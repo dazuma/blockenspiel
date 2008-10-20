@@ -45,7 +45,7 @@ require 'mixology'
 module Blockenspiel
   
   # Current gem version
-  VERSION_STRING = '0.1.0'
+  VERSION_STRING = '0.0.1'
   
   
   # === DSL setup methods
@@ -63,18 +63,43 @@ module Blockenspiel
   
   module DSLSetupMethods
     
+    # Called when DSLSetupMethods extends a class.
+    # This sets up the current class, and adds a hook that causes
+    # any subclass of the current class to also be set up.
+    
     def self.extended(klass_)  # :nodoc:
       unless klass_.instance_variable_defined?(:@_blockenspiel_module)
-        klass_.instance_variable_set(:@_blockenspiel_module, Module.new)
-        klass_.instance_variable_set(:@_blockenspiel_methods, Hash.new)
-        klass_.instance_variable_set(:@_blockenspiel_active, nil)
-        
+        _setup_class(klass_)
         def klass_.inherited(subklass_)
-          subklass_.extend(Blockenspiel::DSLSetupMethods)
+          Blockenspiel::DSLSetupMethods._setup_class(subklass_)
           super
         end
       end
     end
+    
+    
+    # Set up a class.
+    # Creates a DSL module for this class, optionally delegating to the superclass's module.
+    # Also initializes the class's methods hash and active flag.
+    
+    def self._setup_class(klass_)  # :nodoc:
+      superclass_ = klass_.superclass
+      superclass_ = nil unless superclass_.respond_to?(:_get_blockenspiel_module)
+      mod_ = Module.new
+      if superclass_
+        mod_.module_eval do
+          include superclass_._get_blockenspiel_module
+        end
+      end
+      klass_.instance_variable_set(:@_blockenspiel_superclass, superclass_)
+      klass_.instance_variable_set(:@_blockenspiel_module, mod_)
+      klass_.instance_variable_set(:@_blockenspiel_methods, Hash.new)
+      klass_.instance_variable_set(:@_blockenspiel_active, nil)
+    end
+    
+    
+    # Hook called when a method is added.
+    # This automatically makes the method a DSL method according to the current setting.
     
     def method_added(symbol_)  # :nodoc:
       if @_blockenspiel_active
@@ -87,12 +112,25 @@ module Blockenspiel
       super
     end
     
-    def _get_module  # :nodoc:
+    
+    # Get this class's corresponding DSL module
+    
+    def _get_blockenspiel_module  # :nodoc:
       @_blockenspiel_module
     end
     
-    def _get_delegate(name_)  # :nodoc:
-      @_blockenspiel_methods[name_]
+    
+    # Get information on the given DSL method name.
+    # Possible values are the name of the delegate method, false for method disabled,
+    # or nil for method never defined.
+    
+    def _get_blockenspiel_delegate(name_)  # :nodoc:
+      delegate_ = @_blockenspiel_methods[name_]
+      if delegate_.nil? && @_blockenspiel_superclass
+        @_blockenspiel_superclass._get_blockenspiel_delegate(name_)
+      else
+        delegate_
+      end
     end
     
     
@@ -206,15 +244,22 @@ module Blockenspiel
   # 
   # These methods are available in a block passed to Blockenspiel#invoke and
   # can be used to dynamically define what methods are available from a block.
-  # See also Blockenspiel#invoke.
+  # See Blockenspiel#invoke for more information.
   
   class Builder
     
     include Blockenspiel::DSL
     
+    
+    # This is a base class for dynamically constructed targets.
+    # The actual target class is an anonymous subclass of this base class.
+    
     class Target  # :nodoc:
       
       include Blockenspiel::DSL
+      
+      
+      # Add a method specification to the subclass.
       
       def self._add_methodinfo(name_, block_, yields_)
         (@_blockenspiel_methodinfo ||= Hash.new)[name_] = [block_, yields_]
@@ -224,6 +269,9 @@ module Blockenspiel
           end
         ")
       end
+      
+      
+      # Attempt to invoke the given method on the subclass.
       
       def self._invoke_methodinfo(name_, params_, block_)
         info_ = @_blockenspiel_methodinfo[name_]
@@ -237,10 +285,16 @@ module Blockenspiel
       
     end
     
+    
+    # Sets up the dynamic target class.
+    
     def initialize  # :nodoc:
       @target_class = Class.new(Blockenspiel::Builder::Target)
       @target_class.dsl_methods(false)
     end
+    
+    
+    # Creates a new instance of the dynamic target class
     
     def _create_target  # :nodoc:
       @target_class.new
@@ -399,7 +453,7 @@ module Blockenspiel
       else
         
         # Mixin behavior
-        mod_ = target_.class._get_module rescue nil
+        mod_ = target_.class._get_blockenspiel_module rescue nil
         if mod_
           
           # Get the thread and self context
@@ -464,16 +518,21 @@ module Blockenspiel
     return block_.call
     
   end
-    
-    
+  
+  
+  # This implements the mapping between DSL module methods and target object methods.
+  # We look up the current target object based on the current thread.
+  # Then we attempt to call the given method on that object.
+  # If we can't find an appropriate method to call, return the special value TARGET_MISMATCH.
+  
   def self._delegate(name_, params_, block_)  # :nodoc:
     target_stack_ = @_target_stacks[Thread.current.object_id]
     return TARGET_MISMATCH unless target_stack_
     target_stack_.reverse_each do |elem_|
       target_ = elem_[0]
-      klass_ = target_.class
-      delegate_ = klass_._get_delegate(name_)
-      if delegate_ && klass_.public_method_defined?(delegate_)
+      target_class_ = target_.class
+      delegate_ = target_class_._get_blockenspiel_delegate(name_)
+      if delegate_ && target_class_.public_method_defined?(delegate_)
         return target_.send(delegate_, *params_, &block_)
       end
       return TARGET_MISMATCH unless elem_[1]

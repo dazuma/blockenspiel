@@ -292,16 +292,19 @@ concurrently.
 
 === Known issues and limitations
 
-* If you subclass a DSL class, the subclass doesn't inherit the dsl methods
-  of its superclass. This can probably be fixed, but I haven't yet given it
-  a lot of attention.
+* Implementing wildcard DSL methods using <tt>method_missing</tt> doesn't
+  work. I haven't yet figured out the right semantics for this case.
 * Ruby 1.9 and JRuby status not yet known.
 
 === Development and support
 
 Documentation is available at http://virtuoso.rubyforge.org/blockenspiel.
 
-Source code is hosted by Github.
+Source code is hosted by Github at http://github.com/dazuma/blockenspiel.
+
+Report bugs on RubyForge at http://rubyforge.org/virtuoso.
+
+Contact the author at dazuma at gmail dot com.
 
 === Author / Credits
 

@@ -6,3 +6,4 @@ Rakefile
 lib/blockenspiel.rb
 tests/tc_basic.rb
 tests/tc_mixins.rb
+tests/tc_dsl_methods.rb

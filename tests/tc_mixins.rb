@@ -95,12 +95,13 @@ module Blockenspiel
         @my_instance_variable_test = :hello
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
-        Blockenspiel.invoke(proc do
+        block_ = proc do
           set_value('a', 1)
           set_value2('b'){ 2 }
           assert_equal(:hello, @my_instance_variable_test)
           assert_equal(saved_object_id_, self.object_id)
-        end, Target1.new(hash_))
+        end
+        Blockenspiel.invoke(block_, Target1.new(hash_))
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert_equal(1, hash_['a1'])
@@ -118,11 +119,12 @@ module Blockenspiel
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
-        Blockenspiel.invoke(proc do
+        block_ = proc do
           set_value('a', 1)
           set_value2_inmixin('b'){ 2 }
           assert(!self.respond_to?(:set_value2))
-        end, Target2.new(hash_))
+        end
+        Blockenspiel.invoke(block_, Target2.new(hash_))
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
