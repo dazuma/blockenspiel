@@ -294,21 +294,22 @@ concurrently.
 
 * Implementing wildcard DSL methods using <tt>method_missing</tt> doesn't
   work. I haven't yet figured out the right semantics for this case.
-* Ruby 1.9 and JRuby status not yet known.
+* Doesn't yet work in Ruby 1.9 because the mixology gem is not compatible at this point.
+* JRuby status not yet known.
 
 === Development and support
 
-Documentation is available at http://virtuoso.rubyforge.org/blockenspiel.
+Documentation is available at http://virtuoso.rubyforge.org/blockenspiel
 
-Source code is hosted by Github at http://github.com/dazuma/blockenspiel.
+Source code is hosted by Github at http://github.com/dazuma/blockenspiel/tree
 
-Report bugs on RubyForge at http://rubyforge.org/virtuoso.
+Report bugs on RubyForge at http://rubyforge.org/projects/virtuoso
 
 Contact the author at dazuma at gmail dot com.
 
 === Author / Credits
 
-Blockenspiel is written by Daniel Azuma (http://www.daniel-azuma.com/).
+Blockenspiel is written by Daniel Azuma (http://www.daniel-azuma.com).
 
 The mixin implementation is based on a concept by Why The Lucky Stiff.
 See his 6 October 2008 blog posting,
