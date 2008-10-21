@@ -46,7 +46,7 @@ require 'mixology'
 module Blockenspiel
   
   # Current gem version
-  VERSION_STRING = '0.1.0'
+  VERSION_STRING = '0.0.2'
   
   
   # === DSL setup methods

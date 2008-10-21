@@ -288,7 +288,7 @@ concurrently.
 
 === Installation
 
- sudo gem install blockenspiel
+ gem install blockenspiel
 
 === Known issues and limitations
 

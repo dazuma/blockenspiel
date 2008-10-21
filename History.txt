@@ -1,6 +1,7 @@
-=== 0.1.0 / 2008-10-22
+=== 0.0.2 / 2008-10-21
 
-* Initial public release: cleaned up the documentation
+* Cleaned up some of the documentation
+* Revisions to the Implementing DSL Blocks paper
 
 === 0.0.1 / 2008-10-20
 
