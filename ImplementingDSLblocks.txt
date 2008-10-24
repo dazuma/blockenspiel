@@ -335,7 +335,7 @@ So does this mean we're stuck with block parameters for better or worse? Not qui
 * Breaks encapuslation of the proxy class.
 * Possibility of a helper method vs DSL method ambiguity.
 
-*Verdict*: Use it if you are writing a DSL that constructs classes or modifies class internals. Otherwise avoid it. There are better alternatives.
+*Verdict*: Use it if you are writing a DSL that constructs classes or modifies class internals. Otherwise try to avoid it.
 
 === Implementation strategy 3: delegation
 
@@ -448,7 +448,7 @@ Let's wrap up our discussion of delegation and then delve into some different, a
 * Does nothing to solve the helper method vs DSL method ambiguity.
 * Harder to implement than a simple <tt>instance_eval</tt>.
 
-*Verdict*: Use it for cases where <tt>instance_eval</tt> is appropriate (i.e. if you are writing a DSL that constructs classes or modifies class internals) and are worried about helper methods being available. Otherwise avoid it.
+*Verdict*: Use it for cases where <tt>instance_eval</tt> is appropriate (i.e. if you are writing a DSL that constructs classes or modifies class internals) and are worried about helper methods being available. Otherwise try to avoid it.
 
 === Implementation strategy 4: arity detection
 
@@ -588,7 +588,57 @@ A third approach involves dynamically generating a singleton module, "hard codin
 
 This probably can be made to work, and it also has the benefit of solving the nesting and multithreading issue neatly since each mixin is done exactly once. However, it seems to be a fairly heavyweight solution: creating a new module for every DSL block invocation may have performance implications. It is also not clear how to support constructs that are not available to <tt>define_method</tt>, such as blocks and parameter default values. However, such an approach may still be useful in certain cases when you need a dynamically generated DSL depending on the context.
 
-As we have seen, the mixin idea seems like a compelling solution, particularly in conjunction with Gray's arity check, but the implementation details present some challenges. It may be a winner if a library can be written to hide the implementation complexity. Let's summarize this approach, and then proceed to examine such a library, one that uses some of the best of what we've discussed to make implementing DSL blocks simple.
+One more issue with the mixin strategy is that, like all implementations that drop the block parameter, there is an ambiguity regarding whether methods should be directed to the DSL or to the surrounding context. In the implementations we've discussed previously, based on <tt>instance_eval</tt>, the actual behavior is fairly straightforward to reason about. A simple <tt>instance_eval</tt> disables method calls to the block's context altogether: you can call _only_ the DSL methods. An <tt>instance_eval</tt> with delegation re-enables method calls to the block's context but gives the DSL priority. If both the DSL and the surrounding block define the same method name, the DSL's method will be called.
+
+Mixin's behavior is less straightforward, because of a subtlety in Ruby's method lookup behavior. Under most cases, it behaves similarly to an <tt>instance_eval</tt> with delegation: the DSL's methods take priority. However, if methods have been added directly to the object, they will take precedence over the DSL's methods. Following is an example of this case:
+
+ # Suppose we have a DSL block available, via "call_my_dsl",
+ # that implements the methods "foo" and "bar"...
+ 
+ # First, let's implement a simple class
+ class MyClass
+   
+   # A test method
+   def foo
+     puts "in foo"
+   end
+   
+ end
+ 
+ # Create an instance of MyClass
+ obj = MyClass.new
+ 
+ # Now, add a new method "bar" to the object.
+ def obj.bar
+   puts "in bar"
+ end
+ 
+ # Finally, add a method "run" that runs a DSL block
+ def obj.run
+   call_my_dsl do
+     foo         # DSL "foo" method takes precedence over MyClass#foo
+     bar         # The object's "bar" method takes precedence over DSL "bar"
+   end
+ end
+ 
+ # At this point, obj has methods "foo", "bar", and "run"
+ # Run the DSL block to test the behavior
+ obj.run
+
+In the above example, suppose both +foo+ and +bar+ are methods of the DSL. They are also both defined as methods of +obj+. (+foo+ is available because it is a method of +MyClass+, while +bar+ is available because it is explicitly added to +obj+.) However, if you run the code, it calls the DSL's +foo+ but +obj+'s +bar+. Why?
+
+The reason is due to a subtlety in how Ruby does method lookup. When you define a method in the way +foo+ is defined, it is just added to the class. However, when you define a method in the way +bar+ is defined, it is defined as a "singleton method", and added to the "singleton class", which is an anonymous class that holds methods defined directly on a particular object. It turns out that the singleton class is always given the highest priority in method lookup. So, for example, the lookup order for methods of +obj+ within the block would look like this:
+
+ singleton methods of obj  ->  mixin module from the DSL  ->  methods of MyClass
+ (e.g. bar, run)               (e.g. foo, bar)                (e.g. foo)
+
+So when the +foo+ method is called, it is not found in the singleton class, but it is found in the mixin, so the mixin's version is invoked. However, when +bar+ is called, it is found in the singleton class, so that version is invoked in favor of the mixin's version.
+
+Does this esoteric-sounding case actually happen in practice? In fact it does, quite frequently: class methods are singleton methods of the class object, so you should beware of this issue when designing a DSL block that will be called from a class method.
+
+Well, that was confusing. It is on account of such behavior that we need to take the method lookup ambiguity seriously when dealing with mixins. In fact, I would go so far as to suggest that the mixin implementation should always go hand-in-hand with a way to mitigate that ambiguity, such as Gray's arity check.
+
+As we have seen, the mixin idea seems like it may be a compelling solution, particularly in conjunction with Gray's arity check, but the implementation details present some challenges. It may be a winner if a library can be written to hide the implementation complexity. Let's summarize this approach, and then proceed to examine such a library, one that uses some of the best of what we've discussed to make implementing DSL blocks simple.
 
 *Implementation*:
 
@@ -606,9 +656,9 @@ As we have seen, the mixin idea seems like a compelling solution, particularly i
 
 * Requires an extension to Ruby to implement mixin removal.
 * Implementation is complicated and error-prone.
-* Does nothing to solve the helper method vs DSL method ambiguity
+* The helper method vs DSL method ambiguity remains, exhibiting surprising behavior in the presence of singleton methods.
 
-*Verdict*: Use it for cases where parameterless blocks are desired, if a library is available to handle the details of the implementation.
+*Verdict*: Use it for cases where parameterless blocks are desired and the method lookup ambiguity can be mitigated, as long as a library is available to handle the details of the implementation.
 
 === Blockenspiel: a comprehensive implementation
 

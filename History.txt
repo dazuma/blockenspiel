@@ -1,3 +1,11 @@
+=== 0.0.3 / 2008-10-23
+
+* Added :proxy behavior for parameterless blocks
+* Removed option to turn off inheriting, since the semantics are somewhat
+  ill-defined and inconsistent. All parameterless blocks now exhibit the
+  inheriting behavior.
+* Added tests for the different behavior settings.
+
 === 0.0.2 / 2008-10-21
 
 * Cleaned up some of the documentation

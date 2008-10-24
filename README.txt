@@ -262,7 +262,9 @@ want the <tt>instance_eval</tt> behavior anyway. RSpec is a good example of
 such a case, since the DSL is being used to construct objects, so it makes
 sense for instance variables inside the block to belong to the object
 being constructed. Blockenspiel gives you the option of choosing
-<tt>instance_eval</tt> in case you need it.
+<tt>instance_eval</tt> in case you need it. Blockenspiel also provides a
+compromise behavior that uses a proxy to dispatch methods to the DSL object
+or the block's context.
 
 Blockenspiel also correctly handles nested blocks. e.g.
 

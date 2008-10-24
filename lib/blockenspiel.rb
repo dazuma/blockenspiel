@@ -46,7 +46,7 @@ require 'mixology'
 module Blockenspiel
   
   # Current gem version
-  VERSION_STRING = '0.0.2'
+  VERSION_STRING = '0.0.3'
   
   
   # === DSL setup methods
@@ -158,7 +158,7 @@ module Blockenspiel
       unless @_blockenspiel_module.public_method_defined?(name_)
         @_blockenspiel_module.module_eval("
           def #{name_}(*params_, &block_)
-            val_ = Blockenspiel._delegate(:#{name_}, params_, block_)
+            val_ = Blockenspiel._target_dispatch(self, :#{name_}, params_, block_)
             val_ == Blockenspiel::TARGET_MISMATCH ? super(*params_, &block_) : val_
           end
         ")
@@ -237,6 +237,20 @@ module Blockenspiel
   class Base
     
     include Blockenspiel::DSL
+    
+  end
+  
+  
+  # Class for proxy delegators.
+  # The proxy behavior creates one of these delegators, mixes in the dsl
+  # methods, and uses instance_eval to invoke the block. This class delegates
+  # non-handled methods to the context object.
+  
+  class ProxyDelegator  # :nodoc:
+    
+    def method_missing(symbol_, *params_, &block_)
+      Blockenspiel._proxy_dispatch(self, symbol_, params_, block_)
+    end
     
   end
   
@@ -330,6 +344,7 @@ module Blockenspiel
   
   @_target_stacks = Hash.new
   @_mixin_counts = Hash.new
+  @_proxy_delegators = Hash.new
   @_mutex = Mutex.new
   
   
@@ -365,19 +380,23 @@ module Blockenspiel
   #   not modified, so the helper methods and instance variables from the
   #   caller's closure remain available. The DSL methods are removed when
   #   the block completes.
-  # <tt>:mixin_inheriting</tt>::
-  #   This behavior is the same as mixin, with an additional feature when
-  #   DSL blocks are nested. Under normal mixin, only the current block's
-  #   DSL methods are available; any outer blocks have their methods
-  #   disabled. If you use mixin_inheriting, and a method is not implemented
-  #   in the current block, then the next outer block is given a chance to
-  #   handle it-- that is, this block "inherits" methods from any block it
-  #   is nested within.
   # <tt>:instance</tt>::
   #   This behavior actually changes +self+ to the target object using
   #   <tt>instance_eval</tt>. Thus, the caller loses access to its own
   #   helper methods and instance variables, and instead gains access to the
-  #   target object's instance variables.
+  #   target object's instance variables. Any DSL method changes applied
+  #   using <tt>dsl_method</tt> directives are ignored.
+  # <tt>:proxy</tt>::
+  #   This behavior changes +self+ to a proxy object created by applying the
+  #   DSL methods to an empty object, whose <tt>method_missing</tt> points
+  #   back at the block's context. This behavior is a compromise between
+  #   instance and mixin. As with instance, +self+ is changed, so the caller
+  #   loses access to its own instance variables. However, the caller's own
+  #   methods should still be available since any methods not handled by the
+  #   DSL are delegated back to the caller. Also, as with mixin, the target
+  #   object's instance variables are not available (and thus cannot be
+  #   clobbered) in the block, and the transformations specified by
+  #   <tt>dsl_method</tt> directives are honored.
   # 
   # === Dynamic target generation
   # 
@@ -446,69 +465,101 @@ module Blockenspiel
       if parameterless_ == :instance
         
         # Instance-eval behavior.
-        # Note: this does not honor DSL method renaming, etc.
-        # Not sure how best to handle those cases, since we cannot
-        # overlay the module on its own target.
         return target_.instance_eval(&block_)
         
       else
         
-        # Mixin behavior
+        # Remaining behaviors use the module of dsl methods
         mod_ = target_.class._get_blockenspiel_module rescue nil
         if mod_
           
-          # Get the thread and self context
-          thread_id_ = Thread.current.object_id
+          # Get the block's calling context object
           object_ = Kernel.eval('self', block_.binding)
-          object_id_ = object_.object_id
           
-          # Store the target for inheriting.
-          # We maintain a target call stack per thread.
-          target_stack_ = @_target_stacks[thread_id_] ||= Array.new
-          target_stack_.push([target_, parameterless_ == :mixin_inheriting])
-          
-          # Mix this module into the object, if required.
-          # This ensures that we keep track of the number of requests to
-          # mix this module in, from nested blocks and possibly multiple threads.
-          @_mutex.synchronize do
-            count_ = @_mixin_counts[[object_id_, mod_]]
-            if count_
-              @_mixin_counts[[object_id_, mod_]] = count_ + 1
-            else
-              @_mixin_counts[[object_id_, mod_]] = 1
-              object_.mixin(mod_)
+          if parameterless_ == :proxy
+            
+            # Proxy behavior:
+            # Create proxy object
+            proxy_ = ProxyDelegator.new
+            proxy_.extend(mod_)
+            
+            # Store the target and proxy object so dispatchers can get them
+            proxy_delegator_key_ = proxy_.object_id
+            target_stack_key_ = [Thread.current.object_id, proxy_.object_id]
+            @_proxy_delegators[proxy_delegator_key_] = object_
+            @_target_stacks[target_stack_key_] = [target_]
+            
+            begin
+              
+              # Call the block with the proxy as self
+              return proxy_.instance_eval(&block_)
+              
+            ensure
+              
+              # Clean up the dispatcher information
+              @_proxy_delegators.delete(proxy_delegator_key_)
+              @_target_stacks.delete(target_stack_key_)
+              
             end
-          end
-          
-          begin
             
-            # Now call the block
-            return block_.call
+          else
             
-          ensure
+            # Mixin behavior:
+            # Create hash keys
+            mixin_count_key_ = [object_.object_id, mod_.object_id]
+            target_stack_key_ = [Thread.current.object_id, object_.object_id]
             
-            # Clean up the target stack
-            target_stack_.pop
-            @_target_stacks.delete(thread_id_) if target_stack_.size == 0
+            # Store the target for inheriting.
+            # We maintain a target call stack per thread.
+            target_stack_ = @_target_stacks[target_stack_key_] ||= Array.new
+            target_stack_.push(target_)
             
-            # Remove the mixin from the object, if required.
+            # Mix this module into the object, if required.
+            # This ensures that we keep track of the number of requests to
+            # mix this module in, from nested blocks and possibly multiple threads.
             @_mutex.synchronize do
-              count_ = @_mixin_counts[[object_id_, mod_]]
-              if count_ == 1
-                @_mixin_counts.delete([object_id_, mod_])
-                object_.unmix(mod_)
+              count_ = @_mixin_counts[mixin_count_key_]
+              if count_
+                @_mixin_counts[mixin_count_key_] = count_ + 1
               else
-                @_mixin_counts[[object_id_, mod_]] = count_ - 1
+                @_mixin_counts[mixin_count_key_] = 1
+                object_.mixin(mod_)
               end
             end
+            
+            begin
+              
+              # Now call the block
+              return block_.call
+              
+            ensure
+              
+              # Clean up the target stack
+              target_stack_.pop
+              @_target_stacks.delete(target_stack_key_) if target_stack_.size == 0
+              
+              # Remove the mixin from the object, if required.
+              @_mutex.synchronize do
+                count_ = @_mixin_counts[mixin_count_key_]
+                if count_ == 1
+                  @_mixin_counts.delete(mixin_count_key_)
+                  object_.unmix(mod_)
+                else
+                  @_mixin_counts[mixin_count_key_] = count_ - 1
+                end
+              end
+              
+            end
+            # End mixin behavior
             
           end
           
         end
-        # End mixin behavior
+        # End use of dsl methods module
         
       end
     end
+    # End attempt of parameterless block
     
     # Attempt parametered block
     if opts_[:parameter] != false && block_.arity != 0
@@ -526,19 +577,25 @@ module Blockenspiel
   # Then we attempt to call the given method on that object.
   # If we can't find an appropriate method to call, return the special value TARGET_MISMATCH.
   
-  def self._delegate(name_, params_, block_)  # :nodoc:
-    target_stack_ = @_target_stacks[Thread.current.object_id]
+  def self._target_dispatch(object_, name_, params_, block_)  # :nodoc:
+    target_stack_ = @_target_stacks[[Thread.current.object_id, object_.object_id]]
     return TARGET_MISMATCH unless target_stack_
-    target_stack_.reverse_each do |elem_|
-      target_ = elem_[0]
+    target_stack_.reverse_each do |target_|
       target_class_ = target_.class
       delegate_ = target_class_._get_blockenspiel_delegate(name_)
       if delegate_ && target_class_.public_method_defined?(delegate_)
         return target_.send(delegate_, *params_, &block_)
       end
-      return TARGET_MISMATCH unless elem_[1]
     end
     return TARGET_MISMATCH
+  end
+  
+  
+  # This implements the proxy fall-back behavior.
+  # We look up the context object, and call the given method on that object.
+  
+  def self._proxy_dispatch(proxy_, name_, params_, block_)  # :nodoc:
+    @_proxy_delegators[proxy_.object_id].send(name_, *params_, &block_)
   end
   
   
