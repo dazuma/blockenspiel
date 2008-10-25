@@ -1,3 +1,11 @@
+=== 0.0.4 / 2008-10-24
+
+* Improvements to the logic for choosing behaviors
+* Added exception classes and provided better error handling
+* Actually added the behavior test case to the gem manifest...
+* Documentation revisions
+* Revisions to the Implementing DSL Blocks paper
+
 === 0.0.3 / 2008-10-23
 
 * Added :proxy behavior for parameterless blocks

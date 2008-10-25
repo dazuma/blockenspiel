@@ -1,8 +1,8 @@
 == Implementing DSL Blocks
 
-by Daniel Azuma, 19 October 2008
+by Daniel Azuma, 28 October 2008
 
-<em>DSL blocks</em> are constructs commonly used in APIs written in Ruby. In this paper I present an overview of the implementation strategies proposed for this important pattern. I will first describe the features of DSL blocks, utilizing illustrations from several well-known Ruby libraries. I will then survey and critique five implementation strategies that have been put forth. Finally, I will present a new library, {Blockenspiel}[http://virtuoso.rubyforge.org/blockenspiel], designed to be a comprehensive implementation of DSL blocks.
+A <em>DSL block</em> is a construct commonly used in Ruby APIs. In this paper I present an overview of the implementation strategies proposed for this important pattern. I will first describe the features of DSL blocks, utilizing illustrations from several well-known Ruby libraries. I will then survey and critique five implementation strategies that have been put forth. Finally, I will present a new library, {Blockenspiel}[http://virtuoso.rubyforge.org/blockenspiel], designed to be a comprehensive implementation of DSL blocks.
 
 === An illustrative overview of DSL blocks
 
@@ -144,7 +144,28 @@ However, some have argued that it is too verbose. Why, in a DSL, is it necessary
     # etc.
   end
 
-The differences become even more clear if you have nested blocks. Because of Ruby 1.8's scoping semantics, nested blocks need different variable names. Consider an imaginary DSL block that looks like this:
+In the next section we will look at this possible syntax improvement more closely. But first, let us summarize our discussion of the "block parameter" implementation.
+
+*Implementation*:
+
+* Create a proxy class defining the DSL.
+* Yield the proxy object to the block as a parameter.
+
+*Pros*:
+
+* Easy to implement.
+* Clear syntax for the caller.
+* Clear separation between the DSL and surrounding code.
+
+*Cons*:
+
+* Requires a block parameter, sometimes resulting in verbose or clumsy syntax.
+
+<b>Use it when</b>: you want a simple, effective DSL block and don't mind requiring a parameter.
+
+=== Parameterless block syntax
+
+Much of the recent discussion surrounding DSL blocks originates from a desire to eliminate the block parameter. A domain-specific _language_, it is reasoned, should be as natural and concise as possible, and should not be tied down to the syntax of method invocation. In many cases, eliminating parameters would have an enormous impact on the readability of a DSL block. One common example is the case of nested blocks, which, because of Ruby 1.8's scoping semantics, require different variable and parameter names. Consider an imaginary DSL block that looks like this:
 
   create_container do |container|
     container.create_subcontainer do |subcontainer1|
@@ -178,28 +199,44 @@ That was clunky. Wouldn't it be nice to instead see this?...
     end
   end
 
-In the next section we examine an alternate implementation that supports such usage. But first, let us summarize our discussion of the "block parameter" implementation.
+While this is often an improvement, it does come at a cost, and it is important to bear this cost in mind as we delve into implementations of parameterless DSL blocks. First, certain method names become syntactically unavailable when you eliminate the method call syntax. Consider, for example, this simple DSL proxy object that uses <tt>attr_writer</tt>...
 
-*Implementation*:
+  class ConfigMethods
+    attr_writer :author
+    attr_writer :title
+  end
 
-* Create a proxy class defining the DSL.
-* Yield the proxy object to the block as a parameter.
+You might interact with it in a DSL block that uses parameters, like so:
 
-*Pros*:
+  create_paper do |config|
+    config.author = "Daniel Azuma"
+    config.title = "Implementing DSL Blocks"
+  end
 
-* Easy to implement.
-* Clear syntax for the caller.
-* Clear separation between the DSL and surrounding code.
+However, if you try to eliminate the block parameter, you run into this dilemma:
 
-*Cons*:
+  create_paper do
+    author = "Daniel Azuma"            # Whoops! These no longer work because they
+    title = "Implementing DSL Blocks"  # look like local variable assignments!
+  end
 
-* Verbose: requires a block parameter, sometimes resulting in clumsy syntax.
+You are forced either to explicitly specify, for example, "<tt>self.author=</tt>", or you must provide different names for your DSL methods. Similarly, many operators, notably <tt>[]=</tt>, are syntactically not available unless you use a full method call syntax.
 
-*Verdict*: Use it if you want a simple, effective DSL block and don't mind requiring a parameter.
+Second, and more importantly, by eliminating the block parameter, we eliminate the primary means of distinguishing which methods belong to the DSL, and which methods do not. For example, in our routing example, if we eliminate the parameter, like so:
+
+  ActionController::Routing::Routes.draw do
+    connect ':controller/:action/:id'
+    connect ':controller/:action/:page/:format'
+    # etc.
+  end
+
+...we now _assume_ that the +connect+ method is part of the DSL, but that is no longer explicit in the syntax. If, suppose +connect+ was also a method of whatever object was +self+ in the context of the block, which method should be called? There is a method lookup ambiguity inherent to the syntax itself, and, as we shall see, different implementations of parameterless blocks will resolve this ambiguity in different, and sometimes confusing, ways.
+
+Despite the above caveats inherent to the syntax, the desire to eliminate the block parameter is quite strong. Let's consider how it can be done.
 
 === Implementation strategy 2: instance_eval
 
-Micah Martin's post[http://blog.8thlight.com/articles/2007/05/20/] describes an alternate implementation strategy that does not require the block to take a parameter. Instead, he suggests using a powerful, if sometimes confusing, Ruby metaprogramming tool called <tt>instance_eval</tt>. This method, defined on the +Object+ class so it is available to every object, has a simple function: it executes a block given it, but does so with the +self+ reference redirected to the receiver. Hence, within the block, calling a method, or accessing an instance variable or class variable, (or, in Ruby 1.9, accessing a constant), will begin at a different place.
+Micah Martin's {blog post}[http://blog.8thlight.com/articles/2007/05/20/] describes an implementation strategy that does not require the block to take a parameter. He suggests using a powerful, if sometimes confusing, Ruby metaprogramming tool called <tt>instance_eval</tt>. This method, defined on the +Object+ class so it is available to every object, has a simple function: it executes a block given it, but does so with the +self+ reference redirected to the receiver. Hence, within the block, calling a method, or accessing an instance variable or class variable, (or, in Ruby 1.9, accessing a constant), will begin at a different place.
 
 It is perhaps instructive to see an example. Let's create a simple class
 
@@ -309,7 +346,7 @@ The problem gets worse. Changing +self+ affects not only how methods are looked 
 
 What happened? If we recall, <tt>@set</tt> is used by the +Mapper+ object to point back to the routing +RouteSet+. It is how the proxy knows what it is proxying for. But since we've used <tt>instance_eval</tt>, we now have free rein over the +Mapper+ object's internal instance variables, including the ability to clobber them. And that's precisely what we did here. Furthermore, maybe we were actually expecting to access our own <tt>@set</tt> variable, and we haven't done that. Any instance variables from the caller's closure are in fact no longer accessible inside the block.
 
-The problem gets even worse. If we think about the cryptic error message we got when we tried to use our +makeurl+ helper method, we begin to realize that we've run into an ambiguity inherent in dropping the block parameter. If +self+ has changed inside the block, and we tried to call +makeurl+, wouldn't we expect a +NoMethodError+ to be raised for +makeurl+ on the +Mapper+ class, rather than for "<tt>[]</tt>" on the +Symbol+ class? What happened? Then we remember that Rails's routing DSL supports named routes. You do not have to call the specific +connect+ method to create a route. In fact, you can call _any_ method name. It is thus ambiguous, when we invoke +makeurl+, whether we mean our helper method or a named route called "makeurl". Rails assumed we meant the named route, but in fact that isn't what we had intended.
+The problem gets even worse. If we think about the cryptic error message we got when we tried to use our +makeurl+ helper method, we begin to realize that we've run into the method lookup ambiguity discussed in the previous section. If +self+ has changed inside the block, and we tried to call +makeurl+, we might expect a +NoMethodError+ to be raised for +makeurl+ on the +Mapper+ class, rather than for "<tt>[]</tt>" on the +Symbol+ class. However, things change when we recall that Rails's routing DSL supports named routes. You do not have to call the specific +connect+ method to create a route. In fact, you can call _any_ method name. Any name is a valid DSL method name. It is thus ambiguous, when we invoke +makeurl+, whether we mean our helper method or a named route called "makeurl". Rails assumed we meant the named route, but in fact that isn't what we had intended.
 
 This all sounds pretty bad. Do we give up on <tt>instance_eval</tt>? Some members of the Ruby community have, and indeed the technique has generally fallen out of favor in major libraries. Jim Weirich, for instance, {originally}[http://onestepback.org/index.cgi/Tech/Ruby/BuilderObjects.rdoc] utilized <tt>instance_eval</tt> in the XML Builder library illustrated earlier, but later deprecated and removed it because of its surprising behavior.
 
@@ -333,15 +370,15 @@ So does this mean we're stuck with block parameters for better or worse? Not qui
 * Surprising lookup behavior for helper methods.
 * Surprising lookup behavior for instance variables.
 * Breaks encapuslation of the proxy class.
-* Possibility of a helper method vs DSL method ambiguity.
+* Encounters the helper method vs DSL method ambiguity.
 
-*Verdict*: Use it if you are writing a DSL that constructs classes or modifies class internals. Otherwise try to avoid it.
+<b>Use it when</b>: you are writing a DSL that constructs classes or modifies class internals.
 
 === Implementation strategy 3: delegation
 
 In our discussion of <tt>instance_eval</tt>, a major problem we identified is that helper methods, and indeed all other methods from the calling context, are not available within the block. One way to improve the situation, perhaps, is by redirecting any methods not defined in the DSL (that is, not defined on the proxy object) back to the original context. That way, we still have access to our helper methods--they'll appear to be part of the DSL. This "delegation" approach was proposed by Dan Manges in his {blog}[http://www.dcmanges.com/blog/ruby-dsls-instance-eval-with-delegation].
 
-The implementation here is not difficult, if we pull out another tool from Ruby's metaprogramming toolbox, <tt>method_missing</tt>. This method is called whenever you call a method that is not explicitly defined on an object's class. It provides a "last ditch" opportunity to handle the method before Ruby bails with a dreaded +NoMethodError+. Again, an example is probably useful here.
+The basic implementation here is not difficult, if we pull out another tool from Ruby's metaprogramming toolbox, <tt>method_missing</tt>. This method is called whenever you call a method that is not explicitly defined on an object's class. It provides a "last ditch" opportunity to handle the method before Ruby bails with a dreaded +NoMethodError+. Again, an example is probably useful here.
 
   class MyClass
     def foo
@@ -389,7 +426,7 @@ Going back to our modification of the Rails routing code, let's see what this lo
     
     def draw(&block)
       clear!
-      original_self = Kernel.eval('self', block.binding)  # Get the block's context self
+      original_self = Kernel.eval('self', block.binding)  # Get block's context self
       map = Mapper.new(self, original_self)               # Give it to the proxy
       map.instance_eval(&block)
       named_routes.install
@@ -400,7 +437,7 @@ Going back to our modification of the Rails routing code, let's see what this lo
     def add_route(path, options = {})
       # ...
 
-Now people familiar with how Rails is implemented will probably object that +Mapper+ already _has_ a <tt>method_missing</tt> defined. It's used to implement the named routes that caused the ambiguity we described earlier. By replacing Rails's <tt>method_missing</tt> with my own <tt>method_missing</tt>, I effectively disable named routes. Granted, I'm ignoring that issue right now, and just trying to illustrate how method delegation works. As long as we don't use named routes, our +makeurl+ example will now work as we expect:
+Now people familiar with how Rails is implemented will probably object that +Mapper+ already _has_ a <tt>method_missing</tt> defined. It's used to implement the named routes that caused the ambiguity we described earlier. We have not solved that ambiguity: by replacing Rails's <tt>method_missing</tt> with my own <tt>method_missing</tt>, I effectively disable named routes. Granted, I'm ignoring that issue right now, and just trying to illustrate how method delegation works. As long as we don't use named routes, our +makeurl+ example will now work as we expect:
 
   URL_PREFIX = 'mywebsite/:controller/:action/'
   def makeurl(*params)
@@ -413,7 +450,65 @@ Now people familiar with how Rails is implemented will probably object that +Map
     # etc.
   end
 
-While this would appear to have solved the helper method issue, it does nothing to address the other issues we encountered. For example, invoking instance variables inside the block will still reference the instance variables of the +Mapper+ proxy object. There is, as far as I know, no way to delegate instance variable lookup. By using <tt>instance_eval</tt>, we still break encapsulation of the proxy class. And we have not solved the fundamental ambiguity in the method names: whether "makeurl" _should_ be called as part of the DSL or as a helper method. Indeed, that ambiguity really is inherent to the goal of eliminating the block parameter. Without a block parameter, it becomes much harder, syntactically, to specify whether a method should be directed to the DSL or somewhere else.
+While this would appear to have solved the helper method issue, so far it does nothing to address the other issues we encountered. For example, invoking instance variables inside the block will still reference the instance variables of the +Mapper+ proxy object. By using <tt>instance_eval</tt>, we still break encapsulation of the proxy class.
+
+Addressing the instance variable issue is not as straightforward as delegating method calls. There is, as far as I know, no direct way to delegate instance variable lookup, and Manges's blog posting does not attempt to provide a solution either. However, we can imagine a few techniques to mitigate the problem. First, we could eliminate the proxy object's dependence on instance variables altogether, by replacing them with a global hash. In our example, instead of keeping a reference to the +RouteSet+ as an instance variable of +Mapper+, we can maintain a global hash that looks up the +RouteSet+ using the +Mapper+ instance as the key. In this way, we eliminate the risk of the block clobbering the proxy's state, and minimize the problem of breaking encapsulation of the proxy object.
+
+Second, we could make instance variables from the block's context partially available through a "pull-push" technique using <tt>instance_variable_set</tt> and <tt>instance_variable_get</tt> calls. Before calling the block, we "pull" in the block context object's instance variables, byt iterating over them and setting the same instance variables on the proxy object. Then those instance variables will appear to be still available during the block. On completing the block, we then "push" any changes back to the block context object, by iterating over the proxy's instance variables and setting them on the block context object. 
+
+Here is a sample implementation of these two techniques for handling instance variables:
+
+  class RouteSet
+    
+    class Mapper
+      
+      @@routeset_map = Hash.new        # Global hashes to replace
+      @@original_self_map = Hash.new   # Mapper's instance variables
+      
+      def initialize(set, original_self)
+        @@routeset_map[self] = set                       # Add me to global hashes
+        @@original_self_map[self] = original_self
+        original_self.instance_variables.each do |name|  # "pull" instance variables
+          instance_variable_set(name, original_self.instance_variable_get(name))
+        end
+      end
+      
+      def cleanup
+        @@routeset_map.delete(self)                      # Remove from global hashes
+        original_self = @@original_self_map.delete(self)
+        instance_variables.each do |name|                # "push" instance variables
+          original_self.instance_variable_set(name, instance_variable_get(name))
+        end
+      end
+      
+      def connect(path, options = {})
+        @@routeset_map[self].add_route(path, options)  # Lookup set from global hash
+      end
+      
+      # ...
+      
+      def method_missing(name, *params, &blk)                 # Lookup original self
+         @@original_self_map[self].send(name, *params, &blk)  # from global hash
+      end
+    end
+    
+    # ...
+    
+    def draw(&block)
+      clear!
+      original_self = Kernel.eval('self', block.binding)
+      map = Mapper.new(self, original_self)
+      map.instance_eval(&block)
+      map.cleanup
+      named_routes.install
+    end
+    
+    # ...
+    
+    def add_route(path, options = {})
+      # ...
+
+While these measures seem to handle most of the cases, the implementation is getting more complex, and includes the additional overhead of hash lookups and copying of instance variables. More significantly, the "pull-push" technique does not quite preserve the expected semantics of instance variables. For instance, if you change an instance variable's value inside the block, it will get "pushed" back to the context object after the block is completed, but until then, the context object will not know about the change. So if, in the meantime, you called a helper method that relies on that instance variable, you will get the old value, and this can result in confusion. Using global hashes might be an effective means of protecting the proxy object's internals from the block. However, I find the "pull-push" technique to delegate instance variables to be of questionable value.
 
 Several variations on the delegation theme have been proposed. One such variation uses a technique proposed by Jim Weirich called {MethodDirector}[http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/19153]. In this variation, we create a small object whose sole purpose is to receive methods and delegate them to whatever object it thinks should handle them. Utilizing Jim's +MethodDirector+ implementation rather than adding a <tt>method_missing</tt> to our +Mapper+ proxy, we could rewrite the +draw+ method as follows:
 
@@ -428,7 +523,7 @@ Several variations on the delegation theme have been proposed. One such variatio
 
 The upshot is not much different from Manges's delegation technique. Method calls get delegated in approximately the same way (though Weirich speculates that +MethodDirector+'s dispatch process may be slow). Within the block, +self+ now points to the +MethodDirector+ object rather than the +Mapper+ object. This means that we're no longer breaking encapsulation of the mapper proxy (but we are breaking the encapsulation of the +MethodDirector+ itself.) We still cannot access instance variables from the block's context. We no longer clobber +Mapper+'s instance variables, but now we can clobber +MethodDirector+'s. In short, it might be considered a slight improvement, but not much, at a possible performance cost.
 
-Let's wrap up our discussion of delegation and then delve into some different, and perhaps more useful, ideas.
+Let's wrap up our discussion of delegation and then delve into an entirely different approach.
 
 *Implementation*:
 
@@ -443,12 +538,11 @@ Let's wrap up our discussion of delegation and then delve into some different, a
 
 *Cons*:
 
-* Still exhibits surprising lookup behavior for instance variables.
-* Still breaks encapuslation of the proxy class.
-* Does nothing to solve the helper method vs DSL method ambiguity.
+* No complete way to eliminate the surprising lookup behavior for instance variables.
+* Does not solve the helper method vs DSL method ambiguity.
 * Harder to implement than a simple <tt>instance_eval</tt>.
 
-*Verdict*: Use it for cases where <tt>instance_eval</tt> is appropriate (i.e. if you are writing a DSL that constructs classes or modifies class internals) and are worried about helper methods being available. Otherwise try to avoid it.
+<b>Use it when</b>: you have a case where <tt>instance_eval</tt> is appropriate (i.e. if you are writing a DSL that constructs classes or modifies class internals) but you are worried about helper methods being available.
 
 === Implementation strategy 4: arity detection
 
@@ -501,8 +595,8 @@ Let us summarize Gray's arity detection technique, and then proceed to an intere
 
 *Pros*:
 
-* Best of both worlds.
-* Puts the choice in the hands of the caller, who can best make the decision.
+* Gives the caller the ability to choose which syntax works best.
+* Solves method lookup ambiguity.
 * Implementation cost is not significant.
 
 *Cons*:
@@ -510,7 +604,7 @@ Let us summarize Gray's arity detection technique, and then proceed to an intere
 * Not an all-encompassing solution-- either choice still has its own pros and cons.
 * Possibility of dilution of DSL branding.
 
-*Verdict*: Use it for most cases when it is not clear whether block parameters or <tt>instance_eval</tt> is better.
+<b>Use it when</b>: it is not clear whether block parameters or <tt>instance_eval</tt> is better, or if you need a way to mitigate the method lookup ambiguity.
 
 === Implementation strategy 5: mixins
 
@@ -563,13 +657,13 @@ Using mixico, we can now write the +draw+ method like this:
     named_routes.install
   end
 
-Wow! That was simple. Mixico even handles all the eval-block-binding crap for us. But the simplicity is a little deceptive: when we want to do a robust implementation, we run into two issues. First, we run into a challenge if we want to support multiple DSL blocks being invoked at once: for example in the case of nested blocks or multithreading. It is possible in such cases that a MapperModule is already mixed into the block's context. The <tt>mix_eval</tt> method by itself, as of this writing, doesn't handle this case well: the inner invocation will remove the module prematurely. Additional logic is necessary to track how many nested invocations (or invocations from other threads) want to mix-in each particular module into each object.
+Wow! That was simple. Mixico even handles all the eval-block-binding hackery for us. But the simplicity is a little deceptive: when we want to do a robust implementation, we run into two issues. First, we run into a challenge if we want to support multiple DSL blocks being invoked at once: for example in the case of nested blocks or multithreading. It is possible in such cases that a MapperModule is already mixed into the block's context. The <tt>mix_eval</tt> method by itself, as of this writing, doesn't handle this case well: the inner invocation will remove the module prematurely. Additional logic is necessary to track how many nested invocations (or invocations from other threads) want to mix-in each particular module into each object.
 
 The other challenge is that of creating the +MapperModule+ module, implementing the +connect+ method and any others we want to mix-in. Because we're adding methods to someone else's object, we need to be as unobtrusive as possible, yet we need to provide the necessary functionality, including invoking the <tt>add_route</tt> method back on the +RouteSet+. This is unfortunately not trivial. I'll describe a full implementation in the next section, but for now let's explore some possible approaches.
 
 Rails's original +Mapper+ proxy class, we recall from our earlier discussion, used an instance variable, <tt>@set</tt>, which pointed back to the +RouteSet+ instance and thus provided a way to invoke <tt>add_route</tt>. One approach could be to add such an instance variable to the block's context object, so it's available in methods of +MapperModule+. This seems to be the easiest approach, but it is also dangerous because it intrudes on the context object, adding an instance variable and potentially clobbering one used by the caller. Furthermore, in the case of nested blocks that try to add methods to the same object, the two blocks may clobber each other's instance variables.
 
-Instead of adding information to the block's context object, it may be plausible simply to stash the information away in a global location, such as a class variable, that can be accessed by the +MapperModule+ from within the block. Again, this seems to work, until you have nested or multithreaded usage. It then becomes neccessary to keep a stack of references to handle nesting, and thread-local variables to handle multithreading-- all feasible to do, but a lot of work.
+Instead of adding information to the block's context object, it may be plausible simply to stash the information away in a global location, such as a class variable, that can be accessed by the +MapperModule+ from within the block. This is of course the same strategy we used to eliminate instance variables in the section on delegation. Again, this seems to work, until you have nested or multithreaded usage. It then becomes neccessary to keep a stack of references to handle nesting, and thread-local variables to handle multithreading-- all feasible to do, but a lot of work.
 
 A third approach involves dynamically generating a singleton module, "hard coding" a reference to the +RouteSet+ in the module. For example:
 
@@ -588,7 +682,7 @@ A third approach involves dynamically generating a singleton module, "hard codin
 
 This probably can be made to work, and it also has the benefit of solving the nesting and multithreading issue neatly since each mixin is done exactly once. However, it seems to be a fairly heavyweight solution: creating a new module for every DSL block invocation may have performance implications. It is also not clear how to support constructs that are not available to <tt>define_method</tt>, such as blocks and parameter default values. However, such an approach may still be useful in certain cases when you need a dynamically generated DSL depending on the context.
 
-One more issue with the mixin strategy is that, like all implementations that drop the block parameter, there is an ambiguity regarding whether methods should be directed to the DSL or to the surrounding context. In the implementations we've discussed previously, based on <tt>instance_eval</tt>, the actual behavior is fairly straightforward to reason about. A simple <tt>instance_eval</tt> disables method calls to the block's context altogether: you can call _only_ the DSL methods. An <tt>instance_eval</tt> with delegation re-enables method calls to the block's context but gives the DSL priority. If both the DSL and the surrounding block define the same method name, the DSL's method will be called.
+One more issue with the mixin strategy is that, like all implementations that drop the block parameter, there remains an ambiguity regarding whether methods should be directed to the DSL or to the surrounding context. In the implementations we've discussed previously, based on <tt>instance_eval</tt>, the actual behavior is fairly straightforward to reason about. A simple <tt>instance_eval</tt> disables method calls to the block's context altogether: you can call _only_ the DSL methods. An <tt>instance_eval</tt> with delegation re-enables method calls to the block's context but gives the DSL priority. If both the DSL and the surrounding block define the same method name, the DSL's method will be called.
 
 Mixin's behavior is less straightforward, because of a subtlety in Ruby's method lookup behavior. Under most cases, it behaves similarly to an <tt>instance_eval</tt> with delegation: the DSL's methods take priority. However, if methods have been added directly to the object, they will take precedence over the DSL's methods. Following is an example of this case:
 
@@ -658,13 +752,13 @@ As we have seen, the mixin idea seems like it may be a compelling solution, part
 * Implementation is complicated and error-prone.
 * The helper method vs DSL method ambiguity remains, exhibiting surprising behavior in the presence of singleton methods.
 
-*Verdict*: Use it for cases where parameterless blocks are desired and the method lookup ambiguity can be mitigated, as long as a library is available to handle the details of the implementation.
+<b>Use it when</b>: parameterless blocks are desired and the method lookup ambiguity can be mitigated, as long as a library is available to handle the details of the implementation.
 
 === Blockenspiel: a comprehensive implementation
 
-As we have seen, the mixin implementation has some compelling qualities, but is hampered by the difficulty of implementing it in a robust way. It could be a useful implementation if a library were present to handle the details.
+Some of the implementations we have covered, especially the mixin implementation, have some compelling qualities, but are hampered by the difficulty of implementing them in a robust way. It could be a useful implementation if a library were present to handle the details.
 
-Blockenspiel was written to be that library. It provides a comprehensive and robust implementation of the mixin strategy, correctly handling nesting and multithreading. It offers the option to perform an arity check, giving the caller the choice of whether or not to use a block parameter. You can even tell Blockenspiel to use <tt>instance_eval</tt> instead of a mixin, in those cases when it is appropriate. Finally, Blockenspiel also provides an API for dynamic construction of DSLs.
+Blockenspiel was written to be that library. It first provides a comprehensive and robust implementation of the mixin strategy, correctly handling nesting and multithreading. It offers the option to perform an arity check, giving the caller the choice of whether or not to use a block parameter. You can even tell Blockenspiel to use an alternate implementation, such as <tt>instance_eval</tt>, instead of a mixin, in those cases when it is appropriate. Finally, Blockenspiel also provides an API for dynamic construction of DSLs.
 
 But most importantly, it is easy to use. To write a basic DSL, just follow the first and easiest implementation strategy, creating a proxy class that can be passed into the block as a parameter. Then instead of yielding the proxy object, pass it to Blockenspiel, and it will do the rest.
 
@@ -700,36 +794,7 @@ Our Rails routing example implemented using Blockenspiel might look like this:
 
 The code above is as simple as a block parameter or <tt>instance_eval</tt> implementation. However, it performs a full-fledged mixin implementation, and even throws in the arity check. We recall from the previous section that one of the chief challenges is to mediate communication between the mixin and proxy in a re-entrant and thread-safe way. Blockenspiel implements this mediation using a global hash, avoiding the compatibility risk of adding instance variables to the block's context object, and avoiding the performance hit of dynamically generating proxies. All the implementation details are carefully handled behind the scenes.
 
-Atop this basic usage, Blockenspiel provides two types of customization. First, you can customize the DSL, using a few simple directives to specify which methods on your proxy should be available in the mixin implementation, possibly even under different names. Method renaming is an important feature of DSL blocks that don't have parameters, because of a syntactic issue with <tt>attr_writer</tt>. Consider, for example, this simple DSL proxy object:
-
-  class ConfigMethods
-    include Blockenspiel::DSL
-    attr_writer :author
-    attr_writer :title
-  end
-
-You might interact with it in a DSL block that uses parameters, like so:
-
-  create_paper do |config|
-    config.author = "Daniel Azuma"
-    config.title = "Implementing DSL Blocks"
-  end
-
-However, if you try to use it in a parameter-less DSL block that uses mixins (or <tt>instance_eval</tt> or any other such technique), you run into this dilemma:
-
-  create_paper do
-    author = "Daniel Azuma"            # Whoops! These no longer work because they
-    title = "Implementing DSL Blocks"  # look like local variable assignments!
-  end
-
-When you design a DSL for use with parameter-less blocks, you need an alternate API. For example, if you could just rename the methods, the syntax would no longer be ambiguous:
-
-  create_paper do
-    set_author "Daniel Azuma"             # These are unambiguously method calls.
-    set_title "Implementing DSL Blocks"
-  end
-
-Blockenspiel gives you this ability:
+Atop this basic usage, Blockenspiel provides two types of customization. First, you can customize the DSL, using a few simple directives to specify which methods on your proxy should be available in the mixin implementation. You can also cause methods to be available in the mixin under different names, thus sidestepping the <tt>attr_writer</tt> issue we discussed earlier. If you want methods of the form "attribute=" on your proxy object, Blockenspiel provides a simple syntax for renaming them:
 
   class ConfigMethods
     include Blockenspiel::DSL
@@ -739,17 +804,80 @@ Blockenspiel gives you this ability:
     dsl_method :set_title, :title=     # blocks under these alternate names.
   end
 
-Second, you can customize the invocation, specifying whether to perform an arity check, whether to use <tt>instance_eval</tt> instead of mixins, and various other minor behavioral adjustments, by providing parameters to the <tt>Blockenspiel#invoke</tt> method. All the details are handled by the Blockenspiel library, leaving you free to focus on your API.
+Now, when we use block parameters, we use the methods of the original ConfigMethods class:
 
-Blockenspiel is available as a gem:
+  create_paper do |config|
+    config.author = "Daniel Azuma"
+    config.title = "Implementing DSL Blocks"
+  end
+
+And omitting the parameter, the alternate method names are mixed in:
+
+  create_paper do
+    set_author "Daniel Azuma"
+    set_title "Implementing DSL Blocks"
+  end
+
+Second, you can customize the invocation-- for example specifying whether to perform an arity check, whether to use <tt>instance_eval</tt> instead of mixins, and various other minor behavioral adjustments-- simply by providing parameters to the <tt>Blockenspiel#invoke</tt> method. All the implementation details are handled by the Blockenspiel library, leaving you free to focus on your API.
+
+Third, Blockenspiel provides an API, itself a DSL block, letting you dynamically construct DSLs. Suppose, for the sake of argument, we wanted to let the caller optionally rename the +connect+ method, for example because we want to make the name "connect" available for named routes. That is, suppose we wanted to provide this behavior:
+
+  ActionController::Routing::Routes.draw(:method => :myconnect) do |map|
+    map.myconnect ':controller/:action/:id'
+    map.myconnect ':controller/:action/:page/:format'
+    # etc.
+  end
+
+This can be implemented by using Blockenspiel to dynamically generate the proxy class, as follows:
+
+  class RouteSet
+    
+    # We don't define a Mapper class anymore!
+    
+    def draw(options={}, &block)
+      clear!
+      method_name = options[:method] || :connect   # The method name for the DSL to use
+      save_self = self                             # Save a reference to the RouteSet
+      Blockenspiel.invoke(block) do                # Dynamically create a "mapper" object
+        add_method(method_name) do |path, *args|   # Dynamically add the method
+          save_self.add_route(path, *args)         # Call back to the RouteSet
+        end
+      end
+      named_routes.install
+    end
+    
+    # ...
+    
+    def add_route(path, options = {})
+      # ...
+
+The observant reader will notice two features of the above code. First, Blockenspiel's API for dynamically generating a DSL, itself uses a DSL block, and indeed Blockenspiel uses itself to implement this feature. The <tt>add_method</tt> call is part of Blockenspiel's DSL-generation DSL. And second, this code bears a remarkable resemblance to one of the approaches to implementing the proxy class in our discussion on mixins. Indeed, this is Blockenspiel's way of supporting that implementation strategy.
+
+Blockenspiel is available now as a gem for MRI 1.8.x
 
   gem install blockenspiel
 
-It currently requires the mixology gem to handle mixin removal.
+More information is available on Blockenspiel's Rubyforge page at http://virtuoso.rubyforge.org/blockenspiel
+
+Source code is available on Github at http://github.com/dazuma/blockenspiel
 
 === Summary
 
-DSL blocks are a valuable and ubiquitous pattern for designing Ruby APIs. A flurry of discussion has recently occurred surrounding the implementation of DSL blocks, particularly addressing the desire to eliminate the need for parameters to the block. We have discussed five different strategies for DSL block implementation, each with its own advantages and disadvantages. Of these, the mixin strategy, recently proposed by Why The Lucky Stiff, appears promising, but its implementation is complex and requires attention to a number of details. The Blockenspiel library provides a concrete and robust implementation of this strategy, hiding the implementation complexity while providing a number of features useful for writing DSL blocks.
+DSL blocks are a valuable and ubiquitous pattern for designing Ruby APIs. A flurry of discussion has recently surrounded the implementation of DSL blocks, particularly addressing the desire to eliminate the need for parameters to the block. We have discussed several different strategies for DSL block implementation, each with its own advantages and disadvantages.
+
+The simplest strategy, creating a proxy object and passing a reference to the block as a parameter, is straightforward, safe, and widely used. However, sometimes we might want to provide a cleaner API by eliminating the block parameter.
+
+Parameterless blocks inherently pose some syntactic issues. First, it may be ambiguous whether a method is meant to be directed to the DSL or to the block's surrounding context. Second, certain constructions, such as those created by <tt>attr_writer</tt>, are syntactically not allowed and must be renamed.
+
+The simplest way to eliminate the block parameter is to change +self+ inside the block using <tt>instance_eval</tt>. This has the side effects of opening the implementation of the proxy object, and cutting off access to the context's helper methods and instance variables.
+
+It is possible to mitigate these side effects by delegating methods, and partially delegating instance variables, back to the context object. These are not foolproof mechanisms and are subject to a few cases of surprising behavior.
+
+The mixin strategy takes a different approach to parameterless blocks by temporarily "mixing" the DSL methods into the context object itself. This eliminates the side effects of changing the +self+ reference, but requires a more complex implementation, and somewhat exacerbates the method lookup ambiguity.
+
+Since the question of whether or not to take a block parameter may be best answered by the caller, it is often useful for an implementation to check the block's arity to determine whether to use a block parameter or a parameterless implementation. However, it is possible for this step to lead to dilution of the DSL's branding.
+
+The Blockenspiel library provides a concrete and robust implementation of DSL blocks, based on the best of these ideas. It hides the implementation complexity while providing a number of features useful for writing DSL blocks.
 
 === References
 
@@ -778,3 +906,7 @@ DSL blocks are a valuable and ubiquitous pattern for designing Ruby APIs. A flur
 {Why The Lucky Stiff}[http://whytheluckystiff.net/], <em>{Mixico}[http://github.com/why/mixico/tree/master]</em> (Ruby library), 2008.
 
 {Why The Lucky Stiff}[http://whytheluckystiff.net/], <em>{Mixing Our Way Out Of Instance Eval?}[http://hackety.org/2008/10/06/mixingOurWayOutOfInstanceEval.html]</em>, 2008.10.06.
+
+=== About the author
+
+Daniel Azuma is Chief Software Architect at Zoodango. He has been working with Ruby for about three years, and finds the language generally pleasant to work with, though he thinks the scoping rules could use some improvement. His home page is at http://www.daniel-azuma.com/.

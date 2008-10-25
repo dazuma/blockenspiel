@@ -46,7 +46,28 @@ require 'mixology'
 module Blockenspiel
   
   # Current gem version
-  VERSION_STRING = '0.0.3'
+  VERSION_STRING = '0.0.4'
+  
+  
+  # Base exception for all exceptions raised by Blockenspiel 
+  
+  class BlockenspielError < RuntimeError
+  end
+  
+  
+  # This exception is rasied when attempting to use the <tt>:proxy</tt> or
+  # <tt>:mixin</tt> parameterless behavior with a target that does not have
+  # the DSL module included. It is an error made by the DSL implementor.
+  
+  class DSLMissingError < BlockenspielError
+  end
+  
+  
+  # This exception is raised when the block provided does not take the
+  # expected number of parameters. It is an error made by the caller.
+  
+  class BlockParameterError < BlockenspielError
+  end
   
   
   # === DSL setup methods
@@ -365,8 +386,8 @@ module Blockenspiel
   #   If set to false, disables parameterless blocks and always attempts to
   #   pass a parameter to the block. Otherwise, you may set it to one of
   #   three behaviors for parameterless blocks: <tt>:mixin</tt> (the
-  #   default), <tt>:mixin_inheriting</tt>, and <tt>:instance</tt>. See
-  #   below for a description of these behaviors.
+  #   default), <tt>:instance</tt>, and <tt>:proxy</tt>. See below for
+  #   detailed descriptions of these behaviors.
   # <tt>:parameter</tt>::
   #   If set to false, disables blocks with parameters, and always attempts
   #   to use parameterless blocks. Default is true, enabling parameter mode.
@@ -376,16 +397,17 @@ module Blockenspiel
   # 
   # <tt>:mixin</tt>::
   #   This is the default behavior. DSL methods from the target are
-  #   temporarily overlayed on the caller's self object, but self is itself
-  #   not modified, so the helper methods and instance variables from the
-  #   caller's closure remain available. The DSL methods are removed when
-  #   the block completes.
+  #   temporarily overlayed on the caller's +self+ object, but +self+ still
+  #   points to the same object, so the helper methods and instance
+  #   variables from the caller's closure remain available. The DSL methods
+  #   are removed when the block completes.
   # <tt>:instance</tt>::
   #   This behavior actually changes +self+ to the target object using
   #   <tt>instance_eval</tt>. Thus, the caller loses access to its own
   #   helper methods and instance variables, and instead gains access to the
-  #   target object's instance variables. Any DSL method changes applied
-  #   using <tt>dsl_method</tt> directives are ignored.
+  #   target object's instance variables. The target object's methods are
+  #   not modified: this behavior does not apply any DSL method changes
+  #   specified using <tt>dsl_method</tt> directives.
   # <tt>:proxy</tt>::
   #   This behavior changes +self+ to a proxy object created by applying the
   #   DSL methods to an empty object, whose <tt>method_missing</tt> points
@@ -448,10 +470,18 @@ module Blockenspiel
   
   def self.invoke(block_, target_=nil, opts_={}, &builder_block_)
     
-    # Handle this case gracefully
-    return nil unless block_
+    parameter_ = opts_[:parameter]
+    parameterless_ = opts_[:parameterless]
     
-    # Handle dynamic target generation
+    # Handle no-target behavior
+    if parameter_ == false && parameterless_ == false
+      if block_.arity != 0 && block_.arity != -1
+        raise Blockenspiel::BlockParameterError, "Block should not take parameters"
+      end
+      return block_.call
+    end
+    
+    # Perform dynamic target generation if requested
     if builder_block_
       opts_ = target_ || opts_
       builder_ = Blockenspiel::Builder.new
@@ -459,115 +489,108 @@ module Blockenspiel
       target_ = builder_._create_target
     end
     
-    # Attempt parameterless block
-    parameterless_ = opts_[:parameterless]
-    if parameterless_ != false && (block_.arity == 0 || block_.arity == -1)
-      if parameterless_ == :instance
-        
-        # Instance-eval behavior.
-        return target_.instance_eval(&block_)
-        
-      else
-        
-        # Remaining behaviors use the module of dsl methods
-        mod_ = target_.class._get_blockenspiel_module rescue nil
-        if mod_
-          
-          # Get the block's calling context object
-          object_ = Kernel.eval('self', block_.binding)
-          
-          if parameterless_ == :proxy
-            
-            # Proxy behavior:
-            # Create proxy object
-            proxy_ = ProxyDelegator.new
-            proxy_.extend(mod_)
-            
-            # Store the target and proxy object so dispatchers can get them
-            proxy_delegator_key_ = proxy_.object_id
-            target_stack_key_ = [Thread.current.object_id, proxy_.object_id]
-            @_proxy_delegators[proxy_delegator_key_] = object_
-            @_target_stacks[target_stack_key_] = [target_]
-            
-            begin
-              
-              # Call the block with the proxy as self
-              return proxy_.instance_eval(&block_)
-              
-            ensure
-              
-              # Clean up the dispatcher information
-              @_proxy_delegators.delete(proxy_delegator_key_)
-              @_target_stacks.delete(target_stack_key_)
-              
-            end
-            
-          else
-            
-            # Mixin behavior:
-            # Create hash keys
-            mixin_count_key_ = [object_.object_id, mod_.object_id]
-            target_stack_key_ = [Thread.current.object_id, object_.object_id]
-            
-            # Store the target for inheriting.
-            # We maintain a target call stack per thread.
-            target_stack_ = @_target_stacks[target_stack_key_] ||= Array.new
-            target_stack_.push(target_)
-            
-            # Mix this module into the object, if required.
-            # This ensures that we keep track of the number of requests to
-            # mix this module in, from nested blocks and possibly multiple threads.
-            @_mutex.synchronize do
-              count_ = @_mixin_counts[mixin_count_key_]
-              if count_
-                @_mixin_counts[mixin_count_key_] = count_ + 1
-              else
-                @_mixin_counts[mixin_count_key_] = 1
-                object_.mixin(mod_)
-              end
-            end
-            
-            begin
-              
-              # Now call the block
-              return block_.call
-              
-            ensure
-              
-              # Clean up the target stack
-              target_stack_.pop
-              @_target_stacks.delete(target_stack_key_) if target_stack_.size == 0
-              
-              # Remove the mixin from the object, if required.
-              @_mutex.synchronize do
-                count_ = @_mixin_counts[mixin_count_key_]
-                if count_ == 1
-                  @_mixin_counts.delete(mixin_count_key_)
-                  object_.unmix(mod_)
-                else
-                  @_mixin_counts[mixin_count_key_] = count_ - 1
-                end
-              end
-              
-            end
-            # End mixin behavior
-            
-          end
-          
-        end
-        # End use of dsl methods module
-        
+    # Handle parametered block case
+    if parameter_ != false && (block_.arity == 1 || block_.arity == -2) || parameterless_ == false
+      if block_.arity != 1 && block_.arity != -1 && block_.arity != -2
+        raise Blockenspiel::BlockParameterError, "Block should take exactly one parameter"
       end
-    end
-    # End attempt of parameterless block
-    
-    # Attempt parametered block
-    if opts_[:parameter] != false && block_.arity != 0
       return block_.call(target_)
     end
     
-    # Last resort fall-back
-    return block_.call
+    # Check arity for parameterless case
+    if block_.arity != 0 && block_.arity != -1
+      raise Blockenspiel::BlockParameterError, "Block should not take parameters"
+    end
+    
+    # Handle instance-eval behavior
+    if parameterless_ == :instance
+      return target_.instance_eval(&block_)
+    end
+    
+    # Get the module of dsl methods
+    mod_ = target_.class._get_blockenspiel_module rescue nil
+    unless mod_
+      raise Blockenspiel::DSLMissingError
+    end
+    
+    # Get the block's calling context object
+    object_ = Kernel.eval('self', block_.binding)
+    
+    # Handle proxy behavior
+    if parameterless_ == :proxy
+      
+      # Create proxy object
+      proxy_ = Blockenspiel::ProxyDelegator.new
+      proxy_.extend(mod_)
+      
+      # Store the target and proxy object so dispatchers can get them
+      proxy_delegator_key_ = proxy_.object_id
+      target_stack_key_ = [Thread.current.object_id, proxy_.object_id]
+      @_proxy_delegators[proxy_delegator_key_] = object_
+      @_target_stacks[target_stack_key_] = [target_]
+      
+      begin
+        
+        # Call the block with the proxy as self
+        return proxy_.instance_eval(&block_)
+        
+      ensure
+        
+        # Clean up the dispatcher information
+        @_proxy_delegators.delete(proxy_delegator_key_)
+        @_target_stacks.delete(target_stack_key_)
+        
+      end
+      
+    end
+     
+    # Handle mixin behavior (default)
+    
+    # Create hash keys
+    mixin_count_key_ = [object_.object_id, mod_.object_id]
+    target_stack_key_ = [Thread.current.object_id, object_.object_id]
+    
+    # Store the target for inheriting.
+    # We maintain a target call stack per thread.
+    target_stack_ = @_target_stacks[target_stack_key_] ||= Array.new
+    target_stack_.push(target_)
+    
+    # Mix this module into the object, if required.
+    # This ensures that we keep track of the number of requests to
+    # mix this module in, from nested blocks and possibly multiple threads.
+    @_mutex.synchronize do
+      count_ = @_mixin_counts[mixin_count_key_]
+      if count_
+        @_mixin_counts[mixin_count_key_] = count_ + 1
+      else
+        @_mixin_counts[mixin_count_key_] = 1
+        object_.mixin(mod_)
+      end
+    end
+    
+    begin
+      
+      # Now call the block
+      return block_.call
+      
+    ensure
+      
+      # Clean up the target stack
+      target_stack_.pop
+      @_target_stacks.delete(target_stack_key_) if target_stack_.size == 0
+      
+      # Remove the mixin from the object, if required.
+      @_mutex.synchronize do
+        count_ = @_mixin_counts[mixin_count_key_]
+        if count_ == 1
+          @_mixin_counts.delete(mixin_count_key_)
+          object_.unmix(mod_)
+        else
+          @_mixin_counts[mixin_count_key_] = count_ - 1
+        end
+      end
+      
+    end
     
   end
   
@@ -579,7 +602,7 @@ module Blockenspiel
   
   def self._target_dispatch(object_, name_, params_, block_)  # :nodoc:
     target_stack_ = @_target_stacks[[Thread.current.object_id, object_.object_id]]
-    return TARGET_MISMATCH unless target_stack_
+    return Blockenspiel::TARGET_MISMATCH unless target_stack_
     target_stack_.reverse_each do |target_|
       target_class_ = target_.class
       delegate_ = target_class_._get_blockenspiel_delegate(name_)
@@ -587,7 +610,7 @@ module Blockenspiel
         return target_.send(delegate_, *params_, &block_)
       end
     end
-    return TARGET_MISMATCH
+    return Blockenspiel::TARGET_MISMATCH
   end
   
   
