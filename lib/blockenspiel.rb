@@ -46,7 +46,7 @@ require 'mixology'
 module Blockenspiel
   
   # Current gem version
-  VERSION_STRING = '0.0.4'
+  VERSION_STRING = '0.1.0'
   
   
   # Base exception for all exceptions raised by Blockenspiel 
@@ -470,6 +470,9 @@ module Blockenspiel
   
   def self.invoke(block_, target_=nil, opts_={}, &builder_block_)
     
+    unless block_
+      raise ArgumentError, "Block expected"
+    end
     parameter_ = opts_[:parameter]
     parameterless_ = opts_[:parameterless]
     
@@ -490,8 +493,8 @@ module Blockenspiel
     end
     
     # Handle parametered block case
-    if parameter_ != false && (block_.arity == 1 || block_.arity == -2) || parameterless_ == false
-      if block_.arity != 1 && block_.arity != -1 && block_.arity != -2
+    if parameter_ != false && block_.arity == 1 || parameterless_ == false
+      if block_.arity != 1
         raise Blockenspiel::BlockParameterError, "Block should take exactly one parameter"
       end
       return block_.call(target_)

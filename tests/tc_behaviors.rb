@@ -129,7 +129,59 @@ module Blockenspiel
         assert_equal(2, hash_['b2'])
         assert_equal(3, hash_['c3'])
       end
-            
+      
+      
+      # Test parameterless blocks disabled
+      # 
+      # * Asserts that an error is raised if sending a no-parameter block in this case.
+      # * Asserts that sending a one-parameter block still works.
+      
+      def test_disable_parameterless
+        hash_ = Hash.new
+        block1_ = proc do ||
+          set_value1('a', 1)
+        end
+        block2_ = proc do |target_|
+          target_.set_value1('b', 2)
+        end
+        block3_ = proc do
+          set_value1('c', 3)
+        end
+        assert_raise(Blockenspiel::BlockParameterError) do
+          Blockenspiel.invoke(block1_, Target1.new(hash_), :parameterless => false)
+        end
+        Blockenspiel.invoke(block2_, Target1.new(hash_), :parameterless => false)
+        assert_raise(Blockenspiel::BlockParameterError) do
+          Blockenspiel.invoke(block3_, Target1.new(hash_), :parameterless => false)
+        end
+        assert_equal(2, hash_['b1'])
+      end
+      
+      
+      # Test parametered blocks disabled
+      # 
+      # * Asserts that an error is raised if sending a one-parameter block in this case.
+      # * Asserts that sending a no-parameter block still works.
+      
+      def test_disable_parametered
+        hash_ = Hash.new
+        block1_ = proc do ||
+          set_value1('a', 1)
+        end
+        block2_ = proc do |target_|
+          target_.set_value1('b', 2)
+        end
+        block3_ = proc do
+          set_value1('c', 3)
+        end
+        Blockenspiel.invoke(block1_, Target1.new(hash_), :parameter => false)
+        assert_raise(Blockenspiel::BlockParameterError) do
+          Blockenspiel.invoke(block2_, Target1.new(hash_), :parameter => false)
+        end
+        Blockenspiel.invoke(block3_, Target1.new(hash_), :parameter => false)
+        assert_equal(1, hash_['a1'])
+        assert_equal(3, hash_['c1'])
+      end
       
     end
     

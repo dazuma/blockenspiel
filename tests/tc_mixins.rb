@@ -200,6 +200,38 @@ module Blockenspiel
       end
       
       
+      # Test of two threads mixing the same mixin into the same object
+      # 
+      # * Asserts that the mixin is removed only after the second thread is done.
+      
+      def test_threads_same_mixin
+        hash_ = Hash.new
+        block1_ = proc do
+          set_value('a', 1)
+          sleep(0.5)
+          set_value2('b'){ 2 }
+        end
+        block2_ = proc do
+          set_value('c', 3)
+          sleep(1)
+          set_value2('d'){ 4 }
+        end
+        target_ = Target1.new(hash_)
+        thread1_ = Thread.new do
+          Blockenspiel.invoke(block1_, target_)
+        end
+        thread2_ = Thread.new do
+          Blockenspiel.invoke(block2_, target_)
+        end
+        thread1_.join
+        thread2_.join
+        assert_equal(1, hash_['a1'])
+        assert_equal(2, hash_['b1'])
+        assert_equal(3, hash_['c1'])
+        assert_equal(4, hash_['d1'])
+      end
+      
+      
     end
     
   end

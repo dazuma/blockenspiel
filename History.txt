@@ -1,3 +1,10 @@
+=== 0.1.0 / 2008-10-29
+
+* Alpha release, opened for public feedback
+* Tightened constraints on block parameters
+* Added some test cases for threads and parameter constraints
+* Revisions to the Implementing DSL Blocks paper
+
 === 0.0.4 / 2008-10-24
 
 * Improvements to the logic for choosing behaviors
