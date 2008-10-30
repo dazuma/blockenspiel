@@ -83,7 +83,7 @@ Perhaps you were introduced to Ruby via the {Rails}[http://www.rubyonrails.org/]
 
 Blocks are central to Ruby as a language, and it feels natural to Ruby programmers to use them to delimit specialized code. When designing an API for a Ruby library, blocks like these are, in many cases, a natural and effective pattern.
 
-=== Let's be more precise about what we mean by "DSL block".
+=== Defining DSL blocks
 
 Blocks in Ruby are used for a variety of purposes. In many cases, they are used to provide _callbacks_, specifying functionality to inject into an operation. If you come from a functional programming background, you might see them as lambda expressions; in object-oriented-speak, they implement the Visitor pattern. A simple example is the +each+ method, which iterates over a collection, using the given block as a callback that allows the caller to specify processing to perform on each element.
 
@@ -97,7 +97,7 @@ Note that in both this case and the Routing case, the information contained in t
 
 The RSpec example illustrates a more sophisticated case with many keywords and multiple levels of blocks, but it shares common features with the Rails examples. Again, a language is being defined to describe things that could conceivably have been passed in as parameters, but are being specified in a block for clarity and readability.
 
-So far, we can see that DSL blocks have the following properties:
+Based on this discussion, we can see that DSL blocks have the following properties:
 
 * An API requires a caller to communicate complex descriptive information.
 * The API defines a domain-specific language designed to express this information.
@@ -336,9 +336,8 @@ Using the above method, it becomes easy to generate URL strings:
 
 Our <tt>routes.rb</tt> file, utilizing our "improvement" to the routing DSL, might now like this:
 
-  URL_PREFIX = 'mywebsite/:controller/:action/'
   def makeurl(*params)
-    URL_PREFIX + params.map{ |e| e.inspect }.join('/')
+    'mywebsite/:controller/:action/' + params.map{ |e| e.inspect }.join('/')
   end
   
   ActionController::Routing::Routes.draw do
@@ -709,45 +708,45 @@ One more issue with the mixin strategy is that, like all implementations that dr
 
 Mixin's behavior is less straightforward, because of a subtlety in Ruby's method lookup behavior. Under most cases, it behaves similarly to an <tt>instance_eval</tt> with delegation: the DSL's methods take priority. However, if methods have been added directly to the object, they will take precedence over the DSL's methods. Following is an example of this case:
 
- # Suppose we have a DSL block available, via "call_my_dsl",
- # that implements the methods "foo" and "bar"...
- 
- # First, let's implement a simple class
- class MyClass
-   
-   # A test method
-   def foo
-     puts "in foo"
-   end
-   
- end
- 
- # Create an instance of MyClass
- obj = MyClass.new
- 
- # Now, add a new method "bar" to the object.
- def obj.bar
-   puts "in bar"
- end
- 
- # Finally, add a method "run" that runs a DSL block
- def obj.run
-   call_my_dsl do
-     foo         # DSL "foo" method takes precedence over MyClass#foo
-     bar         # The object's "bar" method takes precedence over DSL "bar"
-   end
- end
- 
- # At this point, obj has methods "foo", "bar", and "run"
- # Run the DSL block to test the behavior
- obj.run
+  # Suppose we have a DSL block available, via "call_my_dsl",
+  # that implements the methods "foo" and "bar"...
+  
+  # First, let's implement a simple class
+  class MyClass
+    
+    # A test method
+    def foo
+      puts "in foo"
+    end
+    
+  end
+  
+  # Create an instance of MyClass
+  obj = MyClass.new
+  
+  # Now, add a new method "bar" to the object.
+  def obj.bar
+    puts "in bar"
+  end
+  
+  # Finally, add a method "run" that runs a DSL block
+  def obj.run
+    call_my_dsl do
+      foo         # DSL "foo" method takes precedence over MyClass#foo
+      bar         # The object's "bar" method takes precedence over DSL "bar"
+    end
+  end
+  
+  # At this point, obj has methods "foo", "bar", and "run"
+  # Run the DSL block to test the behavior
+  obj.run
 
 In the above example, suppose both +foo+ and +bar+ are methods of the DSL. They are also both defined as methods of +obj+. (+foo+ is available because it is a method of +MyClass+, while +bar+ is available because it is explicitly added to +obj+.) However, if you run the code, it calls the DSL's +foo+ but +obj+'s +bar+. Why?
 
 The reason points to a subtlety in how Ruby does method lookup. When you define a method in the way +foo+ is defined, it is just added to the class. However, when you define a method in the way +bar+ is defined, it is defined as a "singleton method", and added to the "singleton class", which is an anonymous class that holds methods defined directly on a particular object. It turns out that the singleton class is always given the highest priority in method lookup. So, for example, the lookup order for methods of +obj+ within the block would look like this:
 
- singleton methods of obj  ->  mixin module from the DSL  ->  methods of MyClass
- (e.g. bar, run)               (e.g. foo, bar)                (e.g. foo)
+  singleton methods of obj  ->  mixin module from the DSL  ->  methods of MyClass
+  (e.g. bar, run)               (e.g. foo, bar)                (e.g. foo)
 
 So when the +foo+ method is called, it is not found in the singleton class, but it is found in the mixin, so the mixin's version is invoked. However, when +bar+ is called, it is found in the singleton class, so that version is invoked in favor of the mixin's version.
 
@@ -827,14 +826,14 @@ Atop this basic usage, blockenspiel provides two types of customization. First, 
     dsl_method :set_title, :title=     # blocks under these alternate names.
   end
 
-Now, when we use block parameters, we use the methods of the original ConfigMethods class:
+Now, when we use block parameters, we use the methods of the original +ConfigMethods+ class:
 
   create_paper do |config|
     config.author = "Daniel Azuma"
     config.title = "Implementing DSL Blocks"
   end
 
-And omitting the parameter, the alternate method names are mixed in:
+And, when we omit the parameter, the alternate method names are mixed in:
 
   create_paper do
     set_author "Daniel Azuma"
@@ -932,4 +931,4 @@ The Blockenspiel library provides a concrete and robust implementation of DSL bl
 
 === About the author
 
-Daniel Azuma is Chief Software Architect at Zoodango. He has been working with Ruby for about three years, and finds the language generally pleasant to work with, though he thinks the scoping rules could use some improvement. His home page is at http://www.daniel-azuma.com/.
+Daniel Azuma is Chief Software Architect at Zoodango. He has been working with Ruby for about three years, and finds the language generally pleasant to work with, though he thinks the scoping rules could use some improvement. His home page is at http://www.daniel-azuma.com/

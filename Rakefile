@@ -46,4 +46,40 @@ Hoe.new('blockenspiel', Blockenspiel::VERSION_STRING) do |p_|
   p_.extra_deps = [['mixology', '>= 0.1.0']]
   p_.description_sections = ['blockenspiel']
   p_.url = 'http://virtuoso.rubyforge.org/blockenspiel'
+  p_.clean_globs << 'idslb_markdown.txt'
+end
+
+
+# Custom task that takes the implementing dsl blocks paper
+# and converts it from RDoc format to Markdown
+task :idslb_markdown do
+  File.open('ImplementingDSLblocks.txt') do |read_|
+    File.open('idslb_markdown.txt', 'w') do |write_|
+      linenum_ = 0
+      read_.each do |line_|
+        linenum_ += 1
+        next if linenum_ < 4
+        line_.sub!(/^===\ /, '### ')
+        line_.sub!(/^\ \ /, '    ')
+        if line_[0..3] == '### '
+          line_.gsub!(/(\w)_(\w)/, '\1\_\2')
+        end
+        if line_[0..3] != '    '
+          line_.gsub!('"it_should_behave_like"', '"it\_should\_behave\_like"')
+          line_.gsub!('"time_zone"', '"time\_zone"')
+          line_.gsub!(/\+(\w+)\+/, '`\1`')
+          line_.gsub!(/\*(\w+)\*/, '**\1**')
+          line_.gsub!(/<\/?em>/, '*')
+          line_.gsub!(/<\/?tt>/, '`')
+          line_.gsub!(/<\/?b>/, '**')
+          line_.gsub!(/\{([^\}]+)\}\[([^\]]+)\]/) do |match_|
+            text_, url_ = $1, $2
+            "[#{text_.gsub('_', '\_')}](#{url_})"
+          end
+          line_.gsub!(/\ (http:\/\/[^\s]+)/, ' [\1](\1)')
+        end
+        write_.puts(line_)
+      end
+    end
+  end
 end
