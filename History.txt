@@ -1,3 +1,11 @@
+=== 0.1.1 / 2008-11-06
+
+* Added ability to pass the block as the first parameter in
+  the dynamic DSL builder API; cleaned up the API a little
+* Minor fixes to Implementing DSL Blocks paper
+* Some updates to rdocs
+* More test coverage
+
 === 0.1.0 / 2008-10-29
 
 * Alpha release, opened for public feedback

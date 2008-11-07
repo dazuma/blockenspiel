@@ -7,4 +7,5 @@ lib/blockenspiel.rb
 tests/tc_basic.rb
 tests/tc_behaviors.rb
 tests/tc_dsl_methods.rb
+tests/tc_dynamic.rb
 tests/tc_mixins.rb

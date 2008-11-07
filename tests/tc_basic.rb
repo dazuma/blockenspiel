@@ -33,6 +33,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
+;
 
 
 require File.expand_path("#{File.dirname(__FILE__)}/../lib/blockenspiel.rb")
@@ -120,7 +121,7 @@ module Blockenspiel
           add_method(:set_value) do |key_, value_|
             hash_[key_] = value_
           end
-          add_method(:set_value_by_block, :receive_block => true) do |key_, bl_|
+          add_method(:set_value_by_block, :block => true) do |bl_, key_|
             hash_[key_] = bl_.call
           end
         end

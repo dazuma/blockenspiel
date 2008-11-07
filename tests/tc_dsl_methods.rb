@@ -33,6 +33,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
+;
 
 
 require File.expand_path("#{File.dirname(__FILE__)}/../lib/blockenspiel.rb")
@@ -174,6 +175,27 @@ module Blockenspiel
       end
       
       
+      class Target6 < Blockenspiel::Base
+        
+        def initialize(hash_)
+          @hash = hash_
+        end
+        
+        dsl_methods false
+        
+        def set_value1(key_, value_)
+          @hash["#{key_}1"] = value_
+        end
+        
+        def set_value2(key_)
+          @hash["#{key_}2"] = yield
+        end
+        
+        dsl_methods :set_value1, :renamed_set_value2 => :set_value2
+        
+      end
+      
+      
       # Test default dsl method setting.
       # 
       # * Asserts the right dsl methods are added for the default setting.
@@ -274,6 +296,24 @@ module Blockenspiel
         assert_nil(hash_['d4'])
         assert_equal(5, hash_['e4'])
         assert_equal(6, hash_['f5'])
+      end
+      
+      
+      # Test dsl_methods with multiple parameters.
+      # 
+      # * Asserts that hash syntax for dsl_methods works.
+      # * Asserts that combined array and hash parameters works.
+      
+      def test_multiple_dsl_methods
+        hash_ = Hash.new
+        block_ = proc do
+          set_value1('a', 1)
+          renamed_set_value2('b'){ 2 }
+          assert_raise(NoMethodError){ set_value2('c', 3) }
+        end
+        Blockenspiel.invoke(block_, Target6.new(hash_))
+        assert_equal(1, hash_['a1'])
+        assert_equal(2, hash_['b2'])
       end
       
       

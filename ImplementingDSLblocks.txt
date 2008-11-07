@@ -521,7 +521,7 @@ Here is a sample implementation of these two techniques for handling instance va
         map.instance_eval(&block)
       ensure                      # Ensure the hashes are cleaned up and instance
         map.cleanup               # variables are pushed back to original_self,
-      end                         # even if the block threw and exception
+      end                         # even if the block threw an exception
       named_routes.install
     end
     

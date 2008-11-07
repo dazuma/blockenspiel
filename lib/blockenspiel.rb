@@ -46,7 +46,7 @@ require 'mixology'
 module Blockenspiel
   
   # Current gem version
-  VERSION_STRING = '0.1.0'
+  VERSION_STRING = '0.1.1'.freeze
   
   
   # Base exception for all exceptions raised by Blockenspiel 
@@ -193,17 +193,26 @@ module Blockenspiel
     # To enable automatic exporting of methods to parameterless blocks.
     # After executing this command, all public methods defined in the class
     # will be available on parameterless blocks, until
-    # <tt>dsl_methods false</tt> is called.
+    # <tt>dsl_methods false</tt> is called:
     #  dsl_methods true
     # 
     # To disable automatic exporting of methods to parameterless blocks.
     # After executing this command, methods defined in this class will be
     # excluded from parameterless blocks, until <tt>dsl_methods true</tt>
-    # is called.
+    # is called:
     #  dsl_methods false
     # 
     # To make a list of methods available to parameterless blocks in bulk:
     #  dsl_methods :my_method1, :my_method2, ...
+    # 
+    # You can also point dsl methods to a method of a different name on the
+    # target class, by using a hash syntax, as follows:
+    #  dsl_methods :my_method1 => :target_class_method1,
+    #              :my_method2 => :target_class_method2
+    # 
+    # You can mix non-renamed and renamed method declarations as long as
+    # the renamed (hash) methods are at the end. e.g.:
+    #  dsl_methods :my_method1, :my_method2 => :target_class_method2
     
     def dsl_methods(*names_)
       if names_.size == 0 || names_ == [true]
@@ -311,12 +320,13 @@ module Blockenspiel
       
       def self._invoke_methodinfo(name_, params_, block_)
         info_ = @_blockenspiel_methodinfo[name_]
-        if info_[1]
-          realparams_ = params_ + [block_]
-          info_[0].call(*realparams_)
-        else
-          info_[0].call(*params_)
+        case info_[1]
+        when :first
+          params_.unshift(block_)
+        when :last
+          params_.push(block_)
         end
+        info_[0].call(*params_)
       end
       
     end
@@ -337,22 +347,56 @@ module Blockenspiel
     end
     
     
-    # Make a method available within the block.
+    # === Declare a DSL method.
     # 
+    # This call creates a method that can be called from the DSL block.
     # Provide a name for the method, and a block defining the method's
-    # implementation.
+    # implementation. You may also provided a list of options as follows:
     # 
-    # By default, a method of the same name is also made available in
-    # mixin mode. To change the name of the mixin method, set its name
-    # as the value of the <tt>:mixin</tt> parameter. To disable the
-    # mixin method, set the <tt>:mixin</tt> parameter to +false+.
+    # The <tt>:block</tt> option controls how the generated method reports
+    # any block provided by the caller. If set to +false+ or not given, any
+    # caller-provided block is ignored. If set to <tt>:first</tt>, the
+    # block is _prepended_ (as a +Proc+ object) to the parameters passed to
+    # the method's implementing block. If set to <tt>:last</tt>, the block
+    # is _appended_. In either case, if the caller does not provide a block,
+    # a value of +nil+ is pre- or appended to the parameter list. A value of
+    # +true+ is equivalent to <tt>:first</tt>.
+    # (This is a workaround for the fact that blocks cannot themselves take
+    # block parameters in Ruby 1.8.)
+    # 
+    # For example, to create a method named "foo" that takes one parameter
+    # and a block, do this:
+    # 
+    #  add_method(:foo, :block => :first) do |block, param|
+    #    puts "foo called with parameter "+param.inspect
+    #    puts "the block returned "+block.call.inspect
+    #  end
+    # 
+    # In your DSL, you can then call:
+    # 
+    #  foo("hello"){ "a value" }
+    # 
+    # By default, a method of the same name is also made available to
+    # parameterless blocks. To change the name of the parameterless method,
+    # provide its name as the value of the <tt>:dsl_method</tt> option.
+    # To disable this method for parameterless blocks, set the
+    # <tt>:dsl_method</tt> option to +false+.
+    # 
+    # For historical reasons, the <tt>:mixin</tt> option is an alias for
+    # <tt>:dsl_method</tt>. However, its use is deprecated.
+    # 
+    # The <tt>:receive_block</tt> option is also supported for historical
+    # reasons, but its use is deprecated. Setting <tt>:receive_block</tt> to
+    # +true+ is equivalent to setting <tt>:block</tt> to <tt>:last</tt>.
     
     def add_method(name_, opts_={}, &block_)
-      @target_class._add_methodinfo(name_, block_, opts_[:receive_block])
-      mixin_name_ = opts_[:mixin]
-      if mixin_name_ != false
-        mixin_name_ = name_ if mixin_name_.nil? || mixin_name_ == true
-        @target_class.dsl_method(mixin_name_, name_)
+      receive_block_ = opts_[:receive_block] ? :last : opts_[:block]
+      receive_block_ = :first if receive_block_ && receive_block_ != :last
+      @target_class._add_methodinfo(name_, block_, receive_block_)
+      dsl_method_name_ = opts_[:dsl_method] || opts_[:mixin]
+      if dsl_method_name_ != false
+        dsl_method_name_ = name_ if dsl_method_name_.nil? || dsl_method_name_ == true
+        @target_class.dsl_method(dsl_method_name_, name_)
       end
     end
     
