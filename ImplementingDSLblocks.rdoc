@@ -669,9 +669,9 @@ What we would really like is a way to add methods to just one object temporarily
   s1.foo                  # prints "foo called"
   s2.foo                  # NameError: s2 is unchanged
 
-Unfortunately, there is no way to remove the module from the object. Ruby has no "unextend" capability. This omission led Why to implement it himself as a Ruby language extension, lovingly entitled {mixico}[http://github.com/why/mixico/tree/master]. The name comes from the library's ability to add and remove "mixins" at will. A similar library exists as a gem called {mixology}[http://www.somethingnimble.com/bliki/mixology]. The two libraries use different APIs but perform the same basic function. For the discussion below, I will assume mixico is installed. However, the library I describe in the next section uses mixology because it is available as a gem.
+Unfortunately, there is no way to remove the module from the object. Ruby has no "unextend" capability. This omission led Why to implement it himself as a Ruby language extension called {Mixico}[http://github.com/why/mixico/tree/master]. The name comes from the library's ability to add and remove "mixins" at will. A similar library exists as a gem called {Mixology}[http://www.somethingnimble.com/bliki/mixology]. The two libraries use different APIs but perform the same basic function. For the discussion below, I will assume Mixico is installed. However, the library I describe in the next section uses a custom implementation that is compatible with MRI 1.9 and JRuby.
 
-Using mixico, we can now write the +draw+ method like this:
+Using Mixico, we can now write the +draw+ method like this:
 
   def draw(&block)
     clear!
@@ -758,7 +758,7 @@ As we have seen, the mixin idea seems like it may be a compelling solution, part
 
 *Implementation*:
 
-* Install a mixin library such as mixico or mixology.
+* Install a mixin library such as mixico or mixology (or roll your own if necessary).
 * Define the DSL methods in a module.
 * Mix the module into the block's context before invoking the block, and remove it afterwards.
 * Carefully handle any issues involving nested blocks and multithreading while remaining unobtrusive.
@@ -873,7 +873,7 @@ This requires dynamic generation of the proxy class. We could implement it using
     def add_route(path, options = {})
       # ...
 
-You can install blockenspiel as a gem for MRI 1.8.x
+You can install blockenspiel as a gem. It is compatible with MRI 1.8.7 or later, MRI 1.9.1 or later, and JRuby 1.2 or later.
 
   gem install blockenspiel
 

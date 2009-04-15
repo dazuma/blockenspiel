@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------
 # 
-# Blockenspiel entry point
+# Blockenspiel version
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008 Daniel Azuma
+# Copyright 2008-2009 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -34,10 +34,9 @@
 ;
 
 
-if RUBY_PLATFORM =~ /java/
-  require "blockenspiel_unmixer"
-else
-  require "#{File.dirname(__FILE__)}/blockenspiel/unmixer"
+module Blockenspiel
+  
+  # Current gem version
+  VERSION_STRING = '0.2.0'.freeze
+  
 end
-require "#{File.dirname(__FILE__)}/blockenspiel/impl"
-require "#{File.dirname(__FILE__)}/blockenspiel/version"

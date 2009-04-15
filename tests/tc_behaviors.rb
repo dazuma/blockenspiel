@@ -5,7 +5,7 @@
 # This file contains tests for behavior settings.
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008 Daniel Azuma
+# Copyright 2008-2009 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -36,6 +36,7 @@
 ;
 
 
+require 'test/unit'
 require File.expand_path("#{File.dirname(__FILE__)}/../lib/blockenspiel.rb")
 
 
@@ -95,7 +96,7 @@ module Blockenspiel
           context_self_.assert_raise(NoMethodError){ set_value3_dslversion('d', 4) }
           context_self_.assert_raise(NoMethodError){ helper_method() }
           context_self_.assert(!instance_variable_defined?(:@my_instance_variable_test))
-          context_self_.assert_instance_of(Target1, self)
+          context_self_.assert_instance_of(Blockenspiel::Tests::TextBehaviors::Target1, self)
         end
         Blockenspiel.invoke(block_, Target1.new(hash_), :parameterless => :instance)
         assert_equal(1, hash_['a1'])
@@ -122,7 +123,7 @@ module Blockenspiel
           context_self_.assert_raise(NoMethodError){ set_value3('d', 4) }
           context_self_.assert(helper_method())
           context_self_.assert(!instance_variable_defined?(:@my_instance_variable_test))
-          context_self_.assert(!self.kind_of?(Target1))
+          context_self_.assert(!self.kind_of?(Blockenspiel::Tests::TextBehaviors::Target1))
           context_self_.assert_not_equal(context_self_, self)
         end
         Blockenspiel.invoke(block_, Target1.new(hash_), :parameterless => :proxy)

@@ -256,7 +256,7 @@ Here's an example:
 That API is in itself a DSL block, and yes, Blockenspiel uses itself to
 implement this feature.
 
-By default Blockenspiel uses mixins, which usually exhibit safe and
+By default Blockenspiel uses mixins, which usually exhibit fairly safe and
 non-surprising behavior. However, there are a few cases when you might
 want the <tt>instance_eval</tt> behavior anyway. RSpec is a good example of
 such a case, since the DSL is being used to construct objects, so it makes
@@ -284,9 +284,8 @@ concurrently.
 
 === Requirements
 
-* Ruby 1.8.6 or later.
+* Ruby 1.8.7 or later, or JRuby 1.2 or later. Ruby 1.9 compatible.
 * Rubygems
-* mixology gem.
 
 === Installation
 
@@ -296,8 +295,6 @@ concurrently.
 
 * Implementing wildcard DSL methods using <tt>method_missing</tt> doesn't
   work. I haven't yet figured out the right semantics for this case.
-* Doesn't yet work in Ruby 1.9 because the mixology gem is not compatible at this point.
-* JRuby status not yet known.
 
 === Development and support
 
@@ -311,16 +308,20 @@ Contact the author at dazuma at gmail dot com.
 
 === Author / Credits
 
-Blockenspiel is written by Daniel Azuma (http://www.daniel-azuma.com).
+Blockenspiel is written by Daniel Azuma (http://www.daniel-azuma.com/).
 
 The mixin implementation is based on a concept by Why The Lucky Stiff.
 See his 6 October 2008 blog posting,
 <em>{Mixing Our Way Out Of Instance Eval?}[http://hackety.org/2008/10/06/mixingOurWayOutOfInstanceEval.html]</em>
 for further discussion.
 
+The unmixer code is based on {Mixology}[http://rubyforge.org/projects/mixology],
+by Patrick Farley, anonymous z, Dan Manges, and Clint Bishop.
+The code has been stripped down and modified to support MRI 1.9 and JRuby 1.2.
+
 === License
 
-Copyright 2008 Daniel Azuma.
+Copyright 2008-2009 Daniel Azuma.
 
 All rights reserved.
 

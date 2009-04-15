@@ -1,3 +1,10 @@
+=== 0.2.0 / 2009-04-15
+
+* Now compatible with Ruby 1.9.
+* Now compatible with JRuby 1.2.
+* No longer requires the mixology gem.
+* Building no longer requires hoe.
+
 === 0.1.1 / 2008-11-06
 
 * Added ability to pass the block as the first parameter in
