@@ -1,9 +1,13 @@
-=== 0.2.0 / 2009-04-15
+=== 0.2.1 / 2009-04-16
 
 * Now compatible with Ruby 1.9.
 * Now compatible with JRuby 1.2.
 * No longer requires the mixology gem.
 * Building no longer requires hoe.
+
+=== 0.2.0 / 2009-04-15
+
+* Earlier build of 0.2.1 that had some problems with JRuby.
 
 === 0.1.1 / 2008-11-06
 

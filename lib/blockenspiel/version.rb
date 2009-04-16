@@ -37,6 +37,6 @@
 module Blockenspiel
   
   # Current gem version
-  VERSION_STRING = '0.2.0'.freeze
+  VERSION_STRING = '0.2.1'.freeze
   
 end

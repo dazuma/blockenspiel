@@ -87,7 +87,7 @@ gemspec_ = Gem::Specification.new do |s_|
   s_.has_rdoc = true
   s_.test_files = FileList['tests/tc_*.rb']
   if RUBY_PLATFORM =~ /java/
-    s_.platform = 'jruby'
+    s_.platform = 'java'
     s_.files += ['lib/blockenspiel_unmixer.jar']
   else
     s_.platform = Gem::Platform::RUBY
