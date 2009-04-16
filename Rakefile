@@ -37,20 +37,17 @@ require 'rake/clean'
 require 'rake/gempackagetask'
 require 'rake/testtask'
 require 'rake/rdoctask'
+require 'rdoc/generator/darkfish'
 
 require File.expand_path("#{File.dirname(__FILE__)}/lib/blockenspiel/version")
 
 
 # Configuration
-extra_rdoc_files_ = ['README.rdoc', 'HISTORY.rdoc', 'ImplementingDSLblocks.rdoc']
+extra_rdoc_files_ = ['README.rdoc', 'History.rdoc', 'ImplementingDSLblocks.rdoc']
 
 
 # Default task
-if RUBY_PLATFORM =~ /java/
-  task :default => [:clean, :compile_java, :rdoc, :test]
-else
-  task :default => [:clean, :compile, :rdoc, :test]
-end
+task :default => [:clean, :compile, :rdoc, :test]
 
 
 # Clean task
@@ -67,8 +64,10 @@ end
 Rake::RDocTask.new do |task_|
   task_.main = 'README.rdoc'
   task_.rdoc_files.include(*extra_rdoc_files_)
-  task_.rdoc_files.include('lib/**/*.rb')
+  task_.rdoc_files.include('lib/blockenspiel/*.rb')
   task_.rdoc_dir = 'doc'
+  task_.title = "Blockenspiel #{Blockenspiel::VERSION_STRING} documentation"
+  task_.options << '-f' << 'darkfish'
 end
 
 
@@ -82,10 +81,11 @@ gemspec_ = Gem::Specification.new do |s_|
   s_.description = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks. It is designed to be comprehensive and robust, supporting most common usage patterns, and working correctly in the presence of nested blocks and multithreading.'
   s_.homepage = 'http://virtuoso.rubyforge.org/blockenspiel'
   s_.rubyforge_project = 'virtuoso'
-  s_.required_ruby_version = '>= 1.8.7'
-  s_.files = FileList['ext/**/*.{c,rb}', '{lib,tests}/**/*.rb', '*.rdoc', 'Rakefile'].to_a
+  s_.required_ruby_version = '>= 1.8.6'
+  s_.files = FileList['ext/**/*.{c,rb,java}', 'lib/**/*.{rb,jar}', 'tests/**/*.rb', '*.rdoc', 'Rakefile'].to_a
   s_.extra_rdoc_files = extra_rdoc_files_
   s_.has_rdoc = true
+  s_.test_files = FileList['tests/tc_*.rb']
   if RUBY_PLATFORM =~ /java/
     s_.platform = 'jruby'
     s_.files += ['lib/blockenspiel_unmixer.jar']
@@ -94,17 +94,22 @@ gemspec_ = Gem::Specification.new do |s_|
     s_.extensions = ['ext/blockenspiel/extconf.rb']
   end
 end
+task :package => [:compile]
 Rake::GemPackageTask.new(gemspec_) do |task_|
   task_.need_zip = false
   task_.need_tar = false
 end
 
 
+# General build task
+task :compile => RUBY_PLATFORM =~ /java/ ? [:compile_java] : [:compile_c]
+
+
 # Build tasks for MRI
 dlext_ = Config::CONFIG['DLEXT']
 
 desc 'Builds the extension'
-task :compile => ["lib/blockenspiel/unmixer.#{dlext_}"]
+task :compile_c => ["lib/blockenspiel/unmixer.#{dlext_}"]
 
 file 'ext/blockenspiel/Makefile' => ['ext/blockenspiel/extconf.rb'] do
   Dir.chdir('ext/blockenspiel') do
@@ -131,6 +136,46 @@ task :compile_java do
     sh 'jar cf blockenspiel_unmixer.jar BlockenspielUnmixerService.class'
     cp 'blockenspiel_unmixer.jar', '../../lib/blockenspiel_unmixer.jar'
   end
+end
+
+
+# Publish RDocs
+desc 'Publishes RDocs to RubyForge'
+task :publish_rdoc => [:rerdoc] do
+  config_ = YAML.load(File.read(File.expand_path("~/.rubyforge/user-config.yml")))
+  username_ = config_['username']
+  sh "rsync -av --delete doc/ #{username_}@rubyforge.org:/var/www/gforge-projects/virtuoso/blockenspiel"
+end
+
+
+# Publish gem
+task :publish_gem do |t_|
+  v_ = ENV["VERSION"]
+  abort "Must supply VERSION=x.y.z" unless v_
+  if v_ != Blockenspiel::VERSION_STRING
+    abort "Versions don't match: #{v_} vs #{Blockenspiel::VERSION_STRING}"
+  end
+  mri_pkg_ = "pkg/blockenspiel-#{v_}.gem"
+  jruby_pkg_ = "pkg/blockenspiel-#{v_}-java.gem"
+  if !File.file?(mri_pkg_) || !File.readable?(mri_pkg_)
+    abort "You haven't built #{mri_pkg_} yet. Try rake package"
+  end
+  if !File.file?(jruby_pkg_) || !File.readable?(jruby_pkg_)
+    abort "You haven't built #{jruby_pkg_} yet. Try jrake package"
+  end
+  release_notes_ = File.read("README.rdoc").split(/^(==.*)/)[2].strip
+  release_changes_ = File.read("History.rdoc").split(/^(===.*)/)[1..2].join.strip
+  
+  require 'rubyforge'
+  rf_ = RubyForge.new.configure
+  puts "Logging in to RubyForge"
+  rf_.login
+  config_ = rf_.userconfig
+  config_["release_notes"] = release_notes_
+  config_["release_changes"] = release_changes_
+  config_["preformatted"] = true
+  puts "Releasing blockenspiel #{v_}"
+  rf.add_release('virtuoso', 'blockenspiel', v_, mri_pkg_, jruby_pkg_)
 end
 
 

@@ -85,7 +85,8 @@ module Blockenspiel
     # This sets up the current class, and adds a hook that causes
     # any subclass of the current class to also be set up.
     
-    def self.extended(klass_)  # :nodoc:
+    # :stopdoc:
+    def self.extended(klass_)
       unless klass_.instance_variable_defined?(:@_blockenspiel_module)
         _setup_class(klass_)
         def klass_.inherited(subklass_)
@@ -94,6 +95,7 @@ module Blockenspiel
         end
       end
     end
+    # :startdoc:
     
     
     # Set up a class.
