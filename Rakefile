@@ -97,7 +97,7 @@ end
 task :package => [:compile]
 Rake::GemPackageTask.new(gemspec_) do |task_|
   task_.need_zip = false
-  task_.need_tar = false
+  task_.need_tar = RUBY_PLATFORM !~ /java/
 end
 
 
@@ -157,11 +157,15 @@ task :publish_gem do |t_|
   end
   mri_pkg_ = "pkg/blockenspiel-#{v_}.gem"
   jruby_pkg_ = "pkg/blockenspiel-#{v_}-java.gem"
+  tgz_pkg_ = "pkg/blockenspiel-#{v_}.tgz"
   if !File.file?(mri_pkg_) || !File.readable?(mri_pkg_)
     abort "You haven't built #{mri_pkg_} yet. Try rake package"
   end
   if !File.file?(jruby_pkg_) || !File.readable?(jruby_pkg_)
     abort "You haven't built #{jruby_pkg_} yet. Try jrake package"
+  end
+  if !File.file?(tgz_pkg_) || !File.readable?(tgz_pkg_)
+    abort "You haven't built #{tgz_pkg_} yet. Try rake package"
   end
   release_notes_ = File.read("README.rdoc").split(/^(==.*)/)[2].strip
   release_changes_ = File.read("History.rdoc").split(/^(===.*)/)[1..2].join.strip
@@ -175,7 +179,7 @@ task :publish_gem do |t_|
   config_["release_changes"] = release_changes_
   config_["preformatted"] = true
   puts "Releasing blockenspiel #{v_}"
-  rf.add_release('virtuoso', 'blockenspiel', v_, mri_pkg_, jruby_pkg_)
+  rf_.add_release('virtuoso', 'blockenspiel', v_, mri_pkg_, jruby_pkg_, tgz_pkg_)
 end
 
 
