@@ -471,7 +471,7 @@ module Blockenspiel
   #    add_method(:set_foo) do |value|
   #      my_foo = value
   #    end
-  #    add_method(:set_things_from_block, :receive_block => true) do |value,blk|
+  #    add_method(:set_things_from_block, :block => :last) do |value,blk|
   #      my_foo = value
   #      my_bar = blk.call
   #    end

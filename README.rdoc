@@ -284,8 +284,7 @@ concurrently.
 
 === Requirements
 
-* Ruby 1.8.7 or later, or JRuby 1.2 or later. Ruby 1.9 compatible.
-* Rubygems
+* Ruby 1.8.6 or later, or JRuby 1.2 or later. Ruby 1.9 compatible.
 
 === Installation
 
