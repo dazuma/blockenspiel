@@ -47,7 +47,7 @@ module Blockenspiel
   
   # Base exception for all exceptions raised by Blockenspiel 
   
-  class BlockenspielError < RuntimeError
+  class BlockenspielError < ::RuntimeError
   end
   
   
@@ -55,14 +55,14 @@ module Blockenspiel
   # <tt>:mixin</tt> parameterless behavior with a target that does not have
   # the DSL module included. It is an error made by the DSL implementor.
   
-  class DSLMissingError < BlockenspielError
+  class DSLMissingError < ::Blockenspiel::BlockenspielError
   end
   
   
   # This exception is raised when the block provided does not take the
   # expected number of parameters. It is an error made by the caller.
   
-  class BlockParameterError < BlockenspielError
+  class BlockParameterError < ::Blockenspiel::BlockenspielError
   end
   
   
@@ -90,7 +90,7 @@ module Blockenspiel
       unless klass_.instance_variable_defined?(:@_blockenspiel_module)
         _setup_class(klass_)
         def klass_.inherited(subklass_)
-          Blockenspiel::DSLSetupMethods._setup_class(subklass_)
+          ::Blockenspiel::DSLSetupMethods._setup_class(subklass_)
           super
         end
       end
@@ -105,7 +105,7 @@ module Blockenspiel
     def self._setup_class(klass_)  # :nodoc:
       superclass_ = klass_.superclass
       superclass_ = nil unless superclass_.respond_to?(:_get_blockenspiel_module)
-      mod_ = Module.new
+      mod_ = ::Module.new
       if superclass_
         mod_.module_eval do
           include superclass_._get_blockenspiel_module
@@ -113,7 +113,7 @@ module Blockenspiel
       end
       klass_.instance_variable_set(:@_blockenspiel_superclass, superclass_)
       klass_.instance_variable_set(:@_blockenspiel_module, mod_)
-      klass_.instance_variable_set(:@_blockenspiel_methods, Hash.new)
+      klass_.instance_variable_set(:@_blockenspiel_methods, ::Hash.new)
       klass_.instance_variable_set(:@_blockenspiel_active, nil)
     end
     
@@ -177,8 +177,8 @@ module Blockenspiel
       unless @_blockenspiel_module.public_method_defined?(name_)
         @_blockenspiel_module.module_eval("
           def #{name_}(*params_, &block_)
-            val_ = Blockenspiel._target_dispatch(self, :#{name_}, params_, block_)
-            val_ == Blockenspiel::TARGET_MISMATCH ? super(*params_, &block_) : val_
+            val_ = ::Blockenspiel._target_dispatch(self, :#{name_}, params_, block_)
+            val_ == ::Blockenspiel::TARGET_MISMATCH ? super(*params_, &block_) : val_
           end
         ")
       end
@@ -218,7 +218,7 @@ module Blockenspiel
       elsif names_ == [false]
         @_blockenspiel_active = false
       else
-        if names_.last.kind_of?(Hash)
+        if names_.last.kind_of?(::Hash)
           names_.pop.each do |name_, delegate_|
             dsl_method(name_, delegate_)
           end
@@ -245,7 +245,7 @@ module Blockenspiel
   module DSL
     
     def self.included(klass_)  # :nodoc:
-      klass_.extend(Blockenspiel::DSLSetupMethods)
+      klass_.extend(::Blockenspiel::DSLSetupMethods)
     end
     
   end
@@ -264,7 +264,7 @@ module Blockenspiel
   
   class Base
     
-    include Blockenspiel::DSL
+    include ::Blockenspiel::DSL
     
   end
   
@@ -277,7 +277,7 @@ module Blockenspiel
   class ProxyDelegator  # :nodoc:
     
     def method_missing(symbol_, *params_, &block_)
-      Blockenspiel._proxy_dispatch(self, symbol_, params_, block_)
+      ::Blockenspiel._proxy_dispatch(self, symbol_, params_, block_)
     end
     
   end
@@ -291,7 +291,7 @@ module Blockenspiel
   
   class Builder
     
-    include Blockenspiel::DSL
+    include ::Blockenspiel::DSL
     
     
     # This is a base class for dynamically constructed targets.
@@ -299,13 +299,13 @@ module Blockenspiel
     
     class Target  # :nodoc:
       
-      include Blockenspiel::DSL
+      include ::Blockenspiel::DSL
       
       
       # Add a method specification to the subclass.
       
       def self._add_methodinfo(name_, block_, yields_)
-        (@_blockenspiel_methodinfo ||= Hash.new)[name_] = [block_, yields_]
+        (@_blockenspiel_methodinfo ||= ::Hash.new)[name_] = [block_, yields_]
         module_eval("
           def #{name_}(*params_, &block_)
             self.class._invoke_methodinfo(:#{name_}, params_, block_)
@@ -333,7 +333,7 @@ module Blockenspiel
     # Sets up the dynamic target class.
     
     def initialize  # :nodoc:
-      @target_class = Class.new(Blockenspiel::Builder::Target)
+      @target_class = ::Class.new(::Blockenspiel::Builder::Target)
       @target_class.dsl_methods(false)
     end
     
@@ -402,13 +402,13 @@ module Blockenspiel
   
   
   # :stopdoc:
-  TARGET_MISMATCH = Object.new
+  TARGET_MISMATCH = ::Object.new
   # :startdoc:
   
-  @_target_stacks = Hash.new
-  @_mixin_counts = Hash.new
-  @_proxy_delegators = Hash.new
-  @_mutex = Mutex.new
+  @_target_stacks = ::Hash.new
+  @_mixin_counts = ::Hash.new
+  @_proxy_delegators = ::Hash.new
+  @_mutex = ::Mutex.new
   
   
   # === Invoke a given block.
@@ -513,7 +513,7 @@ module Blockenspiel
   def self.invoke(block_, target_=nil, opts_={}, &builder_block_)
     
     unless block_
-      raise ArgumentError, "Block expected"
+      raise ::ArgumentError, "Block expected"
     end
     parameter_ = opts_[:parameter]
     parameterless_ = opts_[:parameterless]
@@ -521,7 +521,7 @@ module Blockenspiel
     # Handle no-target behavior
     if parameter_ == false && parameterless_ == false
       if block_.arity != 0 && block_.arity != -1
-        raise Blockenspiel::BlockParameterError, "Block should not take parameters"
+        raise ::Blockenspiel::BlockParameterError, "Block should not take parameters"
       end
       return block_.call
     end
@@ -529,7 +529,7 @@ module Blockenspiel
     # Perform dynamic target generation if requested
     if builder_block_
       opts_ = target_ || opts_
-      builder_ = Blockenspiel::Builder.new
+      builder_ = ::Blockenspiel::Builder.new
       invoke(builder_block_, builder_)
       target_ = builder_._create_target
     end
@@ -537,14 +537,14 @@ module Blockenspiel
     # Handle parametered block case
     if parameter_ != false && block_.arity == 1 || parameterless_ == false
       if block_.arity != 1
-        raise Blockenspiel::BlockParameterError, "Block should take exactly one parameter"
+        raise ::Blockenspiel::BlockParameterError, "Block should take exactly one parameter"
       end
       return block_.call(target_)
     end
     
     # Check arity for parameterless case
     if block_.arity != 0 && block_.arity != -1
-      raise Blockenspiel::BlockParameterError, "Block should not take parameters"
+      raise ::Blockenspiel::BlockParameterError, "Block should not take parameters"
     end
     
     # Handle instance-eval behavior
@@ -555,22 +555,22 @@ module Blockenspiel
     # Get the module of dsl methods
     mod_ = target_.class._get_blockenspiel_module rescue nil
     unless mod_
-      raise Blockenspiel::DSLMissingError
+      raise ::Blockenspiel::DSLMissingError
     end
     
     # Get the block's calling context object
-    object_ = Kernel.eval('self', block_.binding)
+    object_ = ::Kernel.eval('self', block_.binding)
     
     # Handle proxy behavior
     if parameterless_ == :proxy
       
       # Create proxy object
-      proxy_ = Blockenspiel::ProxyDelegator.new
+      proxy_ = ::Blockenspiel::ProxyDelegator.new
       proxy_.extend(mod_)
       
       # Store the target and proxy object so dispatchers can get them
       proxy_delegator_key_ = proxy_.object_id
-      target_stack_key_ = [Thread.current.object_id, proxy_.object_id]
+      target_stack_key_ = [::Thread.current.object_id, proxy_.object_id]
       @_proxy_delegators[proxy_delegator_key_] = object_
       @_target_stacks[target_stack_key_] = [target_]
       
@@ -593,11 +593,11 @@ module Blockenspiel
     
     # Create hash keys
     mixin_count_key_ = [object_.object_id, mod_.object_id]
-    target_stack_key_ = [Thread.current.object_id, object_.object_id]
+    target_stack_key_ = [::Thread.current.object_id, object_.object_id]
     
     # Store the target for inheriting.
     # We maintain a target call stack per thread.
-    target_stack_ = @_target_stacks[target_stack_key_] ||= Array.new
+    target_stack_ = @_target_stacks[target_stack_key_] ||= ::Array.new
     target_stack_.push(target_)
     
     # Mix this module into the object, if required.
@@ -629,7 +629,7 @@ module Blockenspiel
         count_ = @_mixin_counts[mixin_count_key_]
         if count_ == 1
           @_mixin_counts.delete(mixin_count_key_)
-          Blockenspiel::Unmixer.unmix(object_, mod_)
+          ::Blockenspiel::Unmixer.unmix(object_, mod_)
         else
           @_mixin_counts[mixin_count_key_] = count_ - 1
         end
@@ -646,8 +646,8 @@ module Blockenspiel
   # If we can't find an appropriate method to call, return the special value TARGET_MISMATCH.
   
   def self._target_dispatch(object_, name_, params_, block_)  # :nodoc:
-    target_stack_ = @_target_stacks[[Thread.current.object_id, object_.object_id]]
-    return Blockenspiel::TARGET_MISMATCH unless target_stack_
+    target_stack_ = @_target_stacks[[::Thread.current.object_id, object_.object_id]]
+    return ::Blockenspiel::TARGET_MISMATCH unless target_stack_
     target_stack_.reverse_each do |target_|
       target_class_ = target_.class
       delegate_ = target_class_._get_blockenspiel_delegate(name_)
@@ -655,7 +655,7 @@ module Blockenspiel
         return target_.send(delegate_, *params_, &block_)
       end
     end
-    return Blockenspiel::TARGET_MISMATCH
+    return ::Blockenspiel::TARGET_MISMATCH
   end
   
   

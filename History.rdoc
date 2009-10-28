@@ -1,3 +1,11 @@
+=== 0.2.2 / 2009-10-28
+
+* Support for gemcutter hosting in the build/release scripts.
+* Some clarifications to constant scopes internal in the code.
+* A few documentation updates.
+* Minor changes to the Implementing DSL Blocks paper to deal with
+  Why's disappearance.
+
 === 0.2.1 / 2009-04-16
 
 * Now compatible with Ruby 1.9.

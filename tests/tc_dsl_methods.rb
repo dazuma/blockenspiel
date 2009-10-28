@@ -37,16 +37,16 @@
 
 
 require 'test/unit'
-require File.expand_path("#{File.dirname(__FILE__)}/../lib/blockenspiel.rb")
+require ::File.expand_path("#{::File.dirname(__FILE__)}/../lib/blockenspiel.rb")
 
 
 module Blockenspiel
   module Tests  # :nodoc:
     
-    class TestDSLMethods < Test::Unit::TestCase  # :nodoc:
+    class TestDSLMethods < ::Test::Unit::TestCase  # :nodoc:
       
       
-      class Target1 < Blockenspiel::Base
+      class Target1 < ::Blockenspiel::Base
         
         def initialize(hash_)
           @hash = hash_
@@ -67,7 +67,7 @@ module Blockenspiel
       end
       
       
-      class Target2 < Blockenspiel::Base
+      class Target2 < ::Blockenspiel::Base
         
         def initialize(hash_)
           @hash = hash_
@@ -92,7 +92,7 @@ module Blockenspiel
       end
       
       
-      class Target3 < Blockenspiel::Base
+      class Target3 < ::Blockenspiel::Base
         
         def initialize(hash_)
           @hash = hash_
@@ -114,7 +114,7 @@ module Blockenspiel
       end
       
       
-      class Target4 < Blockenspiel::Base
+      class Target4 < ::Blockenspiel::Base
         
         def initialize(hash_)
           @hash = hash_
@@ -134,7 +134,7 @@ module Blockenspiel
       end
       
       
-      class Target5a < Blockenspiel::Base
+      class Target5a < ::Blockenspiel::Base
         
         def initialize(hash_)
           @hash = hash_
@@ -176,7 +176,7 @@ module Blockenspiel
       end
       
       
-      class Target6 < Blockenspiel::Base
+      class Target6 < ::Blockenspiel::Base
         
         def initialize(hash_)
           @hash = hash_
@@ -202,13 +202,13 @@ module Blockenspiel
       # * Asserts the right dsl methods are added for the default setting.
       
       def test_default_setting
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         block_ = proc do
           set_value1('a', 1)
           set_value2('b'){ 2 }
-          assert_raise(NoMethodError){ _set_value3('c', 3) }
+          assert_raise(::NoMethodError){ _set_value3('c', 3) }
         end
-        Blockenspiel.invoke(block_, Target1.new(hash_))
+        ::Blockenspiel.invoke(block_, Target1.new(hash_))
         assert_equal(1, hash_['a1'])
         assert_equal(2, hash_['b2'])
         assert_nil(hash_['c3'])
@@ -222,13 +222,13 @@ module Blockenspiel
       # * Asserts that underscore methods are added in dsl_methods true mode.
       
       def test_onoff_switching
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         block_ = proc do
-          assert_raise(NoMethodError){ _set_value1('a', 1) }
+          assert_raise(::NoMethodError){ _set_value1('a', 1) }
           set_value2('b'){ 2 }
           _set_value3('c', 3)
         end
-        Blockenspiel.invoke(block_, Target2.new(hash_))
+        ::Blockenspiel.invoke(block_, Target2.new(hash_))
         assert_nil(hash_['a1'])
         assert_equal(2, hash_['b2'])
         assert_equal(3, hash_['c3'])
@@ -241,14 +241,14 @@ module Blockenspiel
       # * Asserts that adding an explicit dsl method with a different name works.
       
       def test_explicit_add
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         block_ = proc do
           set_value1('a', 1)
-          assert_raise(NoMethodError){ set_value2('b'){ 2 } }
+          assert_raise(::NoMethodError){ set_value2('b'){ 2 } }
           renamed_set_value2('c'){ 3 }
           another_set_value2('d'){ 4 }
         end
-        Blockenspiel.invoke(block_, Target3.new(hash_))
+        ::Blockenspiel.invoke(block_, Target3.new(hash_))
         assert_equal(1, hash_['a1'])
         assert_nil(hash_['b2'])
         assert_equal(3, hash_['c2'])
@@ -262,13 +262,13 @@ module Blockenspiel
       # * Asserts that re-adding a removed method with a different name works.
       
       def test_explicit_removing
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         block_ = proc do
-          assert_raise(NoMethodError){ set_value1('a', 1) }
-          assert_raise(NoMethodError){ set_value2('b'){ 2 } }
+          assert_raise(::NoMethodError){ set_value1('a', 1) }
+          assert_raise(::NoMethodError){ set_value2('b'){ 2 } }
           renamed_set_value2('c'){ 3 }
         end
-        Blockenspiel.invoke(block_, Target4.new(hash_))
+        ::Blockenspiel.invoke(block_, Target4.new(hash_))
         assert_nil(hash_['a1'])
         assert_nil(hash_['b2'])
         assert_equal(3, hash_['c2'])
@@ -281,16 +281,16 @@ module Blockenspiel
       # * Asserts that method overriding is done correctly.
       
       def test_subclassing
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         block_ = proc do
           set_value1('a', 1)
           set_value2('b'){ 2 }
-          assert_raise(NoMethodError){ set_value3('c', 3) }
-          assert_raise(NoMethodError){ set_value4('d', 4) }
+          assert_raise(::NoMethodError){ set_value3('c', 3) }
+          assert_raise(::NoMethodError){ set_value4('d', 4) }
           renamed_set_value4('e', 5)
           set_value5('f', 6)
         end
-        Blockenspiel.invoke(block_, Target5b.new(hash_))
+        ::Blockenspiel.invoke(block_, Target5b.new(hash_))
         assert_equal(1, hash_['a1sub'])
         assert_equal(2, hash_['b2'])
         assert_nil(hash_['c3'])
@@ -306,13 +306,13 @@ module Blockenspiel
       # * Asserts that combined array and hash parameters works.
       
       def test_multiple_dsl_methods
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         block_ = proc do
           set_value1('a', 1)
           renamed_set_value2('b'){ 2 }
-          assert_raise(NoMethodError){ set_value2('c', 3) }
+          assert_raise(::NoMethodError){ set_value2('c', 3) }
         end
-        Blockenspiel.invoke(block_, Target6.new(hash_))
+        ::Blockenspiel.invoke(block_, Target6.new(hash_))
         assert_equal(1, hash_['a1'])
         assert_equal(2, hash_['b2'])
       end

@@ -37,16 +37,16 @@
 
 
 require 'test/unit'
-require File.expand_path("#{File.dirname(__FILE__)}/../lib/blockenspiel.rb")
+require ::File.expand_path("#{::File.dirname(__FILE__)}/../lib/blockenspiel.rb")
 
 
 module Blockenspiel
   module Tests  # :nodoc:
     
-    class TextBehaviors < Test::Unit::TestCase  # :nodoc:
+    class TextBehaviors < ::Test::Unit::TestCase  # :nodoc:
       
       
-      class Target1 < Blockenspiel::Base
+      class Target1 < ::Blockenspiel::Base
         
         dsl_methods false
         
@@ -86,19 +86,19 @@ module Blockenspiel
       # * Asserts that the caller's helper methods are not available.
       
       def test_instance_eval_behavior
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         context_self_ = self
         @my_instance_variable_test = :hello
         block_ = proc do
           set_value1('a', 1)
           set_value2('b'){ 2 }
           set_value3('c', 3)
-          context_self_.assert_raise(NoMethodError){ set_value3_dslversion('d', 4) }
-          context_self_.assert_raise(NoMethodError){ helper_method() }
+          context_self_.assert_raise(::NoMethodError){ set_value3_dslversion('d', 4) }
+          context_self_.assert_raise(::NoMethodError){ helper_method() }
           context_self_.assert(!instance_variable_defined?(:@my_instance_variable_test))
-          context_self_.assert_instance_of(Blockenspiel::Tests::TextBehaviors::Target1, self)
+          context_self_.assert_instance_of(::Blockenspiel::Tests::TextBehaviors::Target1, self)
         end
-        Blockenspiel.invoke(block_, Target1.new(hash_), :parameterless => :instance)
+        ::Blockenspiel.invoke(block_, Target1.new(hash_), :parameterless => :instance)
         assert_equal(1, hash_['a1'])
         assert_equal(2, hash_['b2'])
         assert_equal(3, hash_['c3'])
@@ -113,20 +113,20 @@ module Blockenspiel
       # * Asserts that the caller's helper methods *are* available.
       
       def test_proxy_behavior
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         context_self_ = self
         @my_instance_variable_test = :hello
         block_ = proc do
           set_value1('a', 1)
           set_value2('b'){ 2 }
           set_value3_dslversion('c', 3)
-          context_self_.assert_raise(NoMethodError){ set_value3('d', 4) }
+          context_self_.assert_raise(::NoMethodError){ set_value3('d', 4) }
           context_self_.assert(helper_method())
           context_self_.assert(!instance_variable_defined?(:@my_instance_variable_test))
-          context_self_.assert(!self.kind_of?(Blockenspiel::Tests::TextBehaviors::Target1))
+          context_self_.assert(!self.kind_of?(::Blockenspiel::Tests::TextBehaviors::Target1))
           context_self_.assert_not_equal(context_self_, self)
         end
-        Blockenspiel.invoke(block_, Target1.new(hash_), :parameterless => :proxy)
+        ::Blockenspiel.invoke(block_, Target1.new(hash_), :parameterless => :proxy)
         assert_equal(1, hash_['a1'])
         assert_equal(2, hash_['b2'])
         assert_equal(3, hash_['c3'])
@@ -139,7 +139,7 @@ module Blockenspiel
       # * Asserts that sending a one-parameter block still works.
       
       def test_disable_parameterless
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         block1_ = proc do ||
           set_value1('a', 1)
         end
@@ -149,12 +149,12 @@ module Blockenspiel
         block3_ = proc do
           set_value1('c', 3)
         end
-        assert_raise(Blockenspiel::BlockParameterError) do
-          Blockenspiel.invoke(block1_, Target1.new(hash_), :parameterless => false)
+        assert_raise(::Blockenspiel::BlockParameterError) do
+          ::Blockenspiel.invoke(block1_, Target1.new(hash_), :parameterless => false)
         end
-        Blockenspiel.invoke(block2_, Target1.new(hash_), :parameterless => false)
-        assert_raise(Blockenspiel::BlockParameterError) do
-          Blockenspiel.invoke(block3_, Target1.new(hash_), :parameterless => false)
+        ::Blockenspiel.invoke(block2_, Target1.new(hash_), :parameterless => false)
+        assert_raise(::Blockenspiel::BlockParameterError) do
+          ::Blockenspiel.invoke(block3_, Target1.new(hash_), :parameterless => false)
         end
         assert_equal(2, hash_['b1'])
       end
@@ -166,7 +166,7 @@ module Blockenspiel
       # * Asserts that sending a no-parameter block still works.
       
       def test_disable_parametered
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         block1_ = proc do ||
           set_value1('a', 1)
         end
@@ -176,11 +176,11 @@ module Blockenspiel
         block3_ = proc do
           set_value1('c', 3)
         end
-        Blockenspiel.invoke(block1_, Target1.new(hash_), :parameter => false)
-        assert_raise(Blockenspiel::BlockParameterError) do
-          Blockenspiel.invoke(block2_, Target1.new(hash_), :parameter => false)
+        ::Blockenspiel.invoke(block1_, Target1.new(hash_), :parameter => false)
+        assert_raise(::Blockenspiel::BlockParameterError) do
+          ::Blockenspiel.invoke(block2_, Target1.new(hash_), :parameter => false)
         end
-        Blockenspiel.invoke(block3_, Target1.new(hash_), :parameter => false)
+        ::Blockenspiel.invoke(block3_, Target1.new(hash_), :parameter => false)
         assert_equal(1, hash_['a1'])
         assert_equal(3, hash_['c1'])
       end

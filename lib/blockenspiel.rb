@@ -34,7 +34,7 @@
 ;
 
 
-if RUBY_PLATFORM =~ /java/
+if ::RUBY_PLATFORM =~ /java/
   require "blockenspiel_unmixer"
 else
   require "#{File.dirname(__FILE__)}/blockenspiel/unmixer"

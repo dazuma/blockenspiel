@@ -37,13 +37,13 @@
 
 
 require 'test/unit'
-require File.expand_path("#{File.dirname(__FILE__)}/../lib/blockenspiel.rb")
+require ::File.expand_path("#{::File.dirname(__FILE__)}/../lib/blockenspiel.rb")
 
 
 module Blockenspiel
   module Tests  # :nodoc:
     
-    class TestDynamic < Test::Unit::TestCase  # :nodoc:
+    class TestDynamic < ::Test::Unit::TestCase  # :nodoc:
       
       
       # Test the simple case.
@@ -54,8 +54,8 @@ module Blockenspiel
         block_ = proc do
           set_value(:a, 1)
         end
-        hash_ = Hash.new
-        Blockenspiel.invoke(block_) do
+        hash_ = ::Hash.new
+        ::Blockenspiel.invoke(block_) do
           add_method(:set_value) do |key_, value_|
             hash_[key_] = value_
           end
@@ -70,7 +70,7 @@ module Blockenspiel
       # * Asserts that the method appears in its original name in a parametered block.
       
       def test_renaming
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         dsl_definition_ = proc do
           add_method(:set_value, :dsl_method => :renamed_set_value) do |key_, value_|
             hash_[key_] = value_
@@ -78,14 +78,14 @@ module Blockenspiel
         end
         block1_ = proc do
           renamed_set_value(:a, 1)
-          assert_raise(NoMethodError){ set_value(:b, 2) }
+          assert_raise(::NoMethodError){ set_value(:b, 2) }
         end
-        Blockenspiel.invoke(block1_, &dsl_definition_)
+        ::Blockenspiel.invoke(block1_, &dsl_definition_)
         block2_ = proc do |dsl_|
           dsl_.set_value(:c, 3)
-          assert_raise(NoMethodError){ renamed_set_value(:d, 4) }
+          assert_raise(::NoMethodError){ renamed_set_value(:d, 4) }
         end
-        Blockenspiel.invoke(block2_, &dsl_definition_)
+        ::Blockenspiel.invoke(block2_, &dsl_definition_)
         assert_equal(1, hash_[:a])
         assert_nil(hash_[:b])
         assert_equal(3, hash_[:c])
@@ -100,7 +100,7 @@ module Blockenspiel
       # * Asserts that a block passed "last" works.
       
       def test_blocks_first_and_last
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         dsl_definition_ = proc do
           add_method(:set_value1, :block => :first) do |bl_, key_|
             hash_[key_] = bl_.call
@@ -117,7 +117,7 @@ module Blockenspiel
           set_value2(:b){ 2 }
           set_value2(:c){ 3 }
         end
-        Blockenspiel.invoke(block_, &dsl_definition_)
+        ::Blockenspiel.invoke(block_, &dsl_definition_)
         assert_equal(1, hash_[:a])
         assert_equal(2, hash_[:b])
         assert_equal(3, hash_[:c])
@@ -129,7 +129,7 @@ module Blockenspiel
       # * Asserts that if a block isn't given, it is set to nil.
       
       def test_blocks_nil
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         dsl_definition_ = proc do
           add_method(:set_value1, :block => :first) do |bl_, key_|
             assert_nil(bl_)
@@ -142,7 +142,7 @@ module Blockenspiel
           set_value1(:a)
           set_value2(:b)
         end
-        Blockenspiel.invoke(block_, &dsl_definition_)
+        ::Blockenspiel.invoke(block_, &dsl_definition_)
         assert_nil(hash_[:a])
         assert_nil(hash_[:b])
       end
@@ -155,7 +155,7 @@ module Blockenspiel
       # * Asserts that a block passed "last" works.
       
       def test_blocks_legacy
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         dsl_definition_ = proc do
           add_method(:set_value, :receive_block => true) do |key_, bl_|
             hash_[key_] = bl_.call
@@ -164,7 +164,7 @@ module Blockenspiel
         block_ = proc do
           set_value(:a){ 1 }
         end
-        Blockenspiel.invoke(block_, &dsl_definition_)
+        ::Blockenspiel.invoke(block_, &dsl_definition_)
         assert_equal(1, hash_[:a])
       end
       

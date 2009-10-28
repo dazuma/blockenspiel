@@ -38,16 +38,16 @@
 
 
 require 'test/unit'
-require File.expand_path("#{File.dirname(__FILE__)}/../lib/blockenspiel.rb")
+require ::File.expand_path("#{::File.dirname(__FILE__)}/../lib/blockenspiel.rb")
 
 
 module Blockenspiel
   module Tests  # :nodoc:
     
-    class TestMixins < Test::Unit::TestCase  # :nodoc:
+    class TestMixins < ::Test::Unit::TestCase  # :nodoc:
       
       
-      class Target1 < Blockenspiel::Base
+      class Target1 < ::Blockenspiel::Base
         
         def initialize(hash_)
           @hash = hash_
@@ -64,12 +64,12 @@ module Blockenspiel
       end
       
       
-      class Target2 < Blockenspiel::Base
+      class Target2 < ::Blockenspiel::Base
         
         dsl_methods false
         
         def initialize(hash_=nil)
-          @hash = hash_ || Hash.new
+          @hash = hash_ || ::Hash.new
         end
         
         def set_value(key_, value_)
@@ -92,7 +92,7 @@ module Blockenspiel
       # * Asserts that self doesn't change, and instance variables are preserved.
       
       def test_basic_mixin
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         saved_object_id_ = self.object_id
         @my_instance_variable_test = :hello
         assert(!self.respond_to?(:set_value))
@@ -103,7 +103,7 @@ module Blockenspiel
           assert_equal(:hello, @my_instance_variable_test)
           assert_equal(saved_object_id_, self.object_id)
         end
-        Blockenspiel.invoke(block_, Target1.new(hash_))
+        ::Blockenspiel.invoke(block_, Target1.new(hash_))
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert_equal(1, hash_['a1'])
@@ -117,7 +117,7 @@ module Blockenspiel
       # * Asserts that the methods properly delegate to the target object.
       
       def test_mixin_with_renaming
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
@@ -126,7 +126,7 @@ module Blockenspiel
           set_value2_inmixin('b'){ 2 }
           assert(!self.respond_to?(:set_value2))
         end
-        Blockenspiel.invoke(block_, Target2.new(hash_))
+        ::Blockenspiel.invoke(block_, Target2.new(hash_))
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
@@ -142,15 +142,15 @@ module Blockenspiel
       #   multiple mixins add the same method name
       
       def test_nested_different
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
-        Blockenspiel.invoke(proc do
+        ::Blockenspiel.invoke(proc do
           set_value('a', 1)
           set_value2('b'){ 2 }
           assert(!self.respond_to?(:set_value2_inmixin))
-          Blockenspiel.invoke(proc do
+          ::Blockenspiel.invoke(proc do
             set_value('c', 1)
             set_value2_inmixin('d'){ 2 }
           end, Target2.new(hash_))
@@ -175,14 +175,14 @@ module Blockenspiel
       # * Asserts that the methods are added and removed at the right time.
       
       def test_nested_same
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
-        Blockenspiel.invoke(proc do
+        ::Blockenspiel.invoke(proc do
           set_value('a', 1)
           set_value2_inmixin('b'){ 2 }
-          Blockenspiel.invoke(proc do
+          ::Blockenspiel.invoke(proc do
             set_value('c', 1)
             set_value2_inmixin('d'){ 2 }
             assert(!self.respond_to?(:set_value2))
@@ -207,7 +207,7 @@ module Blockenspiel
       # * Asserts that the mixin is removed only after the second thread is done.
       
       def test_threads_same_mixin
-        hash_ = Hash.new
+        hash_ = ::Hash.new
         block1_ = proc do
           set_value('a', 1)
           sleep(0.5)
@@ -219,11 +219,11 @@ module Blockenspiel
           set_value2('d'){ 4 }
         end
         target_ = Target1.new(hash_)
-        thread1_ = Thread.new do
-          Blockenspiel.invoke(block1_, target_)
+        thread1_ = ::Thread.new do
+          ::Blockenspiel.invoke(block1_, target_)
         end
-        thread2_ = Thread.new do
-          Blockenspiel.invoke(block2_, target_)
+        thread2_ = ::Thread.new do
+          ::Blockenspiel.invoke(block2_, target_)
         end
         thread1_.join
         thread2_.join

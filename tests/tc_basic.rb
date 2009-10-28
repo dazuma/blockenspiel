@@ -37,19 +37,19 @@
 
 
 require 'test/unit'
-require File.expand_path("#{File.dirname(__FILE__)}/../lib/blockenspiel.rb")
+require ::File.expand_path("#{::File.dirname(__FILE__)}/../lib/blockenspiel.rb")
 
 
 module Blockenspiel
   module Tests  # :nodoc:
     
-    class TestBasic < Test::Unit::TestCase  # :nodoc:
+    class TestBasic < ::Test::Unit::TestCase  # :nodoc:
       
       
-      class SimpleTarget < Blockenspiel::Base
+      class SimpleTarget < ::Blockenspiel::Base
         
         def initialize
-          @hash = Hash.new
+          @hash = ::Hash.new
         end
         
         def set_value(key_, value_)
@@ -81,7 +81,7 @@ module Blockenspiel
           assert(!self.respond_to?(:set_value_by_block))
         end
         target_ = SimpleTarget.new
-        Blockenspiel.invoke(block_, target_)
+        ::Blockenspiel.invoke(block_, target_)
         assert_equal(1, target_.get_value(:a))
         assert_equal(2, target_.get_value(:b))
       end
@@ -99,7 +99,7 @@ module Blockenspiel
           set_value_by_block(:b){ 2 }
         end
         target_ = SimpleTarget.new
-        Blockenspiel.invoke(block_, target_)
+        ::Blockenspiel.invoke(block_, target_)
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value_by_block))
         assert_equal(1, target_.get_value(:a))
@@ -117,8 +117,8 @@ module Blockenspiel
           set_value(:a, 1)
           set_value_by_block(:b){ 2 }
         end
-        hash_ = Hash.new
-        Blockenspiel.invoke(block_) do
+        hash_ = ::Hash.new
+        ::Blockenspiel.invoke(block_) do
           add_method(:set_value) do |key_, value_|
             hash_[key_] = value_
           end

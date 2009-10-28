@@ -1,8 +1,12 @@
 == Implementing DSL Blocks
 
-by Daniel Azuma, 29 October 2008
+by Daniel Azuma
 
 A <em>DSL block</em> is a construct commonly used in Ruby APIs, in which a DSL (domain-specific language) is made available inside a block passed to an API call. In this paper I present an overview of different implementation strategies for this important pattern. I will first describe the features of DSL blocks, utilizing illustrations from several well-known Ruby libraries. I will then survey and critique five implementation strategies that have been put forth. Finally, I will present a new library, {Blockenspiel}[http://virtuoso.rubyforge.org/blockenspiel], designed to be a comprehensive implementation of DSL blocks.
+
+Originally written on 29 October 2008.
+
+Minor modifications on 28 October 2009 to deal with Why's disappearance.
 
 === An illustrative overview of DSL blocks
 
@@ -27,7 +31,7 @@ Perhaps you've used the XML {builder}[http://builder.rubyforge.org/] library, wh
     end
   end
 
-The {Markaby}[http://code.whytheluckystiff.net/markaby/] library also uses nested blocks to generate html, but is able to do so more succinctly without requiring you to explicitly reference a builder object:
+The {Markaby}[http://github.com/markaby/markaby] library also uses nested blocks to generate html, but is able to do so more succinctly without requiring you to explicitly reference a builder object:
 
   Markaby::Builder.new.html do
     head { title "Boats.com" }
@@ -366,11 +370,13 @@ The problem gets worse. Changing +self+ affects not only how methods are looked 
 
 What happened? If we recall, <tt>@set</tt> is used by the +Mapper+ object to point back to the routing +RouteSet+. It is how the proxy knows what it is proxying for. But since we've used <tt>instance_eval</tt>, we now have free access to the +Mapper+ object's internal instance variables, including the ability to clobber them. And that's precisely what we did here. Furthermore, maybe we were actually expecting to access our own <tt>@set</tt> variable, and we haven't done that. Any instance variables from the caller's closure are in fact no longer accessible inside the block.
 
+Similarly, if you are using Ruby 1.9, constants are also looked up using +self+ as the starting point. So by changing +self+, <tt>instance_eval</tt> affects the availability of constants in surprising ways.
+
 The problem gets even worse. If we think about the cryptic error message we got when we tried to use our +makeurl+ helper method, we begin to realize that we've run into the method lookup ambiguity discussed in the previous section. If +self+ has changed inside the block, and we tried to call +makeurl+, we might expect a +NoMethodError+ to be raised for +makeurl+ on the +Mapper+ class, rather than for "<tt>[]</tt>" on the +Symbol+ class. However, things change when we recall that Rails's routing DSL supports named routes. You do not have to call the specific +connect+ method to create a route. In fact, you can call _any_ method name. Any name is a valid DSL method name. It is thus ambiguous, when we invoke +makeurl+, whether we mean our helper method or a named route called "makeurl". Rails assumed we meant the named route, but in fact that isn't what we had intended.
 
-This all sounds pretty bad. Do we give up on <tt>instance_eval</tt>? Some members of the Ruby community have, and indeed the technique has generally fallen out of favor in many major libraries. Jim Weirich, for instance, {originally}[http://onestepback.org/index.cgi/Tech/Ruby/BuilderObjects.rdoc] utilized <tt>instance_eval</tt> in the XML Builder library illustrated earlier, but later deprecated and removed it because of its surprising behavior. Why's {Markaby}[http://code.whytheluckystiff.net/markaby/] still uses <tt>instance_eval</tt> but includes a caveat in the {documentation}[http://markaby.rubyforge.org/] explaining the issues and recommending caution.
+This all sounds pretty bad. Do we give up on <tt>instance_eval</tt>? Some members of the Ruby community have, and indeed the technique has generally fallen out of favor in many major libraries. Jim Weirich, for instance, {originally}[http://onestepback.org/index.cgi/Tech/Ruby/BuilderObjects.rdoc] utilized <tt>instance_eval</tt> in the XML Builder library illustrated earlier, but later deprecated and removed it because of its surprising behavior. Why's {Markaby}[http://github.com/markaby/markaby] still uses <tt>instance_eval</tt> but includes a caveat in the {documentation}[http://markaby.rubyforge.org/] explaining the issues and recommending caution.
 
-There are, however, a few specific cases when <tt>instance_eval</tt> may be uniquely appropriate. RSpec's DSL is intended as a class-constructive language: it constructs ruby classes behind the scenes. In the RSpec example at the beginning of this paper, you may notice the use of the <tt>@stack</tt> instance variable. In fact, this is intended as an instance variable of the RSpec test story being written, and as such, <tt>instance_eval</tt> is required because of the kind of language that RSpec wants to use. But in more common cases, such as specifying configuration, <tt>instance_eval</tt> does not give us the most desirable behavior. The general consensus now, expressed for example in recent articles from {Why}[http://hackety.org/2008/10/06/mixingOurWayOutOfInstanceEval.html] and {Ola Bini}[http://olabini.com/blog/2008/09/dont-overuse-instance_eval-and-instance_exec/], is that it should be avoided.
+There are, however, a few specific cases when <tt>instance_eval</tt> may be uniquely appropriate. RSpec's DSL is intended as a class-constructive language: it constructs ruby classes behind the scenes. In the RSpec example at the beginning of this paper, you may notice the use of the <tt>@stack</tt> instance variable. In fact, this is intended as an instance variable of the RSpec test story being written, and as such, <tt>instance_eval</tt> is required because of the kind of language that RSpec wants to use. But in more common cases, such as specifying configuration, <tt>instance_eval</tt> does not give us the most desirable behavior. The general consensus now, expressed for example in recent articles from Why (no longer available) and {Ola Bini}[http://olabini.com/blog/2008/09/dont-overuse-instance_eval-and-instance_exec/], is that it should be avoided.
 
 So does this mean we're stuck with block parameters for better or worse? Not quite. Several alternatives have been proposed recently, and we'll take a look at them in the next few sections. But first, let's summarize the discussion of <tt>instance_eval</tt>.
 
@@ -630,7 +636,7 @@ Let us summarize Gray's arity detection technique, and then proceed to an intere
 
 === Implementation strategy 5: mixins
 
-One of the most interesting entries into the DSL blocks discussion was proposed by Why The Lucky Stiff in his {blog}[http://hackety.org/2008/10/06/mixingOurWayOutOfInstanceEval.html]. Why observes that the problem with <tt>instance_eval</tt> is that it does too much. Most DSL blocks merely want to be able to intercept and respond to certain method calls, whereas <tt>instance_eval</tt> actually changes +self+, which has the additional side effects of blocking access to other methods and instance variables, and breaking encapsulation. A better solution, he maintains, is not to change +self+, but instead temporarily to add the DSL's methods to the block's context for the duration of the block. That is, instead of having the DSL proxy object delegate back to the block's context object, do the opposite: cause the block's context object to delegate to the DSL proxy object.
+One of the most interesting entries into the DSL blocks discussion was proposed by Why The Lucky Stiff in his blog. Unfortunately, with Why's disappearance, the original article is no longer available, but we can summarize its contents here. Why observes that the problem with <tt>instance_eval</tt> is that it does too much. Most DSL blocks merely want to be able to intercept and respond to certain method calls, whereas <tt>instance_eval</tt> actually changes +self+, which has the additional side effects of blocking access to other methods and instance variables, and breaking encapsulation. A better solution, he maintains, is not to change +self+, but instead temporarily to add the DSL's methods to the block's context for the duration of the block. That is, instead of having the DSL proxy object delegate back to the block's context object, do the opposite: cause the block's context object to delegate to the DSL proxy object.
 
 Implementing this is actually harder than it sounds. We need to take the block context object, dynamically add methods to it before calling the block, and then dynamically remove them afterward. We already know how to get the block context object, but adding and removing methods requires some more Ruby metaprogramming wizardry. And now we're stretching our toolbox to the breaking point.
 
@@ -669,7 +675,7 @@ What we would really like is a way to add methods to just one object temporarily
   s1.foo                  # prints "foo called"
   s2.foo                  # NameError: s2 is unchanged
 
-Unfortunately, there is no way to remove the module from the object. Ruby has no "unextend" capability. This omission led Why to implement it himself as a Ruby language extension called {Mixico}[http://github.com/why/mixico/tree/master]. The name comes from the library's ability to add and remove "mixins" at will. A similar library exists as a gem called {Mixology}[http://www.somethingnimble.com/bliki/mixology]. The two libraries use different APIs but perform the same basic function. For the discussion below, I will assume Mixico is installed. However, the library I describe in the next section uses a custom implementation that is compatible with MRI 1.9 and JRuby.
+Unfortunately, there is no way to remove the module from the object. Ruby has no "unextend" capability. This omission led Why to implement it himself as a Ruby language extension called {Mixico}[http://github.com/rkh/mixico]. The name comes from the library's ability to add and remove "mixins" at will. A similar library exists as a gem called {Mixology}[http://www.somethingnimble.com/bliki/mixology]. The two libraries use different APIs but perform the same basic function. For the discussion below, I will assume Mixico is installed. However, the library I describe in the next section uses a custom implementation that is compatible with MRI 1.9 and JRuby.
 
 Using Mixico, we can now write the +draw+ method like this:
 
@@ -923,12 +929,12 @@ The Blockenspiel library provides a concrete and robust implementation of DSL bl
 
 {Jim Weirich}[http://onestepback.org/], <em>{ruby-core:19153}[http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/19153]</em>, 2008.10.07
 
-{Why The Lucky Stiff}[http://whytheluckystiff.net/], <em>{Markaby}[http://code.whytheluckystiff.net/markaby/]</em> (Ruby library), 2006.
+{Why The Lucky Stiff}[http://en.wikipedia.org/wiki/Why_the_lucky_stiff], <em>{Markaby}[http://github.com/markaby/markaby]</em> (Ruby library), 2006.
 
-{Why The Lucky Stiff}[http://whytheluckystiff.net/], <em>{Mixico}[http://github.com/why/mixico/tree/master]</em> (Ruby library), 2008.
+{Why The Lucky Stiff}[http://en.wikipedia.org/wiki/Why_the_lucky_stiff], <em>{Mixico}[http://github.com/rkh/mixico]</em> (Ruby library), 2008.
 
-{Why The Lucky Stiff}[http://whytheluckystiff.net/], <em>{Mixing Our Way Out Of Instance Eval?}[http://hackety.org/2008/10/06/mixingOurWayOutOfInstanceEval.html]</em>, 2008.10.06.
+{Why The Lucky Stiff}[http://en.wikipedia.org/wiki/Why_the_lucky_stiff], <em>Mixing Our Way Out Of Instance Eval?</em> (no longer online), 2008.10.06.
 
 === About the author
 
-Daniel Azuma is Chief Software Architect at Zoodango. He has been working with Ruby for about three years, and finds the language generally pleasant to work with, though he thinks the scoping rules could use some improvement. His home page is at http://www.daniel-azuma.com/
+Daniel Azuma is Chief Software Architect at GeoPage. He has been working with Ruby for about three years, and finds the language generally pleasant to work with, though he thinks the scoping rules could use some improvement. His home page is at http://www.daniel-azuma.com/
