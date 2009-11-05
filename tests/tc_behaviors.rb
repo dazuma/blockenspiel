@@ -89,7 +89,7 @@ module Blockenspiel
         hash_ = ::Hash.new
         context_self_ = self
         @my_instance_variable_test = :hello
-        block_ = proc do
+        block_ = ::Proc.new do
           set_value1('a', 1)
           set_value2('b'){ 2 }
           set_value3('c', 3)
@@ -116,7 +116,7 @@ module Blockenspiel
         hash_ = ::Hash.new
         context_self_ = self
         @my_instance_variable_test = :hello
-        block_ = proc do
+        block_ = ::Proc.new do
           set_value1('a', 1)
           set_value2('b'){ 2 }
           set_value3_dslversion('c', 3)
@@ -140,13 +140,13 @@ module Blockenspiel
       
       def test_disable_parameterless
         hash_ = ::Hash.new
-        block1_ = proc do ||
+        block1_ = ::Proc.new do ||
           set_value1('a', 1)
         end
-        block2_ = proc do |target_|
+        block2_ = ::Proc.new do |target_|
           target_.set_value1('b', 2)
         end
-        block3_ = proc do
+        block3_ = ::Proc.new do
           set_value1('c', 3)
         end
         assert_raise(::Blockenspiel::BlockParameterError) do
@@ -167,13 +167,13 @@ module Blockenspiel
       
       def test_disable_parametered
         hash_ = ::Hash.new
-        block1_ = proc do ||
+        block1_ = ::Proc.new do ||
           set_value1('a', 1)
         end
-        block2_ = proc do |target_|
+        block2_ = ::Proc.new do |target_|
           target_.set_value1('b', 2)
         end
-        block3_ = proc do
+        block3_ = ::Proc.new do
           set_value1('c', 3)
         end
         ::Blockenspiel.invoke(block1_, Target1.new(hash_), :parameter => false)

@@ -1,3 +1,12 @@
+=== 0.3.0 / 2009-11-04
+
+* dsl_attr_writer and dsl_attr_accessor convenience methods are available
+  for creating DSL-friendly attributes.
+* Dynamic DSL methods can now take real block arguments, if supported by
+  the Ruby interpreter.
+* Shortened README.rdoc and renamed the longer version to Blockenspiel.rdoc.
+* Some documentation updates.
+
 === 0.2.2 / 2009-10-28
 
 * Support for gemcutter hosting in the build/release scripts.

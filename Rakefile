@@ -43,7 +43,7 @@ require ::File.expand_path("#{::File.dirname(__FILE__)}/lib/blockenspiel/version
 
 
 # Configuration
-extra_rdoc_files_ = ['README.rdoc', 'History.rdoc', 'ImplementingDSLblocks.rdoc']
+extra_rdoc_files_ = ['README.rdoc', 'Blockenspiel.rdoc', 'History.rdoc', 'ImplementingDSLblocks.rdoc']
 
 
 # Default task
@@ -202,7 +202,7 @@ task :release => [:release_gem_to_gemcutter, :release_gem_to_rubyforge, :publish
 # Custom task that takes the implementing dsl blocks paper
 # and converts it from RDoc format to Markdown
 task :idslb_markdown do
-  ::File.open('ImplementingDSLblocks.txt') do |read_|
+  ::File.open('ImplementingDSLblocks.rdoc') do |read_|
     ::File.open('idslb_markdown.txt', 'w') do |write_|
       linenum_ = 0
       read_.each do |line_|

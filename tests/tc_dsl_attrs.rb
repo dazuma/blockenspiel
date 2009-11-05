@@ -1,8 +1,8 @@
 # -----------------------------------------------------------------------------
 # 
-# Blockenspiel basic tests
+# Blockenspiel dsl attribute tests
 # 
-# This file contains tests for the simple use cases.
+# This file contains tests for the dsl attribute directives.
 # 
 # -----------------------------------------------------------------------------
 # Copyright 2008-2009 Daniel Azuma
@@ -43,91 +43,88 @@ require ::File.expand_path("#{::File.dirname(__FILE__)}/../lib/blockenspiel.rb")
 module Blockenspiel
   module Tests  # :nodoc:
     
-    class TestBasic < ::Test::Unit::TestCase  # :nodoc:
+    class TestDSLAttrs < ::Test::Unit::TestCase  # :nodoc:
       
       
-      class SimpleTarget < ::Blockenspiel::Base
+      class WriterTarget < ::Blockenspiel::Base
         
-        def initialize
-          @hash = ::Hash.new
-        end
-        
-        def set_value(key_, value_)
-          @hash[key_] = value_
-        end
-        
-        def set_value_by_block(key_)
-          @hash[key_] = yield
-        end
-       
-        def get_value(key_)
-          @hash[key_]
-        end
-        dsl_method :get_value, false
+        dsl_attr_writer(:attr1, :attr2)
         
       end
       
       
-      # Test basic usage with a parameter object.
-      # 
-      # * Asserts that methods are not mixed in to self.
-      # * Asserts that the specified target object does in fact receive the block messages.
+      class AccessorTarget < ::Blockenspiel::Base
+        
+        dsl_attr_accessor(:attr1, :attr2)
+        
+      end
       
-      def test_basic_param
-        block_ = ::Proc.new do |t_|
-          t_.set_value(:a, 1)
-          t_.set_value_by_block(:b){ 2 }
-          assert(!self.respond_to?(:set_value))
-          assert(!self.respond_to?(:set_value_by_block))
+      
+      # Test dsl attr writer in a parametered block
+      # 
+      # * Asserts that the standard setter syntax works
+      # * Asserts that the alternate setter syntax works
+      
+      def test_writer_parametered
+        block_ = ::Proc.new do |param_|
+          param_.attr1 = 1
+          assert_equal(2, param_.attr2(2))
         end
-        target_ = SimpleTarget.new
+        target_ = WriterTarget.new
         ::Blockenspiel.invoke(block_, target_)
-        assert_equal(1, target_.get_value(:a))
-        assert_equal(2, target_.get_value(:b))
+        assert_equal(1, target_.instance_variable_get(:@attr1))
+        assert_equal(2, target_.instance_variable_get(:@attr2))
       end
       
       
-      # Test basic usage with a mixin.
+      # Test dsl attr writer in a parameterless block
       # 
-      # * Asserts that methods are mixed in to self.
-      # * Asserts that methods are removed from self afterward.
-      # * Asserts that the specified target object still receives the messages.
+      # * Asserts that the alternate setter syntax works
       
-      def test_basic_mixin
+      def test_writer_parameterless
         block_ = ::Proc.new do
-          set_value(:a, 1)
-          set_value_by_block(:b){ 2 }
+          assert_equal(2, attr2(2))
         end
-        target_ = SimpleTarget.new
+        target_ = WriterTarget.new
         ::Blockenspiel.invoke(block_, target_)
-        assert(!self.respond_to?(:set_value))
-        assert(!self.respond_to?(:set_value_by_block))
-        assert_equal(1, target_.get_value(:a))
-        assert_equal(2, target_.get_value(:b))
+        assert_nil(target_.instance_variable_get(:@attr1))
+        assert_equal(2, target_.instance_variable_get(:@attr2))
       end
       
       
-      # Test basic usage with a builder.
+      # Test dsl attr accessor in a parametered block
       # 
-      # * Asserts that the receivers are called.
-      # * Asserts that receivers with blocks are handled properly.
+      # * Asserts that the standard setter syntax works
+      # * Asserts that the alternate setter syntax works
+      # * Asserts that the getter syntax works
       
-      def test_basic_builder
+      def _test_accessor_parametered
+        block_ = ::Proc.new do |param_|
+          param_.attr1 = 1
+          assert_equal(2, param_.attr2(2))
+          assert_equal(2, param_.attr2)
+        end
+        target_ = AccessorTarget.new
+        ::Blockenspiel.invoke(block_, target_)
+        assert_equal(1, target_.instance_variable_get(:@attr1))
+        assert_equal(2, target_.instance_variable_get(:@attr2))
+      end
+      
+      
+      # Test dsl attr accessor in a parameterless block
+      # 
+      # * Asserts that the alternate setter syntax works
+      # * Asserts that the getter syntax works
+      
+      def test_accessor_parameterless
         block_ = ::Proc.new do
-          set_value(:a, 1)
-          set_value_by_block(:b){ 2 }
+          assert_equal(2, attr2(2))
+          assert_equal(2, attr2)
         end
-        hash_ = ::Hash.new
-        ::Blockenspiel.invoke(block_) do
-          add_method(:set_value) do |key_, value_|
-            hash_[key_] = value_
-          end
-          add_method(:set_value_by_block, :block => true) do |bl_, key_|
-            hash_[key_] = bl_.call
-          end
-        end
-        assert_equal(1, hash_[:a])
-        assert_equal(2, hash_[:b])
+        target_ = AccessorTarget.new
+        ::Blockenspiel.invoke(block_, target_)
+        assert_nil(target_.instance_variable_get(:@attr1))
+        assert_equal(2, target_.instance_variable_get(:@attr2))
       end
       
       

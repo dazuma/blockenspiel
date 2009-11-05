@@ -203,7 +203,7 @@ module Blockenspiel
       
       def test_default_setting
         hash_ = ::Hash.new
-        block_ = proc do
+        block_ = ::Proc.new do
           set_value1('a', 1)
           set_value2('b'){ 2 }
           assert_raise(::NoMethodError){ _set_value3('c', 3) }
@@ -223,7 +223,7 @@ module Blockenspiel
       
       def test_onoff_switching
         hash_ = ::Hash.new
-        block_ = proc do
+        block_ = ::Proc.new do
           assert_raise(::NoMethodError){ _set_value1('a', 1) }
           set_value2('b'){ 2 }
           _set_value3('c', 3)
@@ -242,7 +242,7 @@ module Blockenspiel
       
       def test_explicit_add
         hash_ = ::Hash.new
-        block_ = proc do
+        block_ = ::Proc.new do
           set_value1('a', 1)
           assert_raise(::NoMethodError){ set_value2('b'){ 2 } }
           renamed_set_value2('c'){ 3 }
@@ -263,7 +263,7 @@ module Blockenspiel
       
       def test_explicit_removing
         hash_ = ::Hash.new
-        block_ = proc do
+        block_ = ::Proc.new do
           assert_raise(::NoMethodError){ set_value1('a', 1) }
           assert_raise(::NoMethodError){ set_value2('b'){ 2 } }
           renamed_set_value2('c'){ 3 }
@@ -282,7 +282,7 @@ module Blockenspiel
       
       def test_subclassing
         hash_ = ::Hash.new
-        block_ = proc do
+        block_ = ::Proc.new do
           set_value1('a', 1)
           set_value2('b'){ 2 }
           assert_raise(::NoMethodError){ set_value3('c', 3) }
@@ -307,7 +307,7 @@ module Blockenspiel
       
       def test_multiple_dsl_methods
         hash_ = ::Hash.new
-        block_ = proc do
+        block_ = ::Proc.new do
           set_value1('a', 1)
           renamed_set_value2('b'){ 2 }
           assert_raise(::NoMethodError){ set_value2('c', 3) }

@@ -81,11 +81,13 @@ module Blockenspiel
   
   module DSLSetupMethods
     
-    # Called when DSLSetupMethods extends a class.
-    # This sets up the current class, and adds a hook that causes
-    # any subclass of the current class to also be set up.
     
     # :stopdoc:
+    
+    # Called when DSLSetupMethods extends a class.
+    # This sets up the current class, and adds a hook that causes
+    # any subclass of the current class also to be set up.
+    
     def self.extended(klass_)
       unless klass_.instance_variable_defined?(:@_blockenspiel_module)
         _setup_class(klass_)
@@ -95,6 +97,7 @@ module Blockenspiel
         end
       end
     end
+    
     # :startdoc:
     
     
@@ -175,12 +178,7 @@ module Blockenspiel
       end
       @_blockenspiel_methods[name_] = delegate_
       unless @_blockenspiel_module.public_method_defined?(name_)
-        @_blockenspiel_module.module_eval("
-          def #{name_}(*params_, &block_)
-            val_ = ::Blockenspiel._target_dispatch(self, :#{name_}, params_, block_)
-            val_ == ::Blockenspiel::TARGET_MISMATCH ? super(*params_, &block_) : val_
-          end
-        ")
+        @_blockenspiel_module.module_eval("def #{name_}(*params_, &block_); val_ = ::Blockenspiel._target_dispatch(self, :#{name_}, params_, block_); ::Blockenspiel::NO_VALUE.equal?(val_) ? super(*params_, &block_) : val_; end\n")
       end
     end
     
@@ -228,6 +226,91 @@ module Blockenspiel
         end
       end
     end
+    
+    
+    # A DSL-friendly attr_accessor.
+    # 
+    # This creates the usual "name" and "name=" methods in the current
+    # class that can be used in the usual way. However, its implementation
+    # of the "name" method (the getter) also takes an optional parameter
+    # that causes it to behave as a setter. This is done because the usual
+    # setter syntax cannot be used in a parameterless block, since it is
+    # syntactically indistinguishable from a local variable assignment.
+    # The "name" method is exposed as a dsl_method.
+    # 
+    # For example:
+    # 
+    #  dsl_attr_accessor :foo
+    # 
+    # enables the following:
+    # 
+    #  my_block do |param|
+    #    param.foo = 1   # Usual setter syntax works
+    #    param.foo 2     # Alternate setter syntax also works
+    #    puts param.foo  # Usual getter syntax still works
+    #  end
+    #  
+    #  my_block do
+    #    # foo = 1       # Usual setter syntax does NOT work since it
+    #                    #   looks like a local variable assignment
+    #    foo 2           # Alternate setter syntax does work
+    #    puts foo        # Usual getter syntax still works
+    #  end
+    
+    def dsl_attr_accessor(*names_)
+      names_.each do |name_|
+        unless name_.kind_of?(::String) || name_.kind_of?(::Symbol)
+          raise ::TypeError, "#{name_.inspect} is not a symbol"
+        end
+        unless name_.to_s =~ /^[_a-zA-Z]\w+$/
+          raise ::NameError, "invalid attribute name #{name_.inspect}"
+        end
+        module_eval("def #{name_}(value_=::Blockenspiel::NO_VALUE); ::Blockenspiel::NO_VALUE.equal?(value_) ? @#{name_} : @#{name_} = value_; end\n")
+        alias_method("#{name_}=", name_)
+        dsl_method(name_)
+      end
+    end
+    
+    
+    # A DSL-friendly attr_writer.
+    # 
+    # This creates the usual "name=" method in the current class that can
+    # be used in the usual way. However, it also creates the method "name",
+    # which also functions as a setter (but not a getter). This is done
+    # because the usual setter syntax cannot be used in a parameterless
+    # block, since it is syntactically indistinguishable from a local
+    # variable assignment. The "name" method is exposed as a dsl_method.
+    # 
+    # For example:
+    # 
+    #  dsl_attr_writer :foo
+    # 
+    # is functionally equivalent to:
+    # 
+    #  attr_writer :foo
+    #  alias_method :foo, :foo=
+    #  dsl_method :foo
+    # 
+    # which enables the following:
+    # 
+    #  my_block do |param|
+    #    param.foo = 1   # Usual setter syntax works
+    #    param.foo 2     # Alternate setter syntax also works
+    #  end
+    #  my_block do
+    #    # foo = 1       # Usual setter syntax does NOT work since it
+    #                    #   looks like a local variable assignment
+    #    foo(2)          # Alternate setter syntax does work
+    #  end
+    
+    def dsl_attr_writer(*names_)
+      names_.each do |name_|
+        attr_writer(name_)
+        alias_method(name_, "#{name_}=")
+        dsl_method(name_)
+      end
+    end
+    
     
   end
   
@@ -306,11 +389,7 @@ module Blockenspiel
       
       def self._add_methodinfo(name_, block_, yields_)
         (@_blockenspiel_methodinfo ||= ::Hash.new)[name_] = [block_, yields_]
-        module_eval("
-          def #{name_}(*params_, &block_)
-            self.class._invoke_methodinfo(:#{name_}, params_, block_)
-          end
-        ")
+        module_eval("def #{name_}(*params_, &block_); self.class._invoke_methodinfo(:#{name_}, params_, block_); end\n")
       end
       
       
@@ -324,7 +403,7 @@ module Blockenspiel
         when :last
           params_.push(block_)
         end
-        info_[0].call(*params_)
+        info_[0].call(*params_, &block_)
       end
       
     end
@@ -348,24 +427,60 @@ module Blockenspiel
     # === Declare a DSL method.
     # 
     # This call creates a method that can be called from the DSL block.
-    # Provide a name for the method, and a block defining the method's
-    # implementation. You may also provided a list of options as follows:
+    # Provide a name for the method, a block defining the method's
+    # implementation, and an optional hash of options.
     # 
-    # The <tt>:block</tt> option controls how the generated method reports
-    # any block provided by the caller. If set to +false+ or not given, any
-    # caller-provided block is ignored. If set to <tt>:first</tt>, the
-    # block is _prepended_ (as a +Proc+ object) to the parameters passed to
-    # the method's implementing block. If set to <tt>:last</tt>, the block
-    # is _appended_. In either case, if the caller does not provide a block,
-    # a value of +nil+ is pre- or appended to the parameter list. A value of
-    # +true+ is equivalent to <tt>:first</tt>.
-    # (This is a workaround for the fact that blocks cannot themselves take
-    # block parameters in Ruby 1.8.)
+    # By default, a method of the same name is also made available to
+    # parameterless blocks. To change the name of the parameterless method,
+    # provide its name as the value of the <tt>:dsl_method</tt> option.
+    # To disable this method for parameterless blocks, set the
+    # <tt>:dsl_method</tt> option to +false+.
     # 
+    # The <tt>:mixin</tt> option is a deprecated alias for
+    # <tt>:dsl_method</tt>.
+    # 
+    # === Warning about the +return+ keyword
+    # 
+    # Because you are implementing your method using a block, remember the
+    # distinction between <tt>Proc.new</tt> and +lambda+. Invoking +return+
+    # from the former does not return from the block, but returns from the
+    # surrounding method scope. Since normal blocks passed to methods are
+    # of the former type, be very careful about using the +return+ keyword:
+    # 
+    #  add_method(:foo) do |param|
+    #    puts "foo called with parameter "+param.inspect
+    #    return "a return value"   # DOESN'T WORK LIKE YOU EXPECT!
+    #  end
+    # 
+    # To return a value from the method you are creating, set the evaluation
+    # value at the end of the block:
+    # 
+    #  add_method(:foo) do |param|
+    #    puts "foo called with parameter "+param.inspect
+    #    "a return value"    # Returns from method foo
+    #  end
+    # 
+    # If you must use the +return+ keyword, create your block as a lambda
+    # as in this example:
+    # 
+    #  code = lambda do |param|
+    #    puts "foo called with parameter "+param.inspect
+    #    return "a return value"   # Returns from method foo
+    #  end
+    #  add_method(:foo, &code)
+    # 
+    # === Accepting a block argument
+    # 
+    # If you want your method to take a block, you have several options
+    # depending on your Ruby version. If you are running the standard Matz
+    # Ruby interpreter (MRI) version 1.8.7 or later (including 1.9.x), you
+    # can use the standard "&" block argument notation to receive the block.
+    # Note that you must call the passed block using the +call+ method since
+    # Ruby doesn't support invoking such a block with +yield+.
     # For example, to create a method named "foo" that takes one parameter
     # and a block, do this:
     # 
-    #  add_method(:foo, :block => :first) do |block, param|
+    #  add_method(:foo) do |param, &block|
     #    puts "foo called with parameter "+param.inspect
     #    puts "the block returned "+block.call.inspect
     #  end
@@ -374,18 +489,32 @@ module Blockenspiel
     # 
     #  foo("hello"){ "a value" }
     # 
-    # By default, a method of the same name is also made available to
-    # parameterless blocks. To change the name of the parameterless method,
-    # provide its name as the value of the <tt>:dsl_method</tt> option.
-    # To disable this method for parameterless blocks, set the
-    # <tt>:dsl_method</tt> option to +false+.
+    # If you are using MRI 1.8.6, however, the parser does not support
+    # passing a block argument to a block. Oddly, the current version of
+    # JRuby (version 1.4.0 as of this writing) also does not support this
+    # syntax, though it claims MRI 1.8.7 compatibility. (See bug JRUBY-4180
+    # to track this issue.) If your Ruby interpreter doesn't support the
+    # standard way to create a method that takes a block, Blockenspiel
+    # provides an alternative in the form of the <tt>:block</tt> option.
+    # This option causes blocks provided by the caller to be included in
+    # the normal parameter list to your method, instead of as a block
+    # parameter. It can be set to <tt>:first</tt> or <tt>:last</tt> to
+    # prepend or append, respectively, the block (as a +Proc+ object) to
+    # the parameter list. If the caller does not include a block when
+    # calling your DSL method, nil is prepended/appended. For example:
     # 
-    # For historical reasons, the <tt>:mixin</tt> option is an alias for
-    # <tt>:dsl_method</tt>. However, its use is deprecated.
+    #  add_method(:foo, :block => :last) do |param, block|
+    #    puts "foo called with parameter "+param.inspect
+    #    if block
+    #      puts "the block returned "+block.call.inspect
+    #    else
+    #      puts "no block passed"
+    #    end
+    #  end
     # 
-    # The <tt>:receive_block</tt> option is also supported for historical
-    # reasons, but its use is deprecated. Setting <tt>:receive_block</tt> to
-    # +true+ is equivalent to setting <tt>:block</tt> to <tt>:last</tt>.
+    # The <tt>:receive_block</tt> option is a deprecated alternative.
+    # Setting <tt>:receive_block => true</tt> is currently equivalent to
+    # setting <tt>:block => :last</tt>.
     
     def add_method(name_, opts_={}, &block_)
       receive_block_ = opts_[:receive_block] ? :last : opts_[:block]
@@ -402,7 +531,7 @@ module Blockenspiel
   
   
   # :stopdoc:
-  TARGET_MISMATCH = ::Object.new
+  NO_VALUE = ::Object.new
   # :startdoc:
   
   @_target_stacks = ::Hash.new
@@ -411,10 +540,29 @@ module Blockenspiel
   @_mutex = ::Mutex.new
   
   
-  # === Invoke a given block.
+  # === Invoke a given block
   # 
   # This is the meat of Blockenspiel. Call this function to invoke a block
   # provided by the user of your API.
+  # 
+  # For example, if you want users of your API to be able to do this:
+  # 
+  #  call_dsl do
+  #    foo(1)
+  #    bar(2)
+  #  end
+  # 
+  # Then you should implement <tt>call_dsl</tt> like this:
+  # 
+  #  def call_dsl(&block)
+  #    my_dsl = create_block_implementation
+  #    Blockenspiel.invoke(block, my_dsl)
+  #    do_something_with(my_dsl)
+  #  end
+  # 
+  # In the above, <tt>create_block_implementation</tt> is a placeholder that
+  # returns an instance of your DSL methods class. This class includes the
+  # Blockenspiel::DSL module and defines the DSL methods +foo+ and +bar+.
   # 
   # Normally, this method will check the block's arity to see whether it
   # takes a parameter. If so, it will pass the given target to the block.
@@ -422,7 +570,7 @@ module Blockenspiel
   # a class with DSL capability, the DSL methods are made available on the
   # caller's self object so they may be called without a block parameter.
   # 
-  # Recognized options include:
+  # === Recognized options
   # 
   # <tt>:parameterless</tt>::
   #   If set to false, disables parameterless blocks and always attempts to
@@ -471,7 +619,7 @@ module Blockenspiel
   #    add_method(:set_foo) do |value|
   #      my_foo = value
   #    end
-  #    add_method(:set_things_from_block, :block => :last) do |value,blk|
+  #    add_method(:set_things_from_block) do |value, &blk|
   #      my_foo = value
   #      my_bar = blk.call
   #    end
@@ -495,10 +643,10 @@ module Blockenspiel
   # 
   # The obvious advantage of using dynamic object generation is that you are
   # creating methods using closures, which provides the opportunity to, for
-  # example, modify closure variables such as my_foo. This is more difficult
-  # to do when you create a target class since its methods do not have access
-  # to outside data. Hence, in the above example, we hand-waved, assuming the
-  # existence of some method called "set_my_foo_from".
+  # example, modify closure local variables such as my_foo. This is more
+  # difficult to do when you create a target class since its methods do not
+  # have access to outside data. Hence, in the above example, we hand-waved,
+  # assuming the existence of some method called "set_my_foo_from".
   # 
   # The disadvantage is performance. If you dynamically generate a target
   # object, it involves parsing and creating a new class whenever it is
@@ -643,11 +791,11 @@ module Blockenspiel
   # This implements the mapping between DSL module methods and target object methods.
   # We look up the current target object based on the current thread.
   # Then we attempt to call the given method on that object.
-  # If we can't find an appropriate method to call, return the special value TARGET_MISMATCH.
+  # If we can't find an appropriate method to call, return the special value NO_VALUE.
   
   def self._target_dispatch(object_, name_, params_, block_)  # :nodoc:
     target_stack_ = @_target_stacks[[::Thread.current.object_id, object_.object_id]]
-    return ::Blockenspiel::TARGET_MISMATCH unless target_stack_
+    return ::Blockenspiel::NO_VALUE unless target_stack_
     target_stack_.reverse_each do |target_|
       target_class_ = target_.class
       delegate_ = target_class_._get_blockenspiel_delegate(name_)
@@ -655,7 +803,7 @@ module Blockenspiel
         return target_.send(delegate_, *params_, &block_)
       end
     end
-    return ::Blockenspiel::TARGET_MISMATCH
+    return ::Blockenspiel::NO_VALUE
   end
   
   

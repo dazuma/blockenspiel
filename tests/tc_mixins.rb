@@ -97,7 +97,7 @@ module Blockenspiel
         @my_instance_variable_test = :hello
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
-        block_ = proc do
+        block_ = ::Proc.new do
           set_value('a', 1)
           set_value2('b'){ 2 }
           assert_equal(:hello, @my_instance_variable_test)
@@ -121,7 +121,7 @@ module Blockenspiel
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
-        block_ = proc do
+        block_ = ::Proc.new do
           set_value('a', 1)
           set_value2_inmixin('b'){ 2 }
           assert(!self.respond_to?(:set_value2))
@@ -146,11 +146,11 @@ module Blockenspiel
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
-        ::Blockenspiel.invoke(proc do
+        ::Blockenspiel.invoke(::Proc.new do
           set_value('a', 1)
           set_value2('b'){ 2 }
           assert(!self.respond_to?(:set_value2_inmixin))
-          ::Blockenspiel.invoke(proc do
+          ::Blockenspiel.invoke(::Proc.new do
             set_value('c', 1)
             set_value2_inmixin('d'){ 2 }
           end, Target2.new(hash_))
@@ -179,10 +179,10 @@ module Blockenspiel
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
-        ::Blockenspiel.invoke(proc do
+        ::Blockenspiel.invoke(::Proc.new do
           set_value('a', 1)
           set_value2_inmixin('b'){ 2 }
-          ::Blockenspiel.invoke(proc do
+          ::Blockenspiel.invoke(::Proc.new do
             set_value('c', 1)
             set_value2_inmixin('d'){ 2 }
             assert(!self.respond_to?(:set_value2))
@@ -208,12 +208,12 @@ module Blockenspiel
       
       def test_threads_same_mixin
         hash_ = ::Hash.new
-        block1_ = proc do
+        block1_ = ::Proc.new do
           set_value('a', 1)
           sleep(0.5)
           set_value2('b'){ 2 }
         end
-        block2_ = proc do
+        block2_ = ::Proc.new do
           set_value('c', 3)
           sleep(1)
           set_value2('d'){ 4 }

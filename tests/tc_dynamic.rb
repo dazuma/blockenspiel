@@ -51,7 +51,7 @@ module Blockenspiel
       # * Asserts that the simplest case works.
       
       def test_simple
-        block_ = proc do
+        block_ = ::Proc.new do
           set_value(:a, 1)
         end
         hash_ = ::Hash.new
@@ -71,17 +71,17 @@ module Blockenspiel
       
       def test_renaming
         hash_ = ::Hash.new
-        dsl_definition_ = proc do
+        dsl_definition_ = ::Proc.new do
           add_method(:set_value, :dsl_method => :renamed_set_value) do |key_, value_|
             hash_[key_] = value_
           end
         end
-        block1_ = proc do
+        block1_ = ::Proc.new do
           renamed_set_value(:a, 1)
           assert_raise(::NoMethodError){ set_value(:b, 2) }
         end
         ::Blockenspiel.invoke(block1_, &dsl_definition_)
-        block2_ = proc do |dsl_|
+        block2_ = ::Proc.new do |dsl_|
           dsl_.set_value(:c, 3)
           assert_raise(::NoMethodError){ renamed_set_value(:d, 4) }
         end
@@ -93,15 +93,53 @@ module Blockenspiel
       end
       
       
-      # Test calls with blocks.
+      # Test calls with blocks passed the usual way.
+      # This works in MRI 1.8.7 or later. However, it does NOT currently
+      # work with JRuby 1.4 because of JRUBY-4180. So we disable this test
+      # for all versions of JRuby (for now) and for MRI < 1.8.7.
+      # 
+      # * Asserts that a block passed the usual way works
+      # * Asserts that we can detect when a block has not been passed
+      
+if ::RUBY_PLATFORM != 'java' && ::RUBY_VERSION >= '1.8.7'
+  module_eval <<-END
+      def test_blocks_normal
+        hash_ = ::Hash.new
+        block_ = ::Proc.new do
+          set_value1(:a){ 1 }
+          set_value2(:b){ 2 }
+          set_value2(:c)
+        end
+        ::Blockenspiel.invoke(block_) do
+          add_method(:set_value1) do |key_, &bl_|
+            hash_[key_] = bl_.call
+          end
+          add_method(:set_value2) do |key_, &bl_|
+            hash_[key_] = bl_ ? true : false
+          end
+        end
+        assert_equal(1, hash_[:a])
+        assert_equal(true, hash_[:b])
+        assert_equal(false, hash_[:c])
+      end
+  END
+end
+      
+      
+      # Test calls with blocks passed as non-block parameters.
       # 
       # * Asserts that a block passed "first" works.
       # * Asserts that a block passed "last" works.
-      # * Asserts that a block passed "last" works.
+      # * Asserts that a block passed "true" works.
       
       def test_blocks_first_and_last
         hash_ = ::Hash.new
-        dsl_definition_ = proc do
+        block_ = ::Proc.new do
+          set_value1(:a){ 1 }
+          set_value2(:b){ 2 }
+          set_value2(:c){ 3 }
+        end
+        ::Blockenspiel.invoke(block_) do
           add_method(:set_value1, :block => :first) do |bl_, key_|
             hash_[key_] = bl_.call
           end
@@ -112,12 +150,6 @@ module Blockenspiel
             hash_[key_] = bl_.call
           end
         end
-        block_ = proc do
-          set_value1(:a){ 1 }
-          set_value2(:b){ 2 }
-          set_value2(:c){ 3 }
-        end
-        ::Blockenspiel.invoke(block_, &dsl_definition_)
         assert_equal(1, hash_[:a])
         assert_equal(2, hash_[:b])
         assert_equal(3, hash_[:c])
@@ -130,7 +162,11 @@ module Blockenspiel
       
       def test_blocks_nil
         hash_ = ::Hash.new
-        dsl_definition_ = proc do
+        block_ = ::Proc.new do
+          set_value1(:a)
+          set_value2(:b)
+        end
+        ::Blockenspiel.invoke(block_) do
           add_method(:set_value1, :block => :first) do |bl_, key_|
             assert_nil(bl_)
           end
@@ -138,11 +174,6 @@ module Blockenspiel
             assert_nil(bl_)
           end
         end
-        block_ = proc do
-          set_value1(:a)
-          set_value2(:b)
-        end
-        ::Blockenspiel.invoke(block_, &dsl_definition_)
         assert_nil(hash_[:a])
         assert_nil(hash_[:b])
       end
@@ -150,21 +181,18 @@ module Blockenspiel
       
       # Test calls with blocks (legacy api)
       # 
-      # * Asserts that a block passed "first" works.
-      # * Asserts that a block passed "last" works.
-      # * Asserts that a block passed "last" works.
+      # * Asserts that a block with receive_block works.
       
       def test_blocks_legacy
         hash_ = ::Hash.new
-        dsl_definition_ = proc do
+        block_ = ::Proc.new do
+          set_value(:a){ 1 }
+        end
+        ::Blockenspiel.invoke(block_) do
           add_method(:set_value, :receive_block => true) do |key_, bl_|
             hash_[key_] = bl_.call
           end
         end
-        block_ = proc do
-          set_value(:a){ 1 }
-        end
-        ::Blockenspiel.invoke(block_, &dsl_definition_)
         assert_equal(1, hash_[:a])
       end
       
