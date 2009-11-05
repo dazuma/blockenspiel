@@ -138,6 +138,8 @@ task :compile_java do
   end
 end
 
+task :package => :compile_java
+
 
 # Publish RDocs
 desc 'Publishes RDocs to RubyForge'
@@ -149,7 +151,7 @@ end
 
 
 # Publish gem
-task :release_gem_to_rubyforge do |t_|
+task :release_gem_to_rubyforge => [:package] do |t_|
   v_ = ::ENV["VERSION"]
   abort "Must supply VERSION=x.y.z" unless v_
   if v_ != ::Blockenspiel::VERSION_STRING
