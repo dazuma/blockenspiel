@@ -138,8 +138,6 @@ task :compile_java do
   end
 end
 
-task :package => :compile_java
-
 
 # Publish RDocs
 desc 'Publishes RDocs to RubyForge'

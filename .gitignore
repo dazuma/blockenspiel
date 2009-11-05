@@ -1,3 +1,9 @@
 /doc/
 /pkg/
 .DS_Store
+*.class
+*.jar
+*.bundle
+*.o
+/ext/blockenspiel/Makefile
+
