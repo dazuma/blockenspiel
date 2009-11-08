@@ -1,3 +1,11 @@
+=== 0.3.1 / 2009-11-08
+
+* Blockenspiel#invoke can now take its options hash as the second argument
+  (instead of the third) when using dynamic target generation, since the
+  second argument is otherwise unused in this case.
+* Now defines Blockenspiel::VERSION, as a versionomy object if the
+  versionomy library is available, or as a version string if not.
+
 === 0.3.0 / 2009-11-04
 
 * dsl_attr_writer and dsl_attr_accessor convenience methods are available

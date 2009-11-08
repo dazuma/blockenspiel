@@ -197,6 +197,25 @@ end
       end
       
       
+      # Test passing options in.
+      # 
+      # * Asserts that the "parameter" option is recognized
+      
+      def test_options_recognized
+        block_ = ::Proc.new do
+          set_value(:a, 1)
+        end
+        hash_ = ::Hash.new
+        assert_raise(::Blockenspiel::BlockParameterError) do
+          ::Blockenspiel.invoke(block_, :parameterless => false) do
+            add_method(:set_value) do |key_, value_|
+              hash_[key_] = value_
+            end
+          end
+        end
+      end
+      
+      
     end
     
   end

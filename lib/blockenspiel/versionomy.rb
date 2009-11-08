@@ -34,11 +34,18 @@
 ;
 
 
+begin
+  require 'versionomy'
+rescue ::LoadError
+end
+
+
 module Blockenspiel
   
-  # Current gem version, as a frozen string.
-  VERSION_STRING = '0.3.1'.freeze
-  
-  autoload(:VERSION, ::File.dirname(__FILE__)+'/versionomy.rb')
+  unless const_defined?(:VERSION)
+    # Current gem version, as a Versionomy::Value if the versionomy library
+    # is available, or as a frozen string if not.
+    VERSION = defined?(::Versionomy) ? ::Versionomy.parse(VERSION_STRING, :standard) : VERSION_STRING
+  end
   
 end

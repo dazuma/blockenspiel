@@ -655,6 +655,10 @@ module Blockenspiel
   # 
   # See the Blockenspiel::Builder class for more details on add_method.
   # 
+  # When using dynamic target generation, you may pass the options hash as
+  # the second argument to invoke instead of the third, since you will not
+  # be passing a target object as the second argument.
+  # 
   # (And yes, you guessed it: this API is a DSL block, and is itself
   # implemented using Blockenspiel.)
   
@@ -663,6 +667,18 @@ module Blockenspiel
     unless block_
       raise ::ArgumentError, "Block expected"
     end
+    
+    # Perform dynamic target generation if requested
+    if builder_block_
+      # Support passing the opts hash as the second argument since we
+      # aren't passing a target as an argument.
+      opts_ = target_ || opts_
+      builder_ = ::Blockenspiel::Builder.new
+      invoke(builder_block_, builder_)
+      target_ = builder_._create_target
+    end
+    
+    # Read options
     parameter_ = opts_[:parameter]
     parameterless_ = opts_[:parameterless]
     
@@ -672,14 +688,6 @@ module Blockenspiel
         raise ::Blockenspiel::BlockParameterError, "Block should not take parameters"
       end
       return block_.call
-    end
-    
-    # Perform dynamic target generation if requested
-    if builder_block_
-      opts_ = target_ || opts_
-      builder_ = ::Blockenspiel::Builder.new
-      invoke(builder_block_, builder_)
-      target_ = builder_._create_target
     end
     
     # Handle parametered block case
