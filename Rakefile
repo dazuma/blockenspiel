@@ -190,8 +190,17 @@ task :release_gem_to_gemcutter => [:package] do |t_|
   if v_ != ::Blockenspiel::VERSION_STRING
     abort "Versions don't match: #{v_} vs #{::Blockenspiel::VERSION_STRING}"
   end
+  mri_gem_ = "blockenspiel-#{v_}.gem"
+  jruby_gem_ = "blockenspiel-#{v_}-java.gem"
+  if !::File.file?("pkg/#{mri_gem_}") || !::File.readable?("pkg/#{mri_gem_}")
+    abort "You haven't built #{mri_gem_} yet. Try rake package"
+  end
+  if !::File.file?("pkg/#{jruby_gem_}") || !::File.readable?("pkg/#{jruby_gem_}")
+    abort "You haven't built #{jruby_gem_} yet. Try jrake package"
+  end
   puts "Releasing blockenspiel #{v_} to GemCutter"
-  `cd pkg && gem push blockenspiel-#{v_}.gem`
+  `cd pkg && gem push #{mri_gem_}`
+  `cd pkg && gem push #{jruby_gem_}`
 end
 
 
