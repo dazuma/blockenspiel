@@ -95,6 +95,12 @@ module Blockenspiel
           ::Blockenspiel::DSLSetupMethods._setup_class(subklass_)
           super
         end
+        class << klass_
+          unless private_method_defined?(:_blockenspiel_default_include)
+            alias_method :_blockenspiel_default_include, :include
+            alias_method :include, :_blockenspiel_custom_include
+          end
+        end
       end
     end
     
@@ -121,10 +127,9 @@ module Blockenspiel
     end
     
     
-    # Hook called when a method is added.
-    # This automatically makes the method a DSL method according to the current setting.
+    # Automatically make the given method a DSL method according to the current setting.
     
-    def method_added(symbol_)  # :nodoc:
+    def _blockenspiel_auto_dsl_method(symbol_)  # :nodoc:
       if @_blockenspiel_active
         dsl_method(symbol_)
       elsif @_blockenspiel_active.nil?
@@ -132,7 +137,31 @@ module Blockenspiel
           dsl_method(symbol_)
         end
       end
+    end
+    
+    
+    # Hook called when a method is added.
+    # This calls _blockenspiel_auto_dsl_method to auto-handle the method,
+    # possibly making it a DSL method according to the current setting.
+    
+    def method_added(symbol_)  # :nodoc:
+      _blockenspiel_auto_dsl_method(symbol_)
       super
+    end
+    
+    
+    # Custom include method. Calls the main include implementation, but also
+    # goes through the public methods of the included module and calls
+    # _blockenspiel_auto_dsl_method on each to make them DSL methods
+    # (possibly) according to the current setting.
+    
+    def _blockenspiel_custom_include(*modules_)  # :nodoc:
+      _blockenspiel_default_include(*modules_)
+      modules_.reverse_each do |mod_|
+        mod_.public_instance_methods.each do |method_|
+          _blockenspiel_auto_dsl_method(method_)
+        end
+      end
     end
     
     
@@ -328,6 +357,9 @@ module Blockenspiel
   module DSL
     
     def self.included(klass_)  # :nodoc:
+      unless klass_.kind_of?(::Class)
+        raise ::Blockenspiel::BlockenspielError, "You cannot include Blockenspiel::DSL in a module (yet)"
+      end
       klass_.extend(::Blockenspiel::DSLSetupMethods)
     end
     

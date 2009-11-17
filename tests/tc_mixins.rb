@@ -85,6 +85,38 @@ module Blockenspiel
       end
       
       
+      class Target3 < ::Blockenspiel::Base
+        
+        def initialize(hash_)
+          @hash = hash_
+        end
+        
+        def set_value(key_, value_)
+          @hash[key_] = value_
+        end
+        
+        def _helper_method(key_)
+          @hash[key_]
+        end
+        
+        def get_value(key_)
+          @hash[key_]
+        end
+        dsl_method :get_value, false
+        
+        def get_value2(key_)
+          @hash[key_]
+        end
+        dsl_method :get_value2, false
+        
+      end
+      
+      
+      def get_value(key_)
+        :helper
+      end
+      
+      
       # Basic test of mixin mechanism.
       # 
       # * Asserts that the mixin methods are added and removed for a single mixin.
@@ -231,6 +263,28 @@ module Blockenspiel
         assert_equal(2, hash_['b1'])
         assert_equal(3, hash_['c1'])
         assert_equal(4, hash_['d1'])
+      end
+      
+      
+      # Test mixin omissions.
+      # 
+      # * Asserts that underscore methods are not mixed in.
+      # * Asserts that methods that are turned off after the fact cannot be called.
+      
+      def test_omissions
+        hash_ = ::Hash.new
+        block_ = ::Proc.new do
+          set_value(:a, 1)
+          assert(!self.respond_to?(:_helper_method))
+          assert_equal(:helper, get_value(:a))
+          assert_raise(::NoMethodError) do
+            get_value2(:a)
+          end
+        end
+        target_ = Target3.new(hash_)
+        ::Blockenspiel.invoke(block_, target_)
+        assert(!self.respond_to?(:set_value))
+        assert_equal(1, target_.get_value(:a))
       end
       
       

@@ -66,6 +66,8 @@ For an extended analysis of different ways to implement DSL blocks, see
 
 * Implementing wildcard DSL methods using <tt>method_missing</tt> doesn't
   work. I haven't yet figured out the right semantics for this case.
+* Including Blockenspiel::DSL in a module is not yet supported, but this
+  is planned in a future release.
 
 === Development and support
 

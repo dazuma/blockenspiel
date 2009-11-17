@@ -1,3 +1,11 @@
+=== 0.3.2 / 2009-11-17
+
+* Modules included in a DSL-ized class now have their methods included in
+  the DSL.
+* Raise a more informative error (for now) when trying to include
+  Blockenspiel::DSL in a module. At some point, we'll support this usage,
+  once I figure out the right semantics for it.
+
 === 0.3.1 / 2009-11-08
 
 * Blockenspiel#invoke can now take its options hash as the second argument
