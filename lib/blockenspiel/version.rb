@@ -37,7 +37,7 @@
 module Blockenspiel
   
   # Current gem version, as a frozen string.
-  VERSION_STRING = '0.3.2'.freeze
+  VERSION_STRING = '0.3.3'.freeze
   
   autoload(:VERSION, ::File.dirname(__FILE__)+'/versionomy.rb')
   

@@ -1,3 +1,8 @@
+=== 0.3.3 / 2010-05-24
+
+* Some Rakefile fixes to match RDoc and Ruby 1.9 changes.
+* Minor documentation updates.
+
 === 0.3.2 / 2009-11-17
 
 * Modules included in a DSL-ized class now have their methods included in

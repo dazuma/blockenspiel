@@ -37,6 +37,8 @@ require 'rake/clean'
 require 'rake/gempackagetask'
 require 'rake/testtask'
 require 'rake/rdoctask'
+require 'rdoc'
+require 'rdoc/rdoc'
 require 'rdoc/generator/darkfish'
 
 require ::File.expand_path("#{::File.dirname(__FILE__)}/lib/blockenspiel/version")
@@ -75,7 +77,7 @@ end
 gemspec_ = ::Gem::Specification.new do |s_|
   s_.name = 'blockenspiel'
   s_.summary = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks.'
-  s_.version = ::Blockenspiel::VERSION_STRING
+  s_.version = ::Blockenspiel::VERSION_STRING.dup
   s_.author = 'Daniel Azuma'
   s_.email = 'dazuma@gmail.com'
   s_.description = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks. It is designed to be comprehensive and robust, supporting most common usage patterns, and working correctly in the presence of nested blocks and multithreading.'

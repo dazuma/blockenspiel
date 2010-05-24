@@ -505,8 +505,9 @@ module Blockenspiel
     # 
     # If you want your method to take a block, you have several options
     # depending on your Ruby version. If you are running the standard Matz
-    # Ruby interpreter (MRI) version 1.8.7 or later (including 1.9.x), you
-    # can use the standard "&" block argument notation to receive the block.
+    # Ruby interpreter (MRI) version 1.8.7 or later (including 1.9.x), or a
+    # compatible interpreter such as JRuby 1.5 or later, you can use the
+    # standard "&" block argument notation to receive the block.
     # Note that you must call the passed block using the +call+ method since
     # Ruby doesn't support invoking such a block with +yield+.
     # For example, to create a method named "foo" that takes one parameter
@@ -521,15 +522,11 @@ module Blockenspiel
     # 
     #  foo("hello"){ "a value" }
     # 
-    # If you are using MRI 1.8.6, however, the parser does not support
-    # passing a block argument to a block. Oddly, the current version of
-    # JRuby (version 1.4.0 as of this writing) also does not support this
-    # syntax, though it claims MRI 1.8.7 compatibility. (See bug JRUBY-4180
-    # to track this issue.) If your Ruby interpreter doesn't support the
-    # standard way to create a method that takes a block, Blockenspiel
-    # provides an alternative in the form of the <tt>:block</tt> option.
-    # This option causes blocks provided by the caller to be included in
-    # the normal parameter list to your method, instead of as a block
+    # If you are using MRI 1.8.6, or another Ruby interpreter that doesn't
+    # fully support this syntax (such as JRuby versions older than 1.5),
+    # Blockenspiel provides an alternative in the form of the <tt>:block</tt>
+    # option. This option causes blocks provided by the caller to be included
+    # in the normal parameter list to your method, instead of as a block
     # parameter. It can be set to <tt>:first</tt> or <tt>:last</tt> to
     # prepend or append, respectively, the block (as a +Proc+ object) to
     # the parameter list. If the caller does not include a block when

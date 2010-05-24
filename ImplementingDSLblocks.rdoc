@@ -879,7 +879,7 @@ This requires dynamic generation of the proxy class. We could implement it using
     def add_route(path, options = {})
       # ...
 
-You can install blockenspiel as a gem. It is compatible with MRI 1.8.7 or later, MRI 1.9.1 or later, and JRuby 1.2 or later.
+You can install blockenspiel as a gem. It is compatible with MRI 1.8.7 or later, MRI 1.9.1 or later, and JRuby 1.5 or later.
 
   gem install blockenspiel
 
@@ -937,4 +937,4 @@ The Blockenspiel library provides a concrete and robust implementation of DSL bl
 
 === About the author
 
-Daniel Azuma is Chief Software Architect at GeoPage. He has been working with Ruby for about three years, and finds the language generally pleasant to work with, though he thinks the scoping rules could use some improvement. His home page is at http://www.daniel-azuma.com/
+Daniel Azuma is Chief Software Architect at GeoPage. He has been working with Ruby since 2005, and finds the language generally pleasant to work with, though he thinks the scoping rules could use some improvement. His home page is at http://www.daniel-azuma.com/
