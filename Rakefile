@@ -3,7 +3,7 @@
 # Blockenspiel Rakefile
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2009 Daniel Azuma
+# Copyright 2008-2010 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -48,15 +48,33 @@ require ::File.expand_path("#{::File.dirname(__FILE__)}/lib/blockenspiel/version
 extra_rdoc_files_ = ['README.rdoc', 'Blockenspiel.rdoc', 'History.rdoc', 'ImplementingDSLblocks.rdoc']
 
 
+# Environment configuration
+dlext_ = Config::CONFIG['DLEXT']
+if ::RUBY_PLATFORM =~ /java/
+  platform_suffix_ = 'java'
+elsif ::RUBY_COPYRIGHT =~ /Yukihiro\sMatsumoto/i
+  if ::RUBY_VERSION =~ /^1\.8(\..*)?$/
+    platform_suffix_ = 'mri18'
+  elsif ::RUBY_VERSION =~ /^1\.9(\..*)?$/
+    platform_suffix_ = 'mri19'
+  else
+    raise "Unknown version of Matz Ruby Interpreter (#{::RUBY_VERSION})"
+  end
+else
+  raise "Could not identify the ruby runtime"
+end
+
+
 # Default task
-task :default => [:clean, :compile, :rdoc, :package, :test]
+task :default => [:clean, :rdoc, :package, :test]
 
 
 # Clean task
-CLEAN.include(['ext/blockenspiel/Makefile', '**/unmixer.bundle', 'ext/blockenspiel/unmixer.o', '**/blockenspiel_unmixer.jar', 'ext/blockenspiel/BlockenspielUnmixerService.class', 'idslb_markdown.txt', 'doc', 'pkg'])
+CLEAN.include(['ext/blockenspiel/Makefile*', "**/*.#{dlext_}", '**/*.o', '**/blockenspiel_unmixer.jar', 'ext/blockenspiel/BlockenspielUnmixerService.class', 'idslb_markdown.txt', 'doc', 'pkg'])
 
 
 # Test task
+task :test => :compile
 ::Rake::TestTask.new('test') do |task_|
   task_.pattern = 'tests/tc_*.rb'
 end
@@ -69,37 +87,51 @@ end
   task_.rdoc_files.include('lib/blockenspiel/*.rb')
   task_.rdoc_dir = 'doc'
   task_.title = "Blockenspiel #{::Blockenspiel::VERSION_STRING} documentation"
-  task_.options << '-f' << 'darkfish'
+  task_.options << '--format=darkfish'
 end
 
 
-# Gem task
-gemspec_ = ::Gem::Specification.new do |s_|
-  s_.name = 'blockenspiel'
-  s_.summary = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks.'
-  s_.version = ::Blockenspiel::VERSION_STRING.dup
-  s_.author = 'Daniel Azuma'
-  s_.email = 'dazuma@gmail.com'
-  s_.description = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks. It is designed to be comprehensive and robust, supporting most common usage patterns, and working correctly in the presence of nested blocks and multithreading.'
-  s_.homepage = 'http://virtuoso.rubyforge.org/blockenspiel'
-  s_.rubyforge_project = 'virtuoso'
-  s_.required_ruby_version = '>= 1.8.6'
-  s_.files = ::FileList['ext/**/*.{c,rb,java}', 'lib/**/*.{rb,jar}', 'tests/**/*.rb', '*.rdoc', 'Rakefile'].to_a
-  s_.extra_rdoc_files = extra_rdoc_files_
-  s_.has_rdoc = true
-  s_.test_files = FileList['tests/tc_*.rb']
-  if ::RUBY_PLATFORM =~ /java/
-    s_.platform = 'java'
-    s_.files += ['lib/blockenspiel_unmixer.jar']
-  else
+# Gem package task
+task :package => [:compile_java] do
+  mkdir('pkg') unless ::File.directory?('pkg')
+  
+  # Common gemspec
+  def create_gemspec
+    ::Gem::Specification.new do |s_|
+      s_.name = 'blockenspiel'
+      s_.summary = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks.'
+      s_.version = ::Blockenspiel::VERSION_STRING.dup
+      s_.author = 'Daniel Azuma'
+      s_.email = 'dazuma@gmail.com'
+      s_.description = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks. It is designed to be comprehensive and robust, supporting most common usage patterns, and working correctly in the presence of nested blocks and multithreading.'
+      s_.homepage = 'http://virtuoso.rubyforge.org/blockenspiel'
+      s_.rubyforge_project = 'virtuoso'
+      s_.required_ruby_version = '>= 1.8.6'
+      s_.files = ::FileList['ext/**/*.{c,rb,java}', 'lib/**/*.{rb,jar}', 'tests/**/*.rb', '*.rdoc', 'Rakefile'].to_a
+      s_.extra_rdoc_files = extra_rdoc_files_
+      s_.has_rdoc = true
+      s_.test_files = FileList['tests/tc_*.rb']
+      yield s_
+    end
+  end
+  
+  # Normal platform gemspec
+  gemspec_ = create_gemspec do |s_|
     s_.platform = ::Gem::Platform::RUBY
     s_.extensions = ['ext/blockenspiel/extconf.rb']
   end
-end
-task :package => [:compile]
-::Rake::GemPackageTask.new(gemspec_) do |task_|
-  task_.need_zip = false
-  task_.need_tar = ::RUBY_PLATFORM !~ /java/
+  ::Gem::Builder.new(gemspec_).build
+  gem_filename_ = "blockenspiel-#{::Blockenspiel::VERSION_STRING}.gem"
+  mv gem_filename_, "pkg/#{gem_filename_}")
+  
+  # JRuby gemspec
+  gemspec_ = create_gemspec do |s_|
+    s_.platform = 'java'
+    s_.files += ['lib/blockenspiel_unmixer.jar']
+  end
+  ::Gem::Builder.new(gemspec_).build
+  gem_filename_ = "blockenspiel-#{::Blockenspiel::VERSION_STRING}-java.gem"
+  mv gem_filename_, "pkg/#{gem_filename_}")
 end
 
 
@@ -108,25 +140,28 @@ task :compile => ::RUBY_PLATFORM =~ /java/ ? [:compile_java] : [:compile_c]
 
 
 # Build tasks for MRI
-dlext_ = Config::CONFIG['DLEXT']
+
+makefile_name_ = "Makefile_#{platform_suffix_}"
+unmixer_name_ = "unmixer_#{platform_suffix_}.#{dlext_}"
 
 desc 'Builds the extension'
-task :compile_c => ["lib/blockenspiel/unmixer.#{dlext_}"]
+task :compile_c => ["lib/blockenspiel/#{unmixer_name_}"]
 
-file 'ext/blockenspiel/Makefile' => ['ext/blockenspiel/extconf.rb'] do
+file "ext/blockenspiel/#{makefile_name_}" => ['ext/blockenspiel/extconf.rb'] do
   ::Dir.chdir('ext/blockenspiel') do
     ruby 'extconf.rb'
+    mv 'Makefile', makefile_name_
   end  
 end
 
-file "ext/blockenspiel/unmixer.#{dlext_}" => ['ext/blockenspiel/Makefile', 'ext/blockenspiel/unmixer.c'] do
+file "ext/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{makefile_name_}", 'ext/blockenspiel/unmixer.c'] do
   ::Dir.chdir('ext/blockenspiel') do
-    sh 'make'
+    sh "make -f #{makefile_name_}"
   end
 end
 
-file "lib/blockenspiel/unmixer.#{dlext_}" => ["ext/blockenspiel/unmixer.#{dlext_}"] do
-  cp "ext/blockenspiel/unmixer.#{dlext_}", 'lib/blockenspiel'
+file "lib/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{unmixer_name_}"] do
+  cp "ext/blockenspiel/#{unmixer_name_}", 'lib/blockenspiel'
 end
 
 
@@ -147,41 +182,6 @@ task :publish_rdoc_to_rubyforge => [:rerdoc] do
   config_ = ::YAML.load(::File.read(::File.expand_path("~/.rubyforge/user-config.yml")))
   username_ = config_['username']
   sh "rsync -av --delete doc/ #{username_}@rubyforge.org:/var/www/gforge-projects/virtuoso/blockenspiel"
-end
-
-
-# Publish gem
-task :release_gem_to_rubyforge => [:package] do |t_|
-  v_ = ::ENV["VERSION"]
-  abort "Must supply VERSION=x.y.z" unless v_
-  if v_ != ::Blockenspiel::VERSION_STRING
-    abort "Versions don't match: #{v_} vs #{::Blockenspiel::VERSION_STRING}"
-  end
-  mri_pkg_ = "pkg/blockenspiel-#{v_}.gem"
-  jruby_pkg_ = "pkg/blockenspiel-#{v_}-java.gem"
-  tgz_pkg_ = "pkg/blockenspiel-#{v_}.tgz"
-  if !::File.file?(mri_pkg_) || !::File.readable?(mri_pkg_)
-    abort "You haven't built #{mri_pkg_} yet. Try rake package"
-  end
-  if !::File.file?(jruby_pkg_) || !::File.readable?(jruby_pkg_)
-    abort "You haven't built #{jruby_pkg_} yet. Try jrake package"
-  end
-  if !::File.file?(tgz_pkg_) || !::File.readable?(tgz_pkg_)
-    abort "You haven't built #{tgz_pkg_} yet. Try rake package"
-  end
-  release_notes_ = ::File.read("README.rdoc").split(/^(==.*)/)[2].strip
-  release_changes_ = ::File.read("History.rdoc").split(/^(===.*)/)[1..2].join.strip
-  
-  require 'rubyforge'
-  rf_ = ::RubyForge.new.configure
-  puts "Logging in to RubyForge"
-  rf_.login
-  config_ = rf_.userconfig
-  config_["release_notes"] = release_notes_
-  config_["release_changes"] = release_changes_
-  config_["preformatted"] = true
-  puts "Releasing blockenspiel #{v_} to RubyForge"
-  rf_.add_release('virtuoso', 'blockenspiel', v_, mri_pkg_, jruby_pkg_, tgz_pkg_)
 end
 
 
@@ -207,7 +207,7 @@ end
 
 
 # Publish everything
-task :release => [:release_gem_to_gemcutter, :release_gem_to_rubyforge, :publish_rdoc_to_rubyforge]
+task :release => [:release_gem_to_gemcutter, :publish_rdoc_to_rubyforge]
 
 
 # Custom task that takes the implementing dsl blocks paper

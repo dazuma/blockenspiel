@@ -68,6 +68,7 @@ For an extended analysis of different ways to implement DSL blocks, see
   work. I haven't yet figured out the right semantics for this case.
 * Including Blockenspiel::DSL in a module (rather than a class) is not yet
   supported, but this is planned in a future release.
+* Rubinius support is not yet present.
 
 === Development and support
 
@@ -85,8 +86,8 @@ Blockenspiel is written by Daniel Azuma (http://www.daniel-azuma.com/).
 
 The mixin implementation is based on a concept by the late Why The Lucky
 Stiff, documented in his 6 October 2008 blog posting entitled "Mixing Our
-Way Out Of Instance Eval?". The original link is gone, but you may find
-copies or mirrors out there.
+Way Out Of Instance Eval?". The original link has disappeared along with
+its author, but you may find copies or mirrors out there.
 
 The unmixer code is based on {Mixology}[http://rubyforge.org/projects/mixology],
 version 0.1 by Patrick Farley, anonymous z, Dan Manges, and Clint Bishop.

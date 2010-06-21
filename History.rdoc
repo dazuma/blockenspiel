@@ -1,3 +1,10 @@
+=== 0.4.0 / 2010-06-21
+
+* Implemented string- and file-based DSLs (in addition to block-based).
+* Correctly handle separate active DSLs in different fibers within the
+  same thread, when fibers are avaialble.
+* Organized the source a little better.
+
 === 0.3.3 / 2010-05-24
 
 * Some Rakefile fixes to match RDoc and Ruby 1.9 changes.

@@ -3,7 +3,7 @@
 # Blockenspiel version
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2009 Daniel Azuma
+# Copyright 2008-2010 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -37,7 +37,7 @@
 module Blockenspiel
   
   # Current gem version, as a frozen string.
-  VERSION_STRING = '0.3.3'.freeze
+  VERSION_STRING = '0.4.0'.freeze
   
   autoload(:VERSION, ::File.dirname(__FILE__)+'/versionomy.rb')
   

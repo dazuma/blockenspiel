@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # 
-# Blockenspiel entry point
+# Blockenspiel error classes
 # 
 # -----------------------------------------------------------------------------
 # Copyright 2008-2010 Daniel Azuma
@@ -34,28 +34,28 @@
 ;
 
 
-# == Blockenspiel
-# 
-# The Blockenspiel module provides a namespace for Blockenspiel, as well as
-# the main entry point method "invoke".
-
 module Blockenspiel
+  
+  
+  # Base exception for all exceptions raised by Blockenspiel 
+  
+  class BlockenspielError < ::RuntimeError
+  end
+  
+  
+  # This exception is rasied when attempting to use the <tt>:proxy</tt> or
+  # <tt>:mixin</tt> parameterless behavior with a target that does not have
+  # the DSL module included. It is an error made by the DSL implementor.
+  
+  class DSLMissingError < ::Blockenspiel::BlockenspielError
+  end
+  
+  
+  # This exception is raised when the block provided does not take the
+  # expected number of parameters. It is an error made by the caller.
+  
+  class BlockParameterError < ::Blockenspiel::BlockenspielError
+  end
+  
+  
 end
-
-
-includes_ = [
- 'errors',
- 'dsl_setup',
- 'builder',
- 'impl',
- 'version',
-]
-
-
-dir_ = ::File.expand_path('blockenspiel', ::File.dirname(__FILE__))
-if ::RUBY_PLATFORM =~ /java/
-  require "blockenspiel_unmixer"
-else
-  includes_.unshift('unmixer')
-end
-includes_.each{ |file_| require "#{dir_}/#{file_}" }

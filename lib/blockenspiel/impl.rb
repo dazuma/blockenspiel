@@ -3,7 +3,7 @@
 # Blockenspiel implementation
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2009 Daniel Azuma
+# Copyright 2008-2010 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -37,542 +37,13 @@
 require 'thread'
 
 
-# == Blockenspiel
-# 
-# The Blockenspiel module provides a namespace for Blockenspiel, as well as
-# the main entry point method "invoke".
-
 module Blockenspiel
   
   
-  # Base exception for all exceptions raised by Blockenspiel 
-  
-  class BlockenspielError < ::RuntimeError
-  end
-  
-  
-  # This exception is rasied when attempting to use the <tt>:proxy</tt> or
-  # <tt>:mixin</tt> parameterless behavior with a target that does not have
-  # the DSL module included. It is an error made by the DSL implementor.
-  
-  class DSLMissingError < ::Blockenspiel::BlockenspielError
-  end
-  
-  
-  # This exception is raised when the block provided does not take the
-  # expected number of parameters. It is an error made by the caller.
-  
-  class BlockParameterError < ::Blockenspiel::BlockenspielError
-  end
-  
-  
-  # === DSL setup methods
+  # === Invoke a given DSL
   # 
-  # These class methods are available after you have included the
-  # Blockenspiel::DSL module.
-  # 
-  # By default, a class that has DSL capability will automatically make
-  # all public methods available to parameterless blocks, except for the
-  # +initialize+ method, any methods whose names begin with an underscore,
-  # and any methods whose names end with an equals sign.
-  # 
-  # If you want to change this behavior, use the directives defined here to
-  # control exactly which methods are available to parameterless blocks.
-  
-  module DSLSetupMethods
-    
-    
-    # :stopdoc:
-    
-    # Called when DSLSetupMethods extends a class.
-    # This sets up the current class, and adds a hook that causes
-    # any subclass of the current class also to be set up.
-    
-    def self.extended(klass_)
-      unless klass_.instance_variable_defined?(:@_blockenspiel_module)
-        _setup_class(klass_)
-        def klass_.inherited(subklass_)
-          ::Blockenspiel::DSLSetupMethods._setup_class(subklass_)
-          super
-        end
-        class << klass_
-          unless private_method_defined?(:_blockenspiel_default_include)
-            alias_method :_blockenspiel_default_include, :include
-            alias_method :include, :_blockenspiel_custom_include
-          end
-        end
-      end
-    end
-    
-    # :startdoc:
-    
-    
-    # Set up a class.
-    # Creates a DSL module for this class, optionally delegating to the superclass's module.
-    # Also initializes the class's methods hash and active flag.
-    
-    def self._setup_class(klass_)  # :nodoc:
-      superclass_ = klass_.superclass
-      superclass_ = nil unless superclass_.respond_to?(:_get_blockenspiel_module)
-      mod_ = ::Module.new
-      if superclass_
-        mod_.module_eval do
-          include superclass_._get_blockenspiel_module
-        end
-      end
-      klass_.instance_variable_set(:@_blockenspiel_superclass, superclass_)
-      klass_.instance_variable_set(:@_blockenspiel_module, mod_)
-      klass_.instance_variable_set(:@_blockenspiel_methods, ::Hash.new)
-      klass_.instance_variable_set(:@_blockenspiel_active, nil)
-    end
-    
-    
-    # Automatically make the given method a DSL method according to the current setting.
-    
-    def _blockenspiel_auto_dsl_method(symbol_)  # :nodoc:
-      if @_blockenspiel_active
-        dsl_method(symbol_)
-      elsif @_blockenspiel_active.nil?
-        if symbol_ != :initialize && symbol_.to_s !~ /^_/ && symbol_.to_s !~ /=$/
-          dsl_method(symbol_)
-        end
-      end
-    end
-    
-    
-    # Hook called when a method is added.
-    # This calls _blockenspiel_auto_dsl_method to auto-handle the method,
-    # possibly making it a DSL method according to the current setting.
-    
-    def method_added(symbol_)  # :nodoc:
-      _blockenspiel_auto_dsl_method(symbol_)
-      super
-    end
-    
-    
-    # Custom include method. Calls the main include implementation, but also
-    # goes through the public methods of the included module and calls
-    # _blockenspiel_auto_dsl_method on each to make them DSL methods
-    # (possibly) according to the current setting.
-    
-    def _blockenspiel_custom_include(*modules_)  # :nodoc:
-      _blockenspiel_default_include(*modules_)
-      modules_.reverse_each do |mod_|
-        mod_.public_instance_methods.each do |method_|
-          _blockenspiel_auto_dsl_method(method_)
-        end
-      end
-    end
-    
-    
-    # Get this class's corresponding DSL module
-    
-    def _get_blockenspiel_module  # :nodoc:
-      @_blockenspiel_module
-    end
-    
-    
-    # Get information on the given DSL method name.
-    # Possible values are the name of the delegate method, false for method disabled,
-    # or nil for method never defined.
-    
-    def _get_blockenspiel_delegate(name_)  # :nodoc:
-      delegate_ = @_blockenspiel_methods[name_]
-      if delegate_.nil? && @_blockenspiel_superclass
-        @_blockenspiel_superclass._get_blockenspiel_delegate(name_)
-      else
-        delegate_
-      end
-    end
-    
-    
-    # Make a particular method available to parameterless DSL blocks.
-    # 
-    # To explicitly make a method available to parameterless blocks:
-    #  dsl_method :my_method
-    # 
-    # To explicitly exclude a method from parameterless blocks:
-    #  dsl_method :my_method, false
-    # 
-    # To explicitly make a method available to parameterless blocks, but
-    # point it to a method of a different name on the target class:
-    #  dsl_method :my_method, :target_class_method
-    
-    def dsl_method(name_, delegate_=nil)
-      name_ = name_.to_sym
-      if delegate_
-        delegate_ = delegate_.to_sym
-      elsif delegate_.nil?
-        delegate_ = name_
-      end
-      @_blockenspiel_methods[name_] = delegate_
-      unless @_blockenspiel_module.public_method_defined?(name_)
-        @_blockenspiel_module.module_eval("def #{name_}(*params_, &block_); val_ = ::Blockenspiel._target_dispatch(self, :#{name_}, params_, block_); ::Blockenspiel::NO_VALUE.equal?(val_) ? super(*params_, &block_) : val_; end\n")
-      end
-    end
-    
-    
-    # Control the behavior of methods with respect to parameterless blocks,
-    # or make a list of methods available to parameterless blocks in bulk.
-    # 
-    # To enable automatic exporting of methods to parameterless blocks.
-    # After executing this command, all public methods defined in the class
-    # will be available on parameterless blocks, until
-    # <tt>dsl_methods false</tt> is called:
-    #  dsl_methods true
-    # 
-    # To disable automatic exporting of methods to parameterless blocks.
-    # After executing this command, methods defined in this class will be
-    # excluded from parameterless blocks, until <tt>dsl_methods true</tt>
-    # is called:
-    #  dsl_methods false
-    # 
-    # To make a list of methods available to parameterless blocks in bulk:
-    #  dsl_methods :my_method1, :my_method2, ...
-    # 
-    # You can also point dsl methods to a method of a different name on the
-    # target class, by using a hash syntax, as follows:
-    #  dsl_methods :my_method1 => :target_class_method1,
-    #              :my_method2 => :target_class_method2
-    # 
-    # You can mix non-renamed and renamed method declarations as long as
-    # the renamed (hash) methods are at the end. e.g.:
-    #  dsl_methods :my_method1, :my_method2 => :target_class_method2
-    
-    def dsl_methods(*names_)
-      if names_.size == 0 || names_ == [true]
-        @_blockenspiel_active = true
-      elsif names_ == [false]
-        @_blockenspiel_active = false
-      else
-        if names_.last.kind_of?(::Hash)
-          names_.pop.each do |name_, delegate_|
-            dsl_method(name_, delegate_)
-          end
-        end
-        names_.each do |name_|
-          dsl_method(name_, name_)
-        end
-      end
-    end
-    
-    
-    # A DSL-friendly attr_accessor.
-    # 
-    # This creates the usual "name" and "name=" methods in the current
-    # class that can be used in the usual way. However, its implementation
-    # of the "name" method (the getter) also takes an optional parameter
-    # that causes it to behave as a setter. This is done because the usual
-    # setter syntax cannot be used in a parameterless block, since it is
-    # syntactically indistinguishable from a local variable assignment.
-    # The "name" method is exposed as a dsl_method.
-    # 
-    # For example:
-    # 
-    #  dsl_attr_accessor :foo
-    # 
-    # enables the following:
-    # 
-    #  my_block do |param|
-    #    param.foo = 1   # Usual setter syntax works
-    #    param.foo 2     # Alternate setter syntax also works
-    #    puts param.foo  # Usual getter syntax still works
-    #  end
-    #  
-    #  my_block do
-    #    # foo = 1       # Usual setter syntax does NOT work since it
-    #                    #   looks like a local variable assignment
-    #    foo 2           # Alternate setter syntax does work
-    #    puts foo        # Usual getter syntax still works
-    #  end
-    
-    def dsl_attr_accessor(*names_)
-      names_.each do |name_|
-        unless name_.kind_of?(::String) || name_.kind_of?(::Symbol)
-          raise ::TypeError, "#{name_.inspect} is not a symbol"
-        end
-        unless name_.to_s =~ /^[_a-zA-Z]\w+$/
-          raise ::NameError, "invalid attribute name #{name_.inspect}"
-        end
-        module_eval("def #{name_}(value_=::Blockenspiel::NO_VALUE); ::Blockenspiel::NO_VALUE.equal?(value_) ? @#{name_} : @#{name_} = value_; end\n")
-        alias_method("#{name_}=", name_)
-        dsl_method(name_)
-      end
-    end
-    
-    
-    # A DSL-friendly attr_writer.
-    # 
-    # This creates the usual "name=" method in the current class that can
-    # be used in the usual way. However, it also creates the method "name",
-    # which also functions as a setter (but not a getter). This is done
-    # because the usual setter syntax cannot be used in a parameterless
-    # block, since it is syntactically indistinguishable from a local
-    # variable assignment. The "name" method is exposed as a dsl_method.
-    # 
-    # For example:
-    # 
-    #  dsl_attr_writer :foo
-    # 
-    # is functionally equivalent to:
-    # 
-    #  attr_writer :foo
-    #  alias_method :foo, :foo=
-    #  dsl_method :foo
-    # 
-    # which enables the following:
-    # 
-    #  my_block do |param|
-    #    param.foo = 1   # Usual setter syntax works
-    #    param.foo 2     # Alternate setter syntax also works
-    #  end
-    #  my_block do
-    #    # foo = 1       # Usual setter syntax does NOT work since it
-    #                    #   looks like a local variable assignment
-    #    foo(2)          # Alternate setter syntax does work
-    #  end
-    
-    def dsl_attr_writer(*names_)
-      names_.each do |name_|
-        attr_writer(name_)
-        alias_method(name_, "#{name_}=")
-        dsl_method(name_)
-      end
-    end
-    
-    
-  end
-  
-  
-  # === DSL activation module
-  # 
-  # Include this module in a class to mark this class as a DSL class and
-  # make it possible for its methods to be called from a block that does not
-  # take a parameter.
-  # 
-  # After you include this module, you can use the directives defined in
-  # DSLSetupMethods to control what methods are available to DSL blocks
-  # that do not take parameters.
-  
-  module DSL
-    
-    def self.included(klass_)  # :nodoc:
-      unless klass_.kind_of?(::Class)
-        raise ::Blockenspiel::BlockenspielError, "You cannot include Blockenspiel::DSL in a module (yet)"
-      end
-      klass_.extend(::Blockenspiel::DSLSetupMethods)
-    end
-    
-  end
-  
-  
-  # === DSL activation base class
-  # 
-  # Subclasses of this base class are considered DSL classes.
-  # Methods of the class can be made available to be called from a block that
-  # doesn't take an explicit block parameter.
-  # You may use the directives defined in DSLSetupMethods to control how
-  # methods of the class are handled in such blocks.
-  # 
-  # Subclassing this base class is functionally equivalent to simply
-  # including Blockenspiel::DSL in the class.
-  
-  class Base
-    
-    include ::Blockenspiel::DSL
-    
-  end
-  
-  
-  # Class for proxy delegators.
-  # The proxy behavior creates one of these delegators, mixes in the dsl
-  # methods, and uses instance_eval to invoke the block. This class delegates
-  # non-handled methods to the context object.
-  
-  class ProxyDelegator  # :nodoc:
-    
-    def method_missing(symbol_, *params_, &block_)
-      ::Blockenspiel._proxy_dispatch(self, symbol_, params_, block_)
-    end
-    
-  end
-  
-  
-  # === Dynamically construct a target
-  # 
-  # These methods are available in a block passed to Blockenspiel#invoke and
-  # can be used to dynamically define what methods are available from a block.
-  # See Blockenspiel#invoke for more information.
-  
-  class Builder
-    
-    include ::Blockenspiel::DSL
-    
-    
-    # This is a base class for dynamically constructed targets.
-    # The actual target class is an anonymous subclass of this base class.
-    
-    class Target  # :nodoc:
-      
-      include ::Blockenspiel::DSL
-      
-      
-      # Add a method specification to the subclass.
-      
-      def self._add_methodinfo(name_, block_, yields_)
-        (@_blockenspiel_methodinfo ||= ::Hash.new)[name_] = [block_, yields_]
-        module_eval("def #{name_}(*params_, &block_); self.class._invoke_methodinfo(:#{name_}, params_, block_); end\n")
-      end
-      
-      
-      # Attempt to invoke the given method on the subclass.
-      
-      def self._invoke_methodinfo(name_, params_, block_)
-        info_ = @_blockenspiel_methodinfo[name_]
-        case info_[1]
-        when :first
-          params_.unshift(block_)
-        when :last
-          params_.push(block_)
-        end
-        info_[0].call(*params_, &block_)
-      end
-      
-    end
-    
-    
-    # Sets up the dynamic target class.
-    
-    def initialize  # :nodoc:
-      @target_class = ::Class.new(::Blockenspiel::Builder::Target)
-      @target_class.dsl_methods(false)
-    end
-    
-    
-    # Creates a new instance of the dynamic target class
-    
-    def _create_target  # :nodoc:
-      @target_class.new
-    end
-    
-    
-    # === Declare a DSL method.
-    # 
-    # This call creates a method that can be called from the DSL block.
-    # Provide a name for the method, a block defining the method's
-    # implementation, and an optional hash of options.
-    # 
-    # By default, a method of the same name is also made available to
-    # parameterless blocks. To change the name of the parameterless method,
-    # provide its name as the value of the <tt>:dsl_method</tt> option.
-    # To disable this method for parameterless blocks, set the
-    # <tt>:dsl_method</tt> option to +false+.
-    # 
-    # The <tt>:mixin</tt> option is a deprecated alias for
-    # <tt>:dsl_method</tt>.
-    # 
-    # === Warning about the +return+ keyword
-    # 
-    # Because you are implementing your method using a block, remember the
-    # distinction between <tt>Proc.new</tt> and +lambda+. Invoking +return+
-    # from the former does not return from the block, but returns from the
-    # surrounding method scope. Since normal blocks passed to methods are
-    # of the former type, be very careful about using the +return+ keyword:
-    # 
-    #  add_method(:foo) do |param|
-    #    puts "foo called with parameter "+param.inspect
-    #    return "a return value"   # DOESN'T WORK LIKE YOU EXPECT!
-    #  end
-    # 
-    # To return a value from the method you are creating, set the evaluation
-    # value at the end of the block:
-    # 
-    #  add_method(:foo) do |param|
-    #    puts "foo called with parameter "+param.inspect
-    #    "a return value"    # Returns from method foo
-    #  end
-    # 
-    # If you must use the +return+ keyword, create your block as a lambda
-    # as in this example:
-    # 
-    #  code = lambda do |param|
-    #    puts "foo called with parameter "+param.inspect
-    #    return "a return value"   # Returns from method foo
-    #  end
-    #  add_method(:foo, &code)
-    # 
-    # === Accepting a block argument
-    # 
-    # If you want your method to take a block, you have several options
-    # depending on your Ruby version. If you are running the standard Matz
-    # Ruby interpreter (MRI) version 1.8.7 or later (including 1.9.x), or a
-    # compatible interpreter such as JRuby 1.5 or later, you can use the
-    # standard "&" block argument notation to receive the block.
-    # Note that you must call the passed block using the +call+ method since
-    # Ruby doesn't support invoking such a block with +yield+.
-    # For example, to create a method named "foo" that takes one parameter
-    # and a block, do this:
-    # 
-    #  add_method(:foo) do |param, &block|
-    #    puts "foo called with parameter "+param.inspect
-    #    puts "the block returned "+block.call.inspect
-    #  end
-    # 
-    # In your DSL, you can then call:
-    # 
-    #  foo("hello"){ "a value" }
-    # 
-    # If you are using MRI 1.8.6, or another Ruby interpreter that doesn't
-    # fully support this syntax (such as JRuby versions older than 1.5),
-    # Blockenspiel provides an alternative in the form of the <tt>:block</tt>
-    # option. This option causes blocks provided by the caller to be included
-    # in the normal parameter list to your method, instead of as a block
-    # parameter. It can be set to <tt>:first</tt> or <tt>:last</tt> to
-    # prepend or append, respectively, the block (as a +Proc+ object) to
-    # the parameter list. If the caller does not include a block when
-    # calling your DSL method, nil is prepended/appended. For example:
-    # 
-    #  add_method(:foo, :block => :last) do |param, block|
-    #    puts "foo called with parameter "+param.inspect
-    #    if block
-    #      puts "the block returned "+block.call.inspect
-    #    else
-    #      puts "no block passed"
-    #    end
-    #  end
-    # 
-    # The <tt>:receive_block</tt> option is a deprecated alternative.
-    # Setting <tt>:receive_block => true</tt> is currently equivalent to
-    # setting <tt>:block => :last</tt>.
-    
-    def add_method(name_, opts_={}, &block_)
-      receive_block_ = opts_[:receive_block] ? :last : opts_[:block]
-      receive_block_ = :first if receive_block_ && receive_block_ != :last
-      @target_class._add_methodinfo(name_, block_, receive_block_)
-      dsl_method_name_ = opts_[:dsl_method] || opts_[:mixin]
-      if dsl_method_name_ != false
-        dsl_method_name_ = name_ if dsl_method_name_.nil? || dsl_method_name_ == true
-        @target_class.dsl_method(dsl_method_name_, name_)
-      end
-    end
-    
-  end
-  
-  
-  # :stopdoc:
-  NO_VALUE = ::Object.new
-  # :startdoc:
-  
-  @_target_stacks = ::Hash.new
-  @_mixin_counts = ::Hash.new
-  @_proxy_delegators = ::Hash.new
-  @_mutex = ::Mutex.new
-  
-  
-  # === Invoke a given block
-  # 
-  # This is the meat of Blockenspiel. Call this function to invoke a block
-  # provided by the user of your API.
+  # This is the entry point for Blockenspiel. Call this function to invoke
+  # a set of DSL code provided by the user of your API.
   # 
   # For example, if you want users of your API to be able to do this:
   # 
@@ -592,21 +63,71 @@ module Blockenspiel
   # In the above, <tt>create_block_implementation</tt> is a placeholder that
   # returns an instance of your DSL methods class. This class includes the
   # Blockenspiel::DSL module and defines the DSL methods +foo+ and +bar+.
+  # See Blockenspiel::DSLSetupMethods for a set of tools you can use in your
+  # DSL methods class for creating a DSL.
   # 
-  # Normally, this method will check the block's arity to see whether it
-  # takes a parameter. If so, it will pass the given target to the block.
-  # If the block takes no parameter, and the given target is an instance of
-  # a class with DSL capability, the DSL methods are made available on the
-  # caller's self object so they may be called without a block parameter.
+  # === Usage patterns
   # 
-  # === Recognized options
+  # The invoke method has a number of forms, depending on whether the API
+  # user's DSL code is provided as a block or a string, and depending on
+  # whether the DSL methods are specified statically using a DSL class or
+  # dynamically using a block.
+  # 
+  # [<tt>Blockenspiel.invoke(<i>user_block</i>, <i>my_dsl</i>, <i>opts</i>)</tt>]
+  #   This form takes the user's code as a block, and the DSL itself as an
+  #   object with DSL methods. The opts hash is optional and provides a
+  #   set of arguments as described below under "Block DSL options".
+  # 
+  # [<tt>Blockenspiel.invoke(<i>user_block</i>, <i>opts</i>) { ... }</tt>]
+  #   This form takes the user's code as a block, while the DSL itself is
+  #   specified in the given block, as described below under "Dynamic
+  #   target generation". The opts hash is optional and provides a set of
+  #   arguments as described below under "Block DSL options".
+  # 
+  # [<tt>Blockenspiel.invoke(<i>user_string</i>, <i>my_dsl</i>, <i>opts</i>)</tt>]
+  #   This form takes the user's code as a string, and the DSL itself as an
+  #   object with DSL methods. The opts hash is optional and provides a
+  #   set of arguments as described below under "String DSL options".
+  # 
+  # [<tt>Blockenspiel.invoke(<i>user_string</i>, <i>opts</i>) { ... }</tt>]
+  #   This form takes the user's code as a block, while the DSL itself is
+  #   specified in the given block, as described below under "Dynamic
+  #   target generation". The opts hash is optional and provides a set of
+  #   arguments as described below under "String DSL options".
+  # 
+  # [<tt>Blockenspiel.invoke(<i>my_dsl</i>, <i>opts</i>)</tt>]
+  #   This form reads the user's code from a file, and takes the DSL itself
+  #   as an object with DSL methods. The opts hash is required and provides
+  #   a set of arguments as described below under "String DSL options". The
+  #   <tt>:file</tt> option is required.
+  # 
+  # [<tt>Blockenspiel.invoke(<i>opts</i>) { ... }</tt>]
+  #   This form reads the user's code from a file, while the DSL itself is
+  #   specified in the given block, as described below under "Dynamic
+  #   target generation". The opts hash is required and provides a set of
+  #   arguments as described below under "String DSL options". The
+  #   <tt>:file</tt> option is required.
+  # 
+  # === Block DSL options
+  # 
+  # When a user provides DSL code using a block, you simply pass that block
+  # as the first parameter to Blockenspiel.invoke. Normally, Blockenspiel
+  # will first check the block's arity to see whether it takes a parameter.
+  # If so, it will pass the given target to the block. If the block takes
+  # no parameter, and the given target is an instance of a class with DSL
+  # capability, the DSL methods are made available on the caller's self
+  # object so they may be called without a block parameter.
+  # 
+  # Following are the options understood by Blockenspiel when providing
+  # code using a block:
   # 
   # <tt>:parameterless</tt>::
   #   If set to false, disables parameterless blocks and always attempts to
   #   pass a parameter to the block. Otherwise, you may set it to one of
   #   three behaviors for parameterless blocks: <tt>:mixin</tt> (the
   #   default), <tt>:instance</tt>, and <tt>:proxy</tt>. See below for
-  #   detailed descriptions of these behaviors.
+  #   detailed descriptions of these behaviors. This option key is also
+  #   available as <tt>:behavior</tt>.
   # <tt>:parameter</tt>::
   #   If set to false, disables blocks with parameters, and always attempts
   #   to use parameterless blocks. Default is true, enabling parameter mode.
@@ -638,6 +159,51 @@ module Blockenspiel
   #   object's instance variables are not available (and thus cannot be
   #   clobbered) in the block, and the transformations specified by
   #   <tt>dsl_method</tt> directives are honored.
+  # 
+  # === String DSL options
+  # 
+  # When a user provides DSL code using a string (either directly or via a
+  # file), Blockenspiel always treats it as a "parameterless" invocation,
+  # since there is no way to "pass a parameter" to a string. Thus, the two
+  # options recognized for block DSLs, <tt>:parameterless</tt>, and
+  # <tt>:parameter</tt>, are meaningless and ignored. However, the
+  # following new options are recognized:
+  # 
+  # <tt>:file</tt>::
+  #   The value of this option should be a string indicating the path to
+  #   the file from which the user's DSL code is coming. It is passed
+  #   as the "file" parameter to eval; that is, it is included in the stack
+  #   trace should an exception be thrown out of the DSL. If no code string
+  #   is provided directly, this option is required and must be set to the
+  #   path of the file from which to load the code.
+  # <tt>:line</tt>::
+  #   This option is passed as the "line" parameter to eval; that is, it
+  #   indicates the starting line number for the code string, and is used
+  #   to compute line numbers for the stack trace should an exception be
+  #   thrown out of the DSL. This option is optional and defaults to 1.
+  # <tt>:behavior</tt>::
+  #   Controls how the DSL is called. Recognized values are <tt>:proxy</tt>
+  #   (the default) and <tt>:instance</tt>. See below for detailed
+  #   descriptions of these behaviors. Note that <tt>:mixin</tt> is not
+  #   allowed in this case because its behavior would be indistinguishable
+  #   from the proxy behavior.
+  # 
+  # The following values are recognized for the <tt>:behavior</tt> option:
+  # 
+  # <tt>:proxy</tt>::
+  #   This behavior changes +self+ to a proxy object created by applying the
+  #   DSL methods to an empty object. Thus, the code in the DSL string does
+  #   not have access to the target object's internal instance variables or
+  #   private methods. Furthermore, the transformations specified by
+  #   <tt>dsl_method</tt> directives are honored. This is the default
+  #   behavior.
+  # <tt>:instance</tt>::
+  #   This behavior actually changes +self+ to the target object using
+  #   <tt>instance_eval</tt>. Thus, the code in the DSL string gains access
+  #   to the target object's instance variables and private methods. Also,
+  #   the target object's methods are not modified: this behavior does not
+  #   apply any DSL method changes specified using <tt>dsl_method</tt>
+  #   directives.
   # 
   # === Dynamic target generation
   # 
@@ -684,32 +250,96 @@ module Blockenspiel
   # 
   # See the Blockenspiel::Builder class for more details on add_method.
   # 
-  # When using dynamic target generation, you may pass the options hash as
-  # the second argument to invoke instead of the third, since you will not
-  # be passing a target object as the second argument.
-  # 
   # (And yes, you guessed it: this API is a DSL block, and is itself
   # implemented using Blockenspiel.)
   
-  def self.invoke(block_, target_=nil, opts_={}, &builder_block_)
+  def self.invoke(*args_, &builder_block_)
+    # This method itself is responsible for parsing the args to invoke,
+    # and handling the dynamic target generation. It then passes control
+    # to one of the _invoke_with_* methods.
     
-    unless block_
-      raise ::ArgumentError, "Block expected"
+    # The arguments.
+    block_ = nil
+    eval_str_ = nil
+    target_ = nil
+    opts_ = {}
+    
+    # Get the code
+    case args_.first
+    when ::String
+      eval_str_ = args_.shift
+    when ::Proc
+      block_ = args_.shift
     end
     
-    # Perform dynamic target generation if requested
+    # Get the target, performing dynamic target generation if requested
     if builder_block_
-      # Support passing the opts hash as the second argument since we
-      # aren't passing a target as an argument.
-      opts_ = target_ || opts_
       builder_ = ::Blockenspiel::Builder.new
       invoke(builder_block_, builder_)
       target_ = builder_._create_target
+      args_.shift if args_.first.nil?
+    else
+      target_ = args_.shift
+      unless target_
+        raise ::ArgumentError, "No DSL target provided"
+      end
     end
     
+    # Get the options hash
+    if args_.first.kind_of?(::Hash)
+      opts_ = args_.shift
+    end
+    if args_.size > 0
+      raise ::ArgumentError, "Unexpected arguments"
+    end
+    
+    # Invoke
+    if block_
+      _invoke_with_block(block_, target_, opts_)
+    else
+      _invoke_with_string(eval_str_, target_, opts_)
+    end
+  end
+  
+  
+  # Invoke when the DSL user provides code as a string or file.
+  # We open and read the file if need be, and then pass control
+  # to the _execute method.
+  
+  def self._invoke_with_string(eval_str_, target_, opts_)  # :nodoc:
+    # Read options
+    file_ = opts_[:file]
+    line_ = opts_[:line] || 1
+    
+    # Read file if no string provided directly
+    unless eval_str_
+      if file_
+        eval_str_ = ::File.read(file_)
+      else
+        raise ::ArgumentError, "No code or file provided."
+      end
+    else
+      file_ ||= "(String passed to Blockenspiel)"
+    end
+    
+    # Handle instance-eval behavior
+    if opts_[:behavior] == :instance
+      return target_.instance_eval(eval_str_, file_, line_)
+    end
+    
+    # Execute the DSL using the proxy method.
+    _execute_dsl(true, nil, eval_str_, target_, file_, line_)
+  end
+  
+  
+  # Invoke when the DSL user provides code as a block. We read the given
+  # options hash, handle a few special cases, and then pass control to the
+  # _execute method.
+  
+  def self._invoke_with_block(block_, target_, opts_)  # :nodoc:
     # Read options
     parameter_ = opts_[:parameter]
-    parameterless_ = opts_[:parameterless]
+    parameterless_ = opts_.include?(:behavior) ? opts_[:behavior] : opts_[:parameterless]
     
     # Handle no-target behavior
     if parameter_ == false && parameterless_ == false
@@ -737,17 +367,49 @@ module Blockenspiel
       return target_.instance_eval(&block_)
     end
     
+    # Execute the DSL
+    _execute_dsl(parameterless_ == :proxy, block_, nil, target_, nil, nil)
+  end
+  
+  
+  # Class for proxy delegators.
+  # The proxy behavior creates one of these delegators, mixes in the dsl
+  # methods, and uses instance_eval to invoke the block. This class delegates
+  # non-handled methods to the context object.
+  
+  class ProxyDelegator  # :nodoc:
+    
+    def method_missing(symbol_, *params_, &block_)
+      ::Blockenspiel._proxy_dispatch(self, symbol_, params_, block_)
+    end
+    
+  end
+  
+  
+  # :stopdoc:
+  NO_VALUE = ::Object.new
+  # :startdoc:
+  
+  @_target_stacks = {}
+  @_mixin_counts = {}
+  @_proxy_delegators = {}
+  @_mutex = ::Mutex.new
+  
+  
+  # This is the "meat" of Blockenspiel, implementing both the proxy and
+  # mixin methods.
+  
+  def self._execute_dsl(use_proxy_method_, block_, eval_str_, target_, file_, line_)  # :nodoc:
     # Get the module of dsl methods
     mod_ = target_.class._get_blockenspiel_module rescue nil
     unless mod_
-      raise ::Blockenspiel::DSLMissingError
+      raise ::Blockenspiel::DSLMissingError, "Given DSL target does not include Blockenspiel::DSL"
     end
     
     # Get the block's calling context object
-    object_ = ::Kernel.eval('self', block_.binding)
+    context_object_ = block_ ? ::Kernel.eval('self', block_.binding) : nil
     
-    # Handle proxy behavior
-    if parameterless_ == :proxy
+    if use_proxy_method_
       
       # Create proxy object
       proxy_ = ::Blockenspiel::ProxyDelegator.new
@@ -755,73 +417,76 @@ module Blockenspiel
       
       # Store the target and proxy object so dispatchers can get them
       proxy_delegator_key_ = proxy_.object_id
-      target_stack_key_ = [::Thread.current.object_id, proxy_.object_id]
-      @_proxy_delegators[proxy_delegator_key_] = object_
+      target_stack_key_ = [_current_context_id, proxy_.object_id]
+      @_proxy_delegators[proxy_delegator_key_] = context_object_ if context_object_
       @_target_stacks[target_stack_key_] = [target_]
       
       begin
         
-        # Call the block with the proxy as self
-        return proxy_.instance_eval(&block_)
+        # Evaluate with the proxy as self
+        if block_
+          return proxy_.instance_eval(&block_)
+        else
+          return proxy_.instance_eval(eval_str_, file_, line_)
+        end
         
       ensure
         
         # Clean up the dispatcher information
-        @_proxy_delegators.delete(proxy_delegator_key_)
+        @_proxy_delegators.delete(proxy_delegator_key_) if context_object_
         @_target_stacks.delete(target_stack_key_)
         
       end
       
-    end
-     
-    # Handle mixin behavior (default)
-    
-    # Create hash keys
-    mixin_count_key_ = [object_.object_id, mod_.object_id]
-    target_stack_key_ = [::Thread.current.object_id, object_.object_id]
-    
-    # Store the target for inheriting.
-    # We maintain a target call stack per thread.
-    target_stack_ = @_target_stacks[target_stack_key_] ||= ::Array.new
-    target_stack_.push(target_)
-    
-    # Mix this module into the object, if required.
-    # This ensures that we keep track of the number of requests to
-    # mix this module in, from nested blocks and possibly multiple threads.
-    @_mutex.synchronize do
-      count_ = @_mixin_counts[mixin_count_key_]
-      if count_
-        @_mixin_counts[mixin_count_key_] = count_ + 1
-      else
-        @_mixin_counts[mixin_count_key_] = 1
-        object_.extend(mod_)
-      end
-    end
-    
-    begin
+    else
       
-      # Now call the block
-      return block_.call
+      # Create hash keys
+      mixin_count_key_ = [context_object_.object_id, mod_.object_id]
+      target_stack_key_ = [_current_context_id, context_object_.object_id]
       
-    ensure
+      # Store the target for inheriting.
+      # We maintain a target call stack per thread.
+      target_stack_ = @_target_stacks[target_stack_key_] ||= []
+      target_stack_.push(target_)
       
-      # Clean up the target stack
-      target_stack_.pop
-      @_target_stacks.delete(target_stack_key_) if target_stack_.size == 0
-      
-      # Remove the mixin from the object, if required.
+      # Mix this module into the object, if required.
+      # This ensures that we keep track of the number of requests to
+      # mix this module in, from nested blocks and possibly multiple threads.
       @_mutex.synchronize do
         count_ = @_mixin_counts[mixin_count_key_]
-        if count_ == 1
-          @_mixin_counts.delete(mixin_count_key_)
-          ::Blockenspiel::Unmixer.unmix(object_, mod_)
+        if count_
+          @_mixin_counts[mixin_count_key_] = count_ + 1
         else
-          @_mixin_counts[mixin_count_key_] = count_ - 1
+          @_mixin_counts[mixin_count_key_] = 1
+          context_object_.extend(mod_)
         end
       end
       
+      begin
+        
+        # Now call the block
+        return block_.call
+        
+      ensure
+        
+        # Clean up the target stack
+        target_stack_.pop
+        @_target_stacks.delete(target_stack_key_) if target_stack_.size == 0
+        
+        # Remove the mixin from the object, if required.
+        @_mutex.synchronize do
+          count_ = @_mixin_counts[mixin_count_key_]
+          if count_ == 1
+            @_mixin_counts.delete(mixin_count_key_)
+            ::Blockenspiel::Unmixer.unmix(context_object_, mod_)
+          else
+            @_mixin_counts[mixin_count_key_] = count_ - 1
+          end
+        end
+        
+      end
+      
     end
-    
   end
   
   
@@ -831,7 +496,7 @@ module Blockenspiel
   # If we can't find an appropriate method to call, return the special value NO_VALUE.
   
   def self._target_dispatch(object_, name_, params_, block_)  # :nodoc:
-    target_stack_ = @_target_stacks[[::Thread.current.object_id, object_.object_id]]
+    target_stack_ = @_target_stacks[[_current_context_id, object_.object_id]]
     return ::Blockenspiel::NO_VALUE unless target_stack_
     target_stack_.reverse_each do |target_|
       target_class_ = target_.class
@@ -848,7 +513,28 @@ module Blockenspiel
   # We look up the context object, and call the given method on that object.
   
   def self._proxy_dispatch(proxy_, name_, params_, block_)  # :nodoc:
-    @_proxy_delegators[proxy_.object_id].send(name_, *params_, &block_)
+    delegate_ = @_proxy_delegators[proxy_.object_id]
+    if delegate_
+      delegate_.send(name_, *params_, &block_)
+    else
+      raise ::NoMethodError, "undefined method `#{name_}' in DSL"
+    end
+  end
+  
+  
+  # This returns a current context ID. If fibers are available in the ruby
+  # implementation, this will be the current fiber's object_id. Otherwise,
+  # it is the current thread's object_id.
+  
+  begin
+    require 'fiber'
+    def self._current_context_id  # :nodoc:
+      ::Fiber.current.object_id
+    end
+  rescue ::LoadError
+    def self._current_context_id  # :nodoc:
+      ::Thread.current.object_id
+    end
   end
   
   

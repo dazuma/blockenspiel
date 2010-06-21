@@ -131,6 +131,36 @@ module Blockenspiel
       end
       
       
+      # Test basic usage with a string.
+      # 
+      # * Asserts that the specified target object receives the messages.
+      
+      def test_basic_string
+        string_ = <<-STR
+          set_value(:a, 1)
+          set_value_by_block(:b){ 2 }
+        STR
+        target_ = SimpleTarget.new
+        ::Blockenspiel.invoke(string_, target_)
+        assert(!self.respond_to?(:set_value))
+        assert_equal(1, target_.get_value(:a))
+        assert_equal(2, target_.get_value(:b))
+      end
+      
+      
+      # Test basic usage with a file.
+      # 
+      # * Asserts that the specified target object receives the messages.
+      
+      def test_basic_file
+        target_ = SimpleTarget.new
+        ::Blockenspiel.invoke(target_, :file => "#{File.dirname(__FILE__)}/files/file1.rb")
+        assert(!self.respond_to?(:set_value))
+        assert_equal(1, target_.get_value(:a))
+        assert_equal(2, target_.get_value(:b))
+      end
+      
+      
     end
     
   end
