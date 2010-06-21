@@ -45,7 +45,7 @@ require ::File.expand_path("#{::File.dirname(__FILE__)}/lib/blockenspiel/version
 
 
 # Configuration
-extra_rdoc_files_ = ['README.rdoc', 'Blockenspiel.rdoc', 'History.rdoc', 'ImplementingDSLblocks.rdoc']
+EXTRA_RDOC_FILES = ['README.rdoc', 'Blockenspiel.rdoc', 'History.rdoc', 'ImplementingDSLblocks.rdoc']
 
 
 # Environment configuration
@@ -83,7 +83,7 @@ end
 # RDoc task
 ::Rake::RDocTask.new do |task_|
   task_.main = 'README.rdoc'
-  task_.rdoc_files.include(*extra_rdoc_files_)
+  task_.rdoc_files.include(*EXTRA_RDOC_FILES)
   task_.rdoc_files.include('lib/blockenspiel/*.rb')
   task_.rdoc_dir = 'doc'
   task_.title = "Blockenspiel #{::Blockenspiel::VERSION_STRING} documentation"
@@ -108,7 +108,7 @@ task :package => [:build_java] do
       s_.rubyforge_project = 'virtuoso'
       s_.required_ruby_version = '>= 1.8.6'
       s_.files = ::FileList['ext/**/*.{c,rb,java}', 'lib/**/*.{rb,jar}', 'tests/**/*.rb', '*.rdoc', 'Rakefile'].to_a
-      s_.extra_rdoc_files = extra_rdoc_files_
+      s_.extra_rdoc_files = EXTRA_RDOC_FILES.dup
       s_.has_rdoc = true
       s_.test_files = FileList['tests/tc_*.rb']
       yield s_
@@ -145,11 +145,12 @@ makefile_name_ = "Makefile_#{platform_suffix_}"
 unmixer_general_name_ = "unmixer.#{dlext_}"
 unmixer_name_ = "unmixer_#{platform_suffix_}.#{dlext_}"
 
+desc 'Builds and installs a C extension appropriate to the current platform'
 task :build_c => :compile_c do
   cp "ext/blockenspiel/#{unmixer_name_}", "lib/blockenspiel/#{unmixer_general_name_}"
 end
 
-desc 'Builds the extension'
+desc 'Compiles the C extension'
 task :compile_c => ["ext/blockenspiel/#{unmixer_name_}"]
 
 file "ext/blockenspiel/#{makefile_name_}" => ['ext/blockenspiel/extconf.rb'] do
@@ -164,13 +165,14 @@ file "ext/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{makefile_name_}
     cp makefile_name_, 'Makefile'
     sh 'make'
     mv unmixer_general_name_, unmixer_name_
+    rm 'unmixer.o'
   end
 end
 
 
 # Build tasks for JRuby
 desc "Compiles the JRuby extension"
-task :compile_java do
+task :build_java do
   ::Dir.chdir('ext/blockenspiel') do
     sh 'javac -source 1.5 -target 1.5 -classpath $JRUBY_HOME/lib/jruby.jar BlockenspielUnmixerService.java'
     sh 'jar cf blockenspiel_unmixer.jar BlockenspielUnmixerService.class'
