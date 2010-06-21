@@ -55,8 +55,7 @@ For an extended analysis of different ways to implement DSL blocks, see
 
 === Requirements
 
-* Ruby 1.8.6 or later (1.8.7 recommended), Ruby 1.9.1 or later, or JRuby 1.2
-  or later (1.5 recommended).
+* Ruby 1.8.7, Ruby 1.9.1 or later, or JRuby 1.5 or later.
 
 === Installation
 
@@ -65,10 +64,14 @@ For an extended analysis of different ways to implement DSL blocks, see
 === Known issues and limitations
 
 * Implementing wildcard DSL methods using <tt>method_missing</tt> doesn't
-  work. I haven't yet figured out the right semantics for this case.
+  work. I haven't yet decided on the right semantics for this case, or
+  whether it is even a reasonable feature at all.
 * Including Blockenspiel::DSL in a module (rather than a class) is not yet
-  supported, but this is planned in a future release.
-* Rubinius support is not yet present.
+  supported, but this is planned for a future release.
+* Rubinius support is not yet present, but on the to-do list.
+* Installing on Windows may be a challenge because blockenspiel includes a
+  native extension. I'm considering evaluating Luis Lavena's rake-compiler
+  to simplify this process.
 
 === Development and support
 

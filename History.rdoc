@@ -3,7 +3,8 @@
 * Implemented string- and file-based DSLs (in addition to block-based).
 * Correctly handle separate active DSLs in different fibers within the
   same thread, when fibers are avaialble.
-* Organized the source a little better.
+* Updated ruby runtime dependencies to reflect what I'm actually testing.
+* Organized the source a little better, and fixed some Rakefile quirks.
 
 === 0.3.3 / 2010-05-24
 

@@ -32,9 +32,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
 
+require 'rubygems'
 require 'rake'
 require 'rake/clean'
-require 'rake/gempackagetask'
 require 'rake/testtask'
 require 'rake/rdoctask'
 require 'rdoc'
@@ -70,7 +70,7 @@ task :default => [:clean, :rdoc, :package, :test]
 
 
 # Clean task
-CLEAN.include(['ext/blockenspiel/Makefile*', "**/*.#{dlext_}", '**/*.o', '**/blockenspiel_unmixer.jar', 'ext/blockenspiel/BlockenspielUnmixerService.class', 'idslb_markdown.txt', 'doc', 'pkg'])
+CLEAN.include(['ext/blockenspiel/Makefile*', "**/*.#{dlext_}", 'ext/blockenspiel/unmixer.o', '**/blockenspiel_unmixer.jar', 'ext/blockenspiel/BlockenspielUnmixerService.class', 'idslb_markdown.txt', 'doc', 'pkg'])
 
 
 # Test task
@@ -93,7 +93,7 @@ end
 
 # Gem package task
 task :package => [:build_java] do
-  mkdir('pkg') unless ::File.directory?('pkg')
+  mkdir_p('pkg')
   
   # Common gemspec
   def create_gemspec
@@ -106,7 +106,7 @@ task :package => [:build_java] do
       s_.description = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks. It is designed to be comprehensive and robust, supporting most common usage patterns, and working correctly in the presence of nested blocks and multithreading.'
       s_.homepage = 'http://virtuoso.rubyforge.org/blockenspiel'
       s_.rubyforge_project = 'virtuoso'
-      s_.required_ruby_version = '>= 1.8.6'
+      s_.required_ruby_version = '>= 1.8.7'
       s_.files = ::FileList['ext/**/*.{c,rb,java}', 'lib/**/*.{rb,jar}', 'tests/**/*.rb', '*.rdoc', 'Rakefile'].to_a
       s_.extra_rdoc_files = EXTRA_RDOC_FILES.dup
       s_.has_rdoc = true
@@ -121,8 +121,7 @@ task :package => [:build_java] do
     s_.extensions = ['ext/blockenspiel/extconf.rb']
   end
   ::Gem::Builder.new(gemspec_).build
-  gem_filename_ = "blockenspiel-#{::Blockenspiel::VERSION_STRING}.gem"
-  mv gem_filename_, "pkg/#{gem_filename_}"
+  mv "blockenspiel-#{::Blockenspiel::VERSION_STRING}.gem", 'pkg'
   
   # JRuby gemspec
   gemspec_ = create_gemspec do |s_|
@@ -130,8 +129,7 @@ task :package => [:build_java] do
     s_.files += ['lib/blockenspiel_unmixer.jar']
   end
   ::Gem::Builder.new(gemspec_).build
-  gem_filename_ = "blockenspiel-#{::Blockenspiel::VERSION_STRING}-java.gem"
-  mv gem_filename_, "pkg/#{gem_filename_}"
+  mv "blockenspiel-#{::Blockenspiel::VERSION_STRING}-java.gem", 'pkg'
 end
 
 
@@ -145,39 +143,38 @@ makefile_name_ = "Makefile_#{platform_suffix_}"
 unmixer_general_name_ = "unmixer.#{dlext_}"
 unmixer_name_ = "unmixer_#{platform_suffix_}.#{dlext_}"
 
-desc 'Builds and installs a C extension appropriate to the current platform'
-task :build_c => :compile_c do
+desc 'Ensures the C extension appropriate to the current platform is present'
+task :build_c => ["ext/blockenspiel/#{unmixer_name_}"] do
   cp "ext/blockenspiel/#{unmixer_name_}", "lib/blockenspiel/#{unmixer_general_name_}"
 end
 
-desc 'Compiles the C extension'
-task :compile_c => ["ext/blockenspiel/#{unmixer_name_}"]
+file "ext/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{makefile_name_}"] do
+  ::Dir.chdir('ext/blockenspiel') do
+    cp makefile_name_, 'Makefile'
+    sh 'make'
+    rm 'unmixer.o'
+    mv unmixer_general_name_, unmixer_name_
+  end
+end
 
-file "ext/blockenspiel/#{makefile_name_}" => ['ext/blockenspiel/extconf.rb'] do
+file "ext/blockenspiel/#{makefile_name_}" do
   ::Dir.chdir('ext/blockenspiel') do
     ruby 'extconf.rb'
     mv 'Makefile', makefile_name_
   end  
 end
 
-file "ext/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{makefile_name_}", 'ext/blockenspiel/unmixer.c'] do
-  ::Dir.chdir('ext/blockenspiel') do
-    cp makefile_name_, 'Makefile'
-    sh 'make'
-    mv unmixer_general_name_, unmixer_name_
-    rm 'unmixer.o'
-  end
-end
-
 
 # Build tasks for JRuby
-desc "Compiles the JRuby extension"
-task :build_java do
+desc 'Builds the JRuby extension'
+task :build_java => ['lib/blockenspiel_unmixer.jar']
+
+file 'lib/blockenspiel_unmixer.jar' do
   ::Dir.chdir('ext/blockenspiel') do
     sh 'javac -source 1.5 -target 1.5 -classpath $JRUBY_HOME/lib/jruby.jar BlockenspielUnmixerService.java'
     sh 'jar cf blockenspiel_unmixer.jar BlockenspielUnmixerService.class'
-    cp 'blockenspiel_unmixer.jar', '../../lib/blockenspiel_unmixer.jar'
   end
+  mv 'ext/blockenspiel/blockenspiel_unmixer.jar', 'lib'
 end
 
 
@@ -191,28 +188,22 @@ end
 
 
 # Publish gem
-task :release_gem_to_gemcutter => [:package] do |t_|
+task :release_gem => [:package] do |t_|
   v_ = ::ENV["VERSION"]
   abort "Must supply VERSION=x.y.z" unless v_
   if v_ != ::Blockenspiel::VERSION_STRING
     abort "Versions don't match: #{v_} vs #{::Blockenspiel::VERSION_STRING}"
   end
-  mri_gem_ = "blockenspiel-#{v_}.gem"
-  jruby_gem_ = "blockenspiel-#{v_}-java.gem"
-  if !::File.file?("pkg/#{mri_gem_}") || !::File.readable?("pkg/#{mri_gem_}")
-    abort "You haven't built #{mri_gem_} yet. Try rake package"
+  puts "Releasing blockenspiel #{v_}"
+  ::Dir.chdir('pkg') do
+    sh "gem push blockenspiel-#{v_}.gem"
+    sh "gem push blockenspiel-#{v_}-java.gem"
   end
-  if !::File.file?("pkg/#{jruby_gem_}") || !::File.readable?("pkg/#{jruby_gem_}")
-    abort "You haven't built #{jruby_gem_} yet. Try jrake package"
-  end
-  puts "Releasing blockenspiel #{v_} to GemCutter"
-  `cd pkg && gem push #{mri_gem_}`
-  `cd pkg && gem push #{jruby_gem_}`
 end
 
 
 # Publish everything
-task :release => [:release_gem_to_gemcutter, :publish_rdoc_to_rubyforge]
+task :release => [:release_gem, :publish_rdoc_to_rubyforge]
 
 
 # Custom task that takes the implementing dsl blocks paper

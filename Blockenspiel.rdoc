@@ -186,6 +186,10 @@ or a parameterless block, based on whether or not the block actually takes a
 parameter. You can also disable one or the other, to force the use of either
 a parametered or parameterless block.
 
+You can also let the caller use your DSL by passing you a string or a file
+rather than a block. That is, you can create file-based DSLs such as the
+Rails routes file.
+
 You can control wich methods of the class are available from parameterless
 blocks, and/or make some methods available under different names. Here are
 a few examples:
@@ -303,8 +307,7 @@ multiple threads trying to mix methods into the same object concurrently.
 
 === Requirements
 
-* Ruby 1.8.6 or later (1.8.7 recommended), Ruby 1.9.1 or later, or JRuby 1.2
-  or later (1.5 recommended).
+* Ruby 1.8.7, Ruby 1.9.1 or later, or JRuby 1.5 or later.
 
 === Installation
 
@@ -313,9 +316,14 @@ multiple threads trying to mix methods into the same object concurrently.
 === Known issues and limitations
 
 * Implementing wildcard DSL methods using <tt>method_missing</tt> doesn't
-  work. I haven't yet figured out the right semantics for this case.
+  work. I haven't yet decided on the right semantics for this case, or
+  whether it is even a reasonable feature at all.
 * Including Blockenspiel::DSL in a module (rather than a class) is not yet
-  supported, but this is planned in a future release.
+  supported, but this is planned for a future release.
+* Rubinius support is not yet present, but on the to-do list.
+* Installing on Windows may be a challenge because blockenspiel includes a
+  native extension. I'm considering evaluating Luis Lavena's rake-compiler
+  to simplify this process.
 
 === Development and support
 
