@@ -74,7 +74,7 @@ CLEAN.include(['ext/blockenspiel/Makefile*', "**/*.#{dlext_}", '**/*.o', '**/blo
 
 
 # Test task
-task :test => :compile
+task :test => :build
 ::Rake::TestTask.new('test') do |task_|
   task_.pattern = 'tests/tc_*.rb'
 end
@@ -92,7 +92,7 @@ end
 
 
 # Gem package task
-task :package => [:compile_java] do
+task :package => [:build_java] do
   mkdir('pkg') unless ::File.directory?('pkg')
   
   # Common gemspec
@@ -122,7 +122,7 @@ task :package => [:compile_java] do
   end
   ::Gem::Builder.new(gemspec_).build
   gem_filename_ = "blockenspiel-#{::Blockenspiel::VERSION_STRING}.gem"
-  mv gem_filename_, "pkg/#{gem_filename_}")
+  mv gem_filename_, "pkg/#{gem_filename_}"
   
   # JRuby gemspec
   gemspec_ = create_gemspec do |s_|
@@ -131,21 +131,26 @@ task :package => [:compile_java] do
   end
   ::Gem::Builder.new(gemspec_).build
   gem_filename_ = "blockenspiel-#{::Blockenspiel::VERSION_STRING}-java.gem"
-  mv gem_filename_, "pkg/#{gem_filename_}")
+  mv gem_filename_, "pkg/#{gem_filename_}"
 end
 
 
 # General build task
-task :compile => ::RUBY_PLATFORM =~ /java/ ? [:compile_java] : [:compile_c]
+task :build => ::RUBY_PLATFORM =~ /java/ ? [:build_java] : [:build_c]
 
 
 # Build tasks for MRI
 
 makefile_name_ = "Makefile_#{platform_suffix_}"
+unmixer_general_name_ = "unmixer.#{dlext_}"
 unmixer_name_ = "unmixer_#{platform_suffix_}.#{dlext_}"
 
+task :build_c => :compile_c do
+  cp "ext/blockenspiel/#{unmixer_name_}", "lib/blockenspiel/#{unmixer_general_name_}"
+end
+
 desc 'Builds the extension'
-task :compile_c => ["lib/blockenspiel/#{unmixer_name_}"]
+task :compile_c => ["ext/blockenspiel/#{unmixer_name_}"]
 
 file "ext/blockenspiel/#{makefile_name_}" => ['ext/blockenspiel/extconf.rb'] do
   ::Dir.chdir('ext/blockenspiel') do
@@ -156,12 +161,10 @@ end
 
 file "ext/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{makefile_name_}", 'ext/blockenspiel/unmixer.c'] do
   ::Dir.chdir('ext/blockenspiel') do
-    sh "make -f #{makefile_name_}"
+    cp makefile_name_, 'Makefile'
+    sh 'make'
+    mv unmixer_general_name_, unmixer_name_
   end
-end
-
-file "lib/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{unmixer_name_}"] do
-  cp "ext/blockenspiel/#{unmixer_name_}", 'lib/blockenspiel'
 end
 
 

@@ -340,7 +340,7 @@ module Blockenspiel
       #   fibers.
       
       def test_nested_two_fibers
-        skip unless defined?(::Fiber)
+        return unless defined?(::Fiber)
         hash_ = {}
         target1_ = Target1.new(hash_)
         target2_ = Target2.new(hash_)

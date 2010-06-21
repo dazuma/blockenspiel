@@ -5,5 +5,5 @@
 *.jar
 *.bundle
 *.o
-/ext/blockenspiel/Makefile
+/ext/blockenspiel/Makefile*
 
