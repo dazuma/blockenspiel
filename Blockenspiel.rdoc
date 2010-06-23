@@ -313,7 +313,7 @@ multiple threads trying to mix methods into the same object concurrently.
 
  gem install blockenspiel
 
-=== Known issues and limitations
+=== Known issues and to-do items
 
 * Implementing wildcard DSL methods using <tt>method_missing</tt> doesn't
   work. I haven't yet decided on the right semantics for this case, or
@@ -344,10 +344,13 @@ Way Out Of Instance Eval?". The original link is gone, but you may find
 copies or mirrors out there.
 
 The unmixer code is based on {Mixology}[http://rubyforge.org/projects/mixology],
-version 0.1 by Patrick Farley, anonymous z, Dan Manges, and Clint Bishop.
-The code has been stripped down and modified to support MRI 1.9 and JRuby 1.2.
-I know Mixology 0.2 is available, but I'm keeping the unmixer bundled with
-Blockenspiel for now, to reduce dependencies.
+version by Patrick Farley, anonymous z, Dan Manges, and Clint Bishop.
+The MRI C extension and the JRuby code were adapted from Mixology 0.1, and
+have been stripped down and modified to support Ruby 1.9 and JRuby >= 1.2.
+The Rubinius code was adapted from unreleased code in the Mixology source
+tree and modified to support Rubinius 1.0. I know Mixology 0.2 is now
+available, but its Rubinius support is not active, and I'd rather keep the
+unmixer bundled with Blockenspiel for now to reduce dependencies.
 
 The dsl_attr_writer and dsl_attr_accessor feature came from a suggestion by
 Luis Lavena.
