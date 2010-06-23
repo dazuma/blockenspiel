@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------
 # 
-# Blockenspiel version
+# Blockenspiel unmixer for Rubinius
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2010 Daniel Azuma
+# Copyright 2010 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -36,9 +36,49 @@
 
 module Blockenspiel
   
-  # Current gem version, as a frozen string.
-  VERSION_STRING = '0.4.1'.freeze
   
-  autoload(:VERSION, ::File.dirname(__FILE__)+'/versionomy.rb')
+  # :stopdoc:
+  
+  module Unmixer
+    
+    
+    # Unmix a module from an object in Rubinius.
+    # 
+    # This implementation is based on unreleased code from the Mixology
+    # source, written by Dan Manges.
+    # See http://github.com/dan-manges/mixology
+    # 
+    # It has been stripped down and modified for compatibility with the
+    # Rubinius 1.0 release.
+    
+    def self.unmix(obj_, mod_)  # :nodoc:
+      last_super_ = obj_.metaclass
+      this_super_ = last_super_.direct_superclass
+      while this_super_
+        if (this_super_ == mod_ || this_super_.respond_to?(:module) && this_super_.module == mod_)
+          _reset_method_cache(obj_)
+          last_super_.superclass = this_super_.direct_superclass
+          _reset_method_cache(obj_)
+          return
+        else
+          last_super_ = this_super_
+          this_super_ = this_super_.direct_superclass
+        end
+      end
+      nil
+    end
+    
+    
+    def self._reset_method_cache(obj_)  # :nodoc:
+      obj_.methods.each do |name_|
+        ::Rubinius::VM.reset_method_cache(name_.to_sym)
+      end
+    end
+    
+    
+  end
+  
+  # :startdoc:
+  
   
 end

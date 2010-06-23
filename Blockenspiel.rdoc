@@ -307,7 +307,7 @@ multiple threads trying to mix methods into the same object concurrently.
 
 === Requirements
 
-* Ruby 1.8.7, Ruby 1.9.1 or later, or JRuby 1.5 or later.
+* Ruby 1.8.7, Ruby 1.9.1 or later, JRuby 1.5 or later, or Rubinius 1.0 or later.
 
 === Installation
 
@@ -320,7 +320,6 @@ multiple threads trying to mix methods into the same object concurrently.
   whether it is even a reasonable feature at all.
 * Including Blockenspiel::DSL in a module (rather than a class) is not yet
   supported, but this is planned for a future release.
-* Rubinius support is not yet present, but on the to-do list.
 * Installing on Windows may be a challenge because blockenspiel includes a
   native extension. I'm considering evaluating Luis Lavena's rake-compiler
   to simplify this process.

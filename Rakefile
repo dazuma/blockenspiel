@@ -31,6 +31,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
+;
+
 
 require 'rubygems'
 require 'rake'
@@ -45,35 +47,34 @@ require ::File.expand_path("#{::File.dirname(__FILE__)}/lib/blockenspiel/version
 
 
 # Configuration
+
 EXTRA_RDOC_FILES = ['README.rdoc', 'Blockenspiel.rdoc', 'History.rdoc', 'ImplementingDSLblocks.rdoc']
 
 
 # Environment configuration
+
 dlext_ = Config::CONFIG['DLEXT']
-if ::RUBY_PLATFORM =~ /java/
-  platform_suffix_ = 'java'
-elsif ::RUBY_COPYRIGHT =~ /Yukihiro\sMatsumoto/i
-  if ::RUBY_VERSION =~ /^1\.8(\..*)?$/
-    platform_suffix_ = 'mri18'
-  elsif ::RUBY_VERSION =~ /^1\.9(\..*)?$/
-    platform_suffix_ = 'mri19'
-  else
-    raise "Unknown version of Matz Ruby Interpreter (#{::RUBY_VERSION})"
+platform_ =
+  case ::RUBY_DESCRIPTION
+  when /^jruby\s/ then :jruby
+  when /^ruby\s/ then :mri
+  when /^rubinius\s/ then :rubinius
+  else :unknown
   end
-else
-  raise "Could not identify the ruby runtime"
-end
 
 
 # Default task
+
 task :default => [:clean, :rdoc, :package, :test]
 
 
 # Clean task
-CLEAN.include(['ext/blockenspiel/Makefile*', "**/*.#{dlext_}", 'ext/blockenspiel/unmixer.o', '**/blockenspiel_unmixer.jar', 'ext/blockenspiel/BlockenspielUnmixerService.class', 'idslb_markdown.txt', 'doc', 'pkg'])
+
+CLEAN.include(['ext/blockenspiel/Makefile*', "**/*.#{dlext_}", "**/*.rbc", 'ext/blockenspiel/*.o', '**/*.jar', 'ext/blockenspiel/*.class', 'idslb_markdown.txt', 'doc', 'pkg'])
 
 
 # Test task
+
 task :test => :build
 ::Rake::TestTask.new('test') do |task_|
   task_.pattern = 'tests/tc_*.rb'
@@ -81,10 +82,11 @@ end
 
 
 # RDoc task
+
 ::Rake::RDocTask.new do |task_|
   task_.main = 'README.rdoc'
   task_.rdoc_files.include(*EXTRA_RDOC_FILES)
-  task_.rdoc_files.include('lib/blockenspiel/*.rb')
+  task_.rdoc_files.include(['lib/blockenspiel.rb', 'lib/blockenspiel/*.rb'])
   task_.rdoc_dir = 'doc'
   task_.title = "Blockenspiel #{::Blockenspiel::VERSION_STRING} documentation"
   task_.options << '--format=darkfish'
@@ -92,7 +94,8 @@ end
 
 
 # Gem package task
-task :package => [:build_java] do
+
+task :package => [:build_jruby] do
   mkdir_p('pkg')
   
   # Common gemspec
@@ -126,7 +129,7 @@ task :package => [:build_java] do
   # JRuby gemspec
   gemspec_ = create_gemspec do |s_|
     s_.platform = 'java'
-    s_.files += ['lib/blockenspiel_unmixer.jar']
+    s_.files += ['lib/blockenspiel_unmixer_jruby.jar']
   end
   ::Gem::Builder.new(gemspec_).build
   mv "blockenspiel-#{::Blockenspiel::VERSION_STRING}-java.gem", 'pkg'
@@ -134,51 +137,78 @@ end
 
 
 # General build task
-task :build => ::RUBY_PLATFORM =~ /java/ ? [:build_java] : [:build_c]
 
-
-# Build tasks for MRI
-
-makefile_name_ = "Makefile_#{platform_suffix_}"
-unmixer_general_name_ = "unmixer.#{dlext_}"
-unmixer_name_ = "unmixer_#{platform_suffix_}.#{dlext_}"
-
-desc 'Ensures the C extension appropriate to the current platform is present'
-task :build_c => ["ext/blockenspiel/#{unmixer_name_}"] do
-  cp "ext/blockenspiel/#{unmixer_name_}", "lib/blockenspiel/#{unmixer_general_name_}"
+case platform_
+when :jruby
+  task :build => [:build_jruby]
+when :mri
+  task :build => [:build_mri]
+else
+  task :build
 end
 
-file "ext/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{makefile_name_}"] do
-  ::Dir.chdir('ext/blockenspiel') do
-    cp makefile_name_, 'Makefile'
-    sh 'make'
-    rm 'unmixer.o'
-    mv unmixer_general_name_, unmixer_name_
+
+# Build tasks for MRI.
+# These are available only if the current rake is running under MRI.
+# They build the C extension for the current MRI.
+
+if platform_ == :mri
+  
+  if ::RUBY_VERSION =~ /^1\.8\..*$/
+    mri_version_suffix_ = '18'
+  elsif ::RUBY_VERSION =~ /^1\.9\..*$/
+    mri_version_suffix_ = '19'
+  else
+    raise "Unknown version of Matz Ruby Interpreter (#{::RUBY_VERSION})"
   end
+  
+  makefile_name_ = "Makefile#{mri_version_suffix_}"
+  unmixer_general_name_ = "unmixer_mri.#{dlext_}"
+  unmixer_name_ = "unmixer_mri#{mri_version_suffix_}.#{dlext_}"
+  
+  desc 'Ensures the MRI C extension appropriate to the current platform is present'
+  task :build_mri => ["ext/blockenspiel/#{unmixer_name_}"] do
+    cp "ext/blockenspiel/#{unmixer_name_}", "lib/blockenspiel/#{unmixer_general_name_}"
+  end
+  
+  file "ext/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{makefile_name_}"] do
+    ::Dir.chdir('ext/blockenspiel') do
+      cp makefile_name_, 'Makefile'
+      sh 'make'
+      rm 'unmixer_mri.o'
+      mv unmixer_general_name_, unmixer_name_
+    end
+  end
+  
+  file "ext/blockenspiel/#{makefile_name_}" do
+    ::Dir.chdir('ext/blockenspiel') do
+      ruby 'extconf.rb'
+      mv 'Makefile', makefile_name_
+    end  
+  end
+  
 end
 
-file "ext/blockenspiel/#{makefile_name_}" do
-  ::Dir.chdir('ext/blockenspiel') do
-    ruby 'extconf.rb'
-    mv 'Makefile', makefile_name_
-  end  
-end
 
+# Build tasks for JRuby.
+# These are available under any ruby.
+# They assume that $JRUBY_HOME is set, and that the javac and jar
+# binaries are in the current path.
 
-# Build tasks for JRuby
 desc 'Builds the JRuby extension'
-task :build_java => ['lib/blockenspiel_unmixer.jar']
+task :build_jruby => ['lib/blockenspiel_unmixer_jruby.jar']
 
-file 'lib/blockenspiel_unmixer.jar' do
+file 'lib/blockenspiel_unmixer_jruby.jar' do
   ::Dir.chdir('ext/blockenspiel') do
-    sh 'javac -source 1.5 -target 1.5 -classpath $JRUBY_HOME/lib/jruby.jar BlockenspielUnmixerService.java'
-    sh 'jar cf blockenspiel_unmixer.jar BlockenspielUnmixerService.class'
+    sh 'javac -source 1.5 -target 1.5 -classpath $JRUBY_HOME/lib/jruby.jar BlockenspielUnmixerJrubyService.java'
+    sh 'jar cf blockenspiel_unmixer_jruby.jar BlockenspielUnmixerJrubyService.class'
   end
-  mv 'ext/blockenspiel/blockenspiel_unmixer.jar', 'lib'
+  mv 'ext/blockenspiel/blockenspiel_unmixer_jruby.jar', 'lib'
 end
 
 
 # Publish RDocs
+
 desc 'Publishes RDocs to RubyForge'
 task :publish_rdoc_to_rubyforge => [:rerdoc] do
   config_ = ::YAML.load(::File.read(::File.expand_path("~/.rubyforge/user-config.yml")))
@@ -188,6 +218,7 @@ end
 
 
 # Publish gem
+
 task :release_gem => [:package] do |t_|
   v_ = ::ENV["VERSION"]
   abort "Must supply VERSION=x.y.z" unless v_
@@ -203,11 +234,13 @@ end
 
 
 # Publish everything
+
 task :release => [:release_gem, :publish_rdoc_to_rubyforge]
 
 
 # Custom task that takes the implementing dsl blocks paper
 # and converts it from RDoc format to Markdown
+
 task :idslb_markdown do
   ::File.open('ImplementingDSLblocks.rdoc') do |read_|
     ::File.open('idslb_markdown.txt', 'w') do |write_|

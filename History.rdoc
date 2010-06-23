@@ -1,3 +1,12 @@
+=== 0.4.1 / 2010-06-23
+
+* Support for rubinius 1.0.
+* Slightly better support for platforms that don't have a supported unmix
+  implementation. The supported platforms are MRI 1.8 and 1.9, JRuby, and
+  Rubinius. On all others, (assuming they implement enough of Ruby),
+  Blockenspiel will install, but it will raise an exception if you try to
+  use the mixin behavior.
+
 === 0.4.0 / 2010-06-21
 
 * Implemented string- and file-based DSLs (in addition to block-based).

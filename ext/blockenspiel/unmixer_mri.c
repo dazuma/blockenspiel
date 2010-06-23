@@ -4,7 +4,7 @@
   Blockenspiel unmixer (MRI implementation)
   
   -----------------------------------------------------------------------------
-  Copyright 2008-2009 Daniel Azuma
+  Copyright 2008-2010 Daniel Azuma
   
   All rights reserved.
   
@@ -36,12 +36,14 @@
 
 
 /*
-  This implementation based on Mixology,
+  This implementation based on Mixology 0.1,
   written by Patrick Farley, anonymous z, Dan Manges, and Clint Bishop.
   http://rubyforge.org/projects/mixology
   http://github.com/dan-manges/mixology/tree/master
   
   It has been stripped down and modified for compatibility with Ruby 1.9.
+  
+  Note that this C extension is specific to MRI.
 */
 
 
@@ -54,7 +56,7 @@
 
 
 static void remove_nested_module(VALUE klass, VALUE module) {
-  if (RBASIC(RCLASS_SUPER(klass))->klass == RBASIC(RCLASS_SUPER(module))->klass) {
+  if (CLASS_OF(RCLASS_SUPER(klass)) == CLASS_OF(RCLASS_SUPER(module))) {
     if (RCLASS_SUPER(RCLASS_SUPER(module)) && BUILTIN_TYPE(RCLASS_SUPER(module)) == T_ICLASS) {
       remove_nested_module(RCLASS_SUPER(klass), RCLASS_SUPER(module));
     }
@@ -64,10 +66,10 @@ static void remove_nested_module(VALUE klass, VALUE module) {
 
 
 static VALUE do_unmix(VALUE self, VALUE receiver, VALUE module) {
-  VALUE klass = RBASIC(receiver)->klass;
+  VALUE klass = CLASS_OF(receiver);
   while (klass != rb_class_real(klass)) {
     VALUE super = RCLASS_SUPER(klass);
-    if (BUILTIN_TYPE(super) == T_ICLASS && RBASIC(super)->klass == module) {
+    if (BUILTIN_TYPE(super) == T_ICLASS && CLASS_OF(super) == module) {
       if (RCLASS_SUPER(module) && BUILTIN_TYPE(RCLASS_SUPER(module)) == T_ICLASS) {
         remove_nested_module(super, module);
       }
@@ -80,7 +82,7 @@ static VALUE do_unmix(VALUE self, VALUE receiver, VALUE module) {
 }
 
 
-void Init_unmixer() {
+void Init_unmixer_mri() {
   VALUE container = rb_singleton_class(rb_define_module_under(rb_define_module("Blockenspiel"), "Unmixer"));
   rb_define_method(container, "unmix", do_unmix, 2);
 }

@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------
 # 
-# Blockenspiel version
+# Blockenspiel unmixer module when unmixer is not implemented
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2010 Daniel Azuma
+# Copyright 2010 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -36,9 +36,23 @@
 
 module Blockenspiel
   
-  # Current gem version, as a frozen string.
-  VERSION_STRING = '0.4.1'.freeze
   
-  autoload(:VERSION, ::File.dirname(__FILE__)+'/versionomy.rb')
+  # :stopdoc:
+  
+  module Unmixer
+    
+    
+    # Unmixer stub.
+    # This throws an exception indicating the unmixer is not implemented.
+    
+    def self.unmix(obj_, mod_)  # :nodoc:
+      raise "Blockenspiel's mixin behavior is not implemented on this ruby platform."
+    end
+    
+    
+  end
+  
+  # :startdoc:
+  
   
 end

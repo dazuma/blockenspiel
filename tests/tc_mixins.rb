@@ -339,67 +339,70 @@ module Blockenspiel
       #   multiple mixins add the same method name, multiple times from different
       #   fibers.
       
-      def test_nested_two_fibers
-        return unless defined?(::Fiber)
-        hash_ = {}
-        target1_ = Target1.new(hash_)
-        target2_ = Target2.new(hash_)
-        assert(!self.respond_to?(:set_value))
-        assert(!self.respond_to?(:set_value2))
-        assert(!self.respond_to?(:set_value2_inmixin))
-        f1_ = ::Fiber.new do
-          ::Blockenspiel.invoke(::Proc.new do
-            ::Fiber.yield
-            set_value('a', 1)
-            set_value2('b'){ 2 }
+      if defined?(::Fiber)
+        
+        def test_nested_two_fibers
+          hash_ = {}
+          target1_ = Target1.new(hash_)
+          target2_ = Target2.new(hash_)
+          assert(!self.respond_to?(:set_value))
+          assert(!self.respond_to?(:set_value2))
+          assert(!self.respond_to?(:set_value2_inmixin))
+          f1_ = ::Fiber.new do
             ::Blockenspiel.invoke(::Proc.new do
               ::Fiber.yield
-              set_value('c', 3)
-              set_value2_inmixin('d'){ 4 }
-            end, target2_)
-            ::Fiber.yield
-            set_value('e', 5)
-            set_value2('f'){ 6 }
-          end, target1_)
-        end
-        f2_ = ::Fiber.new do
-          ::Blockenspiel.invoke(::Proc.new do
-            ::Fiber.yield
-            set_value('A', 11)
-            set_value2_inmixin('B'){ 12 }
-            ::Blockenspiel.invoke(::Proc.new do
+              set_value('a', 1)
+              set_value2('b'){ 2 }
+              ::Blockenspiel.invoke(::Proc.new do
+                ::Fiber.yield
+                set_value('c', 3)
+                set_value2_inmixin('d'){ 4 }
+              end, target2_)
               ::Fiber.yield
-              set_value('C', 13)
-              set_value2('D'){ 14 }
+              set_value('e', 5)
+              set_value2('f'){ 6 }
             end, target1_)
-            ::Fiber.yield
-            set_value('E', 15)
-            set_value2_inmixin('F'){ 16 }
-          end, target2_)
+          end
+          f2_ = ::Fiber.new do
+            ::Blockenspiel.invoke(::Proc.new do
+              ::Fiber.yield
+              set_value('A', 11)
+              set_value2_inmixin('B'){ 12 }
+              ::Blockenspiel.invoke(::Proc.new do
+                ::Fiber.yield
+                set_value('C', 13)
+                set_value2('D'){ 14 }
+              end, target1_)
+              ::Fiber.yield
+              set_value('E', 15)
+              set_value2_inmixin('F'){ 16 }
+            end, target2_)
+          end
+          f1_.resume
+          f2_.resume
+          f1_.resume
+          f2_.resume
+          f1_.resume
+          f2_.resume
+          f1_.resume
+          f2_.resume
+          assert(!self.respond_to?(:set_value))
+          assert(!self.respond_to?(:set_value2))
+          assert(!self.respond_to?(:set_value2_inmixin))
+          assert_equal(1, hash_['a1'])
+          assert_equal(2, hash_['b1'])
+          assert_equal(3, hash_['c2'])
+          assert_equal(4, hash_['d2'])
+          assert_equal(5, hash_['e1'])
+          assert_equal(6, hash_['f1'])
+          assert_equal(11, hash_['A2'])
+          assert_equal(12, hash_['B2'])
+          assert_equal(13, hash_['C1'])
+          assert_equal(14, hash_['D1'])
+          assert_equal(15, hash_['E2'])
+          assert_equal(16, hash_['F2'])
         end
-        f1_.resume
-        f2_.resume
-        f1_.resume
-        f2_.resume
-        f1_.resume
-        f2_.resume
-        f1_.resume
-        f2_.resume
-        assert(!self.respond_to?(:set_value))
-        assert(!self.respond_to?(:set_value2))
-        assert(!self.respond_to?(:set_value2_inmixin))
-        assert_equal(1, hash_['a1'])
-        assert_equal(2, hash_['b1'])
-        assert_equal(3, hash_['c2'])
-        assert_equal(4, hash_['d2'])
-        assert_equal(5, hash_['e1'])
-        assert_equal(6, hash_['f1'])
-        assert_equal(11, hash_['A2'])
-        assert_equal(12, hash_['B2'])
-        assert_equal(13, hash_['C1'])
-        assert_equal(14, hash_['D1'])
-        assert_equal(15, hash_['E2'])
-        assert_equal(16, hash_['F2'])
+        
       end
       
       

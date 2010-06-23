@@ -36,10 +36,10 @@
 
 
 /*
-  This implementation based on Mixology,
+  This implementation based on Mixology 0.1,
   written by Patrick Farley, anonymous z, Dan Manges, and Clint Bishop.
   http://rubyforge.org/projects/mixology
-  http://github.com/dan-manges/mixology/tree/master
+  http://github.com/dan-manges/mixology
   
   It has been stripped down and modified for JRuby 1.2 compatibility.
 */
@@ -63,14 +63,14 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.load.BasicLibraryService;
 
 
-public class BlockenspielUnmixerService implements BasicLibraryService
+public class BlockenspielUnmixerJrubyService implements BasicLibraryService
 {
     
     public boolean basicLoad(final Ruby runtime) throws IOException
     {
         RubyModule blockenspielModule = runtime.getOrCreateModule("Blockenspiel");
         RubyModule unmixerModule = runtime.defineModuleUnder("Unmixer", blockenspielModule);
-        unmixerModule.getSingletonClass().defineAnnotatedMethods(BlockenspielUnmixerService.class);
+        unmixerModule.getSingletonClass().defineAnnotatedMethods(BlockenspielUnmixerJrubyService.class);
         return true;
     }
     

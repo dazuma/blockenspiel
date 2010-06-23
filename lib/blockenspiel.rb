@@ -53,9 +53,14 @@ includes_ = [
 
 
 dir_ = ::File.expand_path('blockenspiel', ::File.dirname(__FILE__))
-if ::RUBY_PLATFORM =~ /java/
-  require "blockenspiel_unmixer"
+case ::RUBY_DESCRIPTION
+when /^ruby\s/
+  includes_.unshift('unmixer_mri')
+when /^jruby\s/
+  require "blockenspiel_unmixer_jruby"
+when /^rubinius\s/
+  includes_.unshift('unmixer_rubinius')
 else
-  includes_.unshift('unmixer')
+  includes_.unshift('unmixer_unimplemented')
 end
 includes_.each{ |file_| require "#{dir_}/#{file_}" }
