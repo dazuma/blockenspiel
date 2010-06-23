@@ -55,6 +55,9 @@
 #endif
 
 
+#ifndef RUBINIUS
+
+
 static void remove_nested_module(VALUE klass, VALUE module) {
   if (CLASS_OF(RCLASS_SUPER(klass)) == CLASS_OF(RCLASS_SUPER(module))) {
     if (RCLASS_SUPER(RCLASS_SUPER(module)) && BUILTIN_TYPE(RCLASS_SUPER(module)) == T_ICLASS) {
@@ -82,7 +85,14 @@ static VALUE do_unmix(VALUE self, VALUE receiver, VALUE module) {
 }
 
 
+#endif
+
+
 void Init_unmixer_mri() {
+#ifndef RUBINIUS
+  
   VALUE container = rb_singleton_class(rb_define_module_under(rb_define_module("Blockenspiel"), "Unmixer"));
   rb_define_method(container, "unmix", do_unmix, 2);
+  
+#endif
 }

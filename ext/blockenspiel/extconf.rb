@@ -34,9 +34,5 @@
 ;
 
 
-# This should run only on MRI.
-
-if ::RUBY_DESCRIPTION =~ /^ruby\s/
-  require 'mkmf'
-  create_makefile 'blockenspiel/unmixer_mri'
-end
+require 'mkmf'
+create_makefile 'blockenspiel/unmixer_mri'
