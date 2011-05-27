@@ -52,7 +52,7 @@ module Blockenspiel
     # Rubinius 1.0 release.
     
     def self.unmix(obj_, mod_)  # :nodoc:
-      last_super_ = obj_.metaclass
+      last_super_ = obj_.singleton_class
       this_super_ = last_super_.direct_superclass
       while this_super_
         if (this_super_ == mod_ || this_super_.respond_to?(:module) && this_super_.module == mod_)
