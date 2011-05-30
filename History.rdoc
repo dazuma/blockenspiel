@@ -1,7 +1,10 @@
 === 0.4.2 / 2011-05-31
 
 * Fixed an unmixer compatibility issue with Rubinius > 1.2.x. (Thanks to @meh for the fix.)
-* Recent versions of Rubinius raised exceptions involving fiber. Fixed.
+* Recent versions of Rubinius raised exceptions involving Fiber. Fixed.
+* Integrated JRuby platform gem back into main gem.
+* A .gemspec file is now available for gem building and bundler git integration.
+* Some cleanup of the Rakefile and tests.
 
 === 0.4.1 / 2010-06-23
 

@@ -34,5 +34,13 @@
 ;
 
 
-require 'mkmf'
-create_makefile 'blockenspiel/unmixer_mri'
+if ::RUBY_DESCRIPTION =~ /^jruby\s/
+  
+  ::File.open('Makefile', 'w'){ |f_| f_.write(".PHONY: install\ninstall:\n") }
+  
+else
+  
+  require 'mkmf'
+  create_makefile 'blockenspiel/unmixer_mri'
+  
+end

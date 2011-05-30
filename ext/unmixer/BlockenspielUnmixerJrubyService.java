@@ -41,7 +41,7 @@
   http://rubyforge.org/projects/mixology
   http://github.com/dan-manges/mixology
   
-  It has been stripped down and modified for JRuby 1.2 compatibility.
+  It has been stripped down and modified for JRuby 1.2+ compatibility.
 */
 
 import java.io.IOException;
@@ -50,7 +50,7 @@ import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
- 
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -121,7 +121,7 @@ public class BlockenspielUnmixerJrubyService implements BasicLibraryService
         throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
         Method method = RubyModule.class.getDeclaredMethod("setSuperClass",
-                                                           new Class[] {RubyClass.class} );
+            new Class[] {RubyClass.class} );
         method.setAccessible(true);
         Object[] superClassArg = new Object[] { superClass };
         method.invoke(klass, superClassArg);
@@ -137,4 +137,3 @@ public class BlockenspielUnmixerJrubyService implements BasicLibraryService
     }
     
 }
- 

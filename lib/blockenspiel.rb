@@ -43,24 +43,19 @@ module Blockenspiel
 end
 
 
-includes_ = [
- 'errors',
- 'dsl_setup',
- 'builder',
- 'impl',
- 'version',
-]
-
-
-dir_ = ::File.expand_path('blockenspiel', ::File.dirname(__FILE__))
 case ::RUBY_DESCRIPTION
 when /^ruby\s/
-  includes_.unshift('unmixer_mri')
+  require 'blockenspiel/unmixer_mri'
 when /^jruby\s/
-  require "blockenspiel_unmixer_jruby"
+  require 'blockenspiel_unmixer_jruby'
 when /^rubinius\s/
-  includes_.unshift('unmixer_rubinius')
+  require 'blockenspiel/unmixer_rubinius'
 else
-  includes_.unshift('unmixer_unimplemented')
+  require 'blockenspiel/unmixer_unimplemented'
 end
-includes_.each{ |file_| require "#{dir_}/#{file_}" }
+
+require 'blockenspiel/errors'
+require 'blockenspiel/dsl_setup'
+require 'blockenspiel/builder'
+require 'blockenspiel/impl'
+require 'blockenspiel/version'

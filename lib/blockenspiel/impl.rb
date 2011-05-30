@@ -121,34 +121,34 @@ module Blockenspiel
   # Following are the options understood by Blockenspiel when providing
   # code using a block:
   # 
-  # <tt>:parameterless</tt>::
+  # [<tt>:parameterless</tt>]
   #   If set to false, disables parameterless blocks and always attempts to
   #   pass a parameter to the block. Otherwise, you may set it to one of
   #   three behaviors for parameterless blocks: <tt>:mixin</tt> (the
   #   default), <tt>:instance</tt>, and <tt>:proxy</tt>. See below for
   #   detailed descriptions of these behaviors. This option key is also
   #   available as <tt>:behavior</tt>.
-  # <tt>:parameter</tt>::
+  # [<tt>:parameter</tt>]
   #   If set to false, disables blocks with parameters, and always attempts
   #   to use parameterless blocks. Default is true, enabling parameter mode.
   # 
   # The following values control the precise behavior of parameterless
   # blocks. These are values for the <tt>:parameterless</tt> option.
   # 
-  # <tt>:mixin</tt>::
+  # [<tt>:mixin</tt>]
   #   This is the default behavior. DSL methods from the target are
   #   temporarily overlayed on the caller's +self+ object, but +self+ still
   #   points to the same object, so the helper methods and instance
   #   variables from the caller's closure remain available. The DSL methods
   #   are removed when the block completes.
-  # <tt>:instance</tt>::
+  # [<tt>:instance</tt>]
   #   This behavior actually changes +self+ to the target object using
   #   <tt>instance_eval</tt>. Thus, the caller loses access to its own
   #   helper methods and instance variables, and instead gains access to the
   #   target object's instance variables. The target object's methods are
   #   not modified: this behavior does not apply any DSL method changes
   #   specified using <tt>dsl_method</tt> directives.
-  # <tt>:proxy</tt>::
+  # [<tt>:proxy</tt>]
   #   This behavior changes +self+ to a proxy object created by applying the
   #   DSL methods to an empty object, whose <tt>method_missing</tt> points
   #   back at the block's context. This behavior is a compromise between
@@ -169,19 +169,19 @@ module Blockenspiel
   # <tt>:parameter</tt>, are meaningless and ignored. However, the
   # following new options are recognized:
   # 
-  # <tt>:file</tt>::
+  # [<tt>:file</tt>]
   #   The value of this option should be a string indicating the path to
   #   the file from which the user's DSL code is coming. It is passed
   #   as the "file" parameter to eval; that is, it is included in the stack
   #   trace should an exception be thrown out of the DSL. If no code string
   #   is provided directly, this option is required and must be set to the
   #   path of the file from which to load the code.
-  # <tt>:line</tt>::
+  # [<tt>:line</tt>]
   #   This option is passed as the "line" parameter to eval; that is, it
   #   indicates the starting line number for the code string, and is used
   #   to compute line numbers for the stack trace should an exception be
   #   thrown out of the DSL. This option is optional and defaults to 1.
-  # <tt>:behavior</tt>::
+  # [<tt>:behavior</tt>]
   #   Controls how the DSL is called. Recognized values are <tt>:proxy</tt>
   #   (the default) and <tt>:instance</tt>. See below for detailed
   #   descriptions of these behaviors. Note that <tt>:mixin</tt> is not
@@ -190,14 +190,14 @@ module Blockenspiel
   # 
   # The following values are recognized for the <tt>:behavior</tt> option:
   # 
-  # <tt>:proxy</tt>::
+  # [<tt>:proxy</tt>]
   #   This behavior changes +self+ to a proxy object created by applying the
   #   DSL methods to an empty object. Thus, the code in the DSL string does
   #   not have access to the target object's internal instance variables or
   #   private methods. Furthermore, the transformations specified by
   #   <tt>dsl_method</tt> directives are honored. This is the default
   #   behavior.
-  # <tt>:instance</tt>::
+  # [<tt>:instance</tt>]
   #   This behavior actually changes +self+ to the target object using
   #   <tt>instance_eval</tt>. Thus, the code in the DSL string gains access
   #   to the target object's instance variables and private methods. Also,
