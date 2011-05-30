@@ -1,3 +1,8 @@
+=== 0.4.2 / 2011-05-31
+
+* Fixed an unmixer compatibility issue with Rubinius > 1.2.x. (Thanks to @meh for the fix.)
+* Recent versions of Rubinius raised exceptions involving fiber. Fixed.
+
 === 0.4.1 / 2010-06-23
 
 * Support for rubinius 1.0.

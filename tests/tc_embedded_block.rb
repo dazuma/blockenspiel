@@ -1,9 +1,11 @@
 # -----------------------------------------------------------------------------
 # 
-# Blockenspiel version
+# Blockenspiel behavior tests
+# 
+# This file contains tests for behavior settings.
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2010 Daniel Azuma
+# Copyright 2008-2009 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -34,11 +36,58 @@
 ;
 
 
+require 'test/unit'
+require 'blockenspiel'
+
+
 module Blockenspiel
-  
-  # Current gem version, as a frozen string.
-  VERSION_STRING = '0.4.2'.freeze
-  
-  autoload(:VERSION, ::File.dirname(__FILE__)+'/versionomy.rb')
-  
+  module Tests  # :nodoc:
+    
+    class TestEmbeddedBlock < ::Test::Unit::TestCase  # :nodoc:
+      
+      
+      class Target1 < ::Blockenspiel::Base
+        
+        def initialize(value_)
+          @value = value_
+          @block = nil
+        end
+        
+        def set_block(&block_)
+          @block = block_
+        end
+        
+        def value
+          @value
+        end
+        
+        dsl_methods false
+        
+        def call_block
+          @block.call
+        end
+        
+      end
+      
+      
+      BLOCK = ::Proc.new do
+        set_block do
+          self.value
+        end
+      end
+      
+      
+      # Test an embedded block with a proxy.
+      
+      def test_proxy_embedded_block
+        return  # TEMP
+        target_ = Target1.new(23)
+        ::Blockenspiel.invoke(BLOCK, target_, :parameterless => :proxy)
+        assert_equal(23, target_.call_block)
+      end
+      
+      
+    end
+    
+  end
 end

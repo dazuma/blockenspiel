@@ -528,6 +528,7 @@ module Blockenspiel
   
   begin
     require 'fiber'
+    raise ::LoadError unless defined?(::Fiber)
     def self._current_context_id  # :nodoc:
       ::Fiber.current.object_id
     end

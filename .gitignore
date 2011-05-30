@@ -6,5 +6,4 @@
 *.bundle
 *.o
 *.rbc
-/ext/blockenspiel/Makefile*
-
+Makefile*

@@ -70,14 +70,19 @@ task :default => [:clean, :rdoc, :package, :test]
 
 # Clean task
 
-CLEAN.include(['ext/blockenspiel/Makefile*', "**/*.#{dlext_}", "**/*.rbc", 'ext/blockenspiel/*.o', '**/*.jar', 'ext/blockenspiel/*.class', 'idslb_markdown.txt', 'doc', 'pkg'])
+CLEAN.include(['ext/**/Makefile*', 'ext/**/*.o', 'ext/**/*.class', "**/*.#{dlext_}", '**/*.jar', "**/*.rbc", 'idslb_markdown.txt', 'doc', 'pkg'])
 
 
 # Test task
 
 task :test => :build
 ::Rake::TestTask.new('test') do |task_|
-  task_.pattern = 'tests/tc_*.rb'
+  if ENV['TESTCASE']
+    task_.pattern = "tests/tc_#{ENV['TESTCASE']}.rb"
+  else
+    task_.pattern = 'tests/tc_*.rb'
+  end
+  task_.libs = [::File.expand_path('lib', ::File.dirname(__FILE__))]
 end
 
 
@@ -86,7 +91,7 @@ end
 ::Rake::RDocTask.new do |task_|
   task_.main = 'README.rdoc'
   task_.rdoc_files.include(*EXTRA_RDOC_FILES)
-  task_.rdoc_files.include(['lib/blockenspiel.rb', 'lib/blockenspiel/*.rb'])
+  task_.rdoc_files.include(['lib/**/*.rb'])
   task_.rdoc_dir = 'doc'
   task_.title = "Blockenspiel #{::Blockenspiel::VERSION_STRING} documentation"
   task_.options << '--format=darkfish'
@@ -121,7 +126,7 @@ task :package => [:build_jruby] do
   # Normal platform gemspec
   gemspec_ = create_gemspec do |s_|
     s_.platform = ::Gem::Platform::RUBY
-    s_.extensions = ['ext/blockenspiel/extconf.rb']
+    s_.extensions = ['ext/unmixer/extconf.rb']
   end
   ::Gem::Builder.new(gemspec_).build
   mv "blockenspiel-#{::Blockenspiel::VERSION_STRING}.gem", 'pkg'
@@ -167,12 +172,12 @@ if platform_ == :mri
   unmixer_name_ = "unmixer_mri#{mri_version_suffix_}.#{dlext_}"
   
   desc 'Ensures the MRI C extension appropriate to the current platform is present'
-  task :build_mri => ["ext/blockenspiel/#{unmixer_name_}"] do
-    cp "ext/blockenspiel/#{unmixer_name_}", "lib/blockenspiel/#{unmixer_general_name_}"
+  task :build_mri => ["ext/unmixer/#{unmixer_name_}"] do
+    cp "ext/unmixer/#{unmixer_name_}", "lib/blockenspiel/#{unmixer_general_name_}"
   end
   
-  file "ext/blockenspiel/#{unmixer_name_}" => ["ext/blockenspiel/#{makefile_name_}"] do
-    ::Dir.chdir('ext/blockenspiel') do
+  file "ext/unmixer/#{unmixer_name_}" => ["ext/unmixer/#{makefile_name_}", "ext/unmixer/unmixer_mri.c"] do
+    ::Dir.chdir('ext/unmixer') do
       cp makefile_name_, 'Makefile'
       sh 'make'
       rm 'unmixer_mri.o'
@@ -180,8 +185,8 @@ if platform_ == :mri
     end
   end
   
-  file "ext/blockenspiel/#{makefile_name_}" do
-    ::Dir.chdir('ext/blockenspiel') do
+  file "ext/unmixer/#{makefile_name_}" do
+    ::Dir.chdir('ext/unmixer') do
       ruby 'extconf.rb'
       mv 'Makefile', makefile_name_
     end  
@@ -199,11 +204,11 @@ desc 'Builds the JRuby extension'
 task :build_jruby => ['lib/blockenspiel_unmixer_jruby.jar']
 
 file 'lib/blockenspiel_unmixer_jruby.jar' do
-  ::Dir.chdir('ext/blockenspiel') do
+  ::Dir.chdir('ext/unmixer') do
     sh 'javac -source 1.5 -target 1.5 -classpath $JRUBY_HOME/lib/jruby.jar BlockenspielUnmixerJrubyService.java'
     sh 'jar cf blockenspiel_unmixer_jruby.jar BlockenspielUnmixerJrubyService.class'
   end
-  mv 'ext/blockenspiel/blockenspiel_unmixer_jruby.jar', 'lib'
+  mv 'ext/unmixer/blockenspiel_unmixer_jruby.jar', 'lib'
 end
 
 

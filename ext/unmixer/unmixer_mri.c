@@ -47,7 +47,7 @@
 */
 
 
-#include "ruby.h"
+#include <ruby.h>
 
 
 #ifndef RCLASS_SUPER
