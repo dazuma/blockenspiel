@@ -530,7 +530,12 @@ module Blockenspiel
     require 'fiber'
     raise ::LoadError unless defined?(::Fiber)
     def self._current_context_id  # :nodoc:
-      ::Fiber.current.object_id
+      begin
+        ::Fiber.current.object_id
+      rescue ::Exception
+        # JRuby hack (see JRUBY-5842)
+        ::Thread.current.object_id
+      end
     end
   rescue ::LoadError
     def self._current_context_id  # :nodoc:

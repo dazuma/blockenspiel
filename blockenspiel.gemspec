@@ -16,4 +16,5 @@
   s_.extra_rdoc_files = ::Dir.glob("*.rdoc")
   s_.test_files = ::Dir.glob("test/**/tc_*.rb")
   s_.platform = ::Gem::Platform::RUBY
+  s_.extensions = ::Dir.glob("ext/*/extconf.rb")
 end

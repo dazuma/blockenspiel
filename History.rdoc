@@ -1,7 +1,8 @@
-=== 0.4.2 / 2011-05-31
+=== 0.4.2 / 2011-06-02
 
 * Fixed an unmixer compatibility issue with Rubinius > 1.2.x. (Thanks to @meh for the fix.)
 * Recent versions of Rubinius raised exceptions involving Fiber. Fixed.
+* Workaround for a JRuby NullPointerException (JRUBY-5842).
 * Integrated JRuby platform gem back into main gem.
 * A .gemspec file is now available for gem building and bundler git integration.
 * Some cleanup of the Rakefile and tests.
