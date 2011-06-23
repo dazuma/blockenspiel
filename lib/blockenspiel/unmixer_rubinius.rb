@@ -3,7 +3,7 @@
 # Blockenspiel unmixer for Rubinius
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2010 Daniel Azuma
+# Copyright 2011 Daniel Azuma
 # 
 # All rights reserved.
 # 

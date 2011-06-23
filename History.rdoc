@@ -1,3 +1,9 @@
+=== 0.4.3 / 2011-06-22
+
+* MRI C extension experienced a compile error under the current MRI head (e.g. 1.9.3). Fixed.
+* Rake-based build of the MRI C extension failed under newer rakes. Fixed.
+* Eliminated some Rakefile deprecation warnings under newer rakes.
+
 === 0.4.2 / 2011-06-02
 
 * Fixed an unmixer compatibility issue with Rubinius > 1.2.x. (Thanks to @meh for the fix.)

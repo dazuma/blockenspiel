@@ -5,7 +5,7 @@
 # This file contains tests for dynamic DSL generation.
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2009 Daniel Azuma
+# Copyright 2008-2011 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -94,15 +94,11 @@ module Blockenspiel
       
       
       # Test calls with blocks passed the usual way.
-      # This works in MRI 1.8.7 or later. However, it does NOT currently
-      # work with JRuby 1.4 because of JRUBY-4180. So we disable this test
-      # for all versions of JRuby (for now) and for MRI < 1.8.7.
+      # Note: this will fail in MRI < 1.8.7 and JRuby < 1.5.
       # 
       # * Asserts that a block passed the usual way works
       # * Asserts that we can detect when a block has not been passed
       
-if ::RUBY_PLATFORM != 'java' && ::RUBY_VERSION >= '1.8.7'
-  module_eval <<-END
       def test_blocks_normal
         hash_ = ::Hash.new
         block_ = ::Proc.new do
@@ -122,8 +118,6 @@ if ::RUBY_PLATFORM != 'java' && ::RUBY_VERSION >= '1.8.7'
         assert_equal(true, hash_[:b])
         assert_equal(false, hash_[:c])
       end
-  END
-end
       
       
       # Test calls with blocks passed as non-block parameters.

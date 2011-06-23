@@ -3,7 +3,7 @@
 # Blockenspiel entry point
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2010 Daniel Azuma
+# Copyright 2008-2011 Daniel Azuma
 # 
 # All rights reserved.
 # 

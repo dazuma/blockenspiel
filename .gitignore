@@ -6,4 +6,6 @@
 *.bundle
 *.o
 *.rbc
+*.dSYM
 Makefile*
+/ext/*/mkmf.log

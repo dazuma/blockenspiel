@@ -3,7 +3,7 @@
 # Blockenspiel native library builder
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2010 Daniel Azuma
+# Copyright 2010-2011 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -41,6 +41,7 @@ if ::RUBY_DESCRIPTION =~ /^jruby\s/
 else
   
   require 'mkmf'
+  have_header('ruby/backward/classext.h')
   create_makefile 'blockenspiel/unmixer_mri'
   
 end

@@ -3,7 +3,7 @@
 # Blockenspiel Rakefile
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2010 Daniel Azuma
+# Copyright 2008-2011 Daniel Azuma
 # 
 # All rights reserved.
 # 
@@ -36,12 +36,12 @@
 
 task :build_other => ['lib/blockenspiel_unmixer_jruby.jar']
 file 'lib/blockenspiel_unmixer_jruby.jar' do
-  ::Dir.chdir('ext/unmixer') do
+  ::Dir.chdir('java') do
     sh 'javac -source 1.5 -target 1.5 -classpath $JRUBY_HOME/lib/jruby.jar BlockenspielUnmixerJrubyService.java'
     sh 'jar cf blockenspiel_unmixer_jruby.jar BlockenspielUnmixerJrubyService.class'
     rm 'BlockenspielUnmixerJrubyService.class'
   end
-  mv 'ext/unmixer/blockenspiel_unmixer_jruby.jar', 'lib'
+  mv 'java/blockenspiel_unmixer_jruby.jar', 'lib'
 end
 
 
@@ -93,7 +93,7 @@ release_gemspec_.version = gemspec_.version.to_s.sub(/\.build\d+$/, '')
 
 # Platform info
 
-dlext_ = ::Config::CONFIG['DLEXT']
+dlext_ = ::RbConfig::CONFIG['DLEXT']
 
 platform_ =
   case ::RUBY_DESCRIPTION

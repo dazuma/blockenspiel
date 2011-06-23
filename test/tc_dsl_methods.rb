@@ -5,7 +5,7 @@
 # This file contains tests for the dsl method directives.
 # 
 # -----------------------------------------------------------------------------
-# Copyright 2008-2009 Daniel Azuma
+# Copyright 2008-2011 Daniel Azuma
 # 
 # All rights reserved.
 # 

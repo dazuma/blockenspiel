@@ -4,7 +4,7 @@
   Blockenspiel unmixer (MRI implementation)
   
   -----------------------------------------------------------------------------
-  Copyright 2008-2010 Daniel Azuma
+  Copyright 2008-2011 Daniel Azuma
   
   All rights reserved.
   
@@ -49,7 +49,12 @@
 
 #include <ruby.h>
 
+/* Support for ruby >= 1.9.3 that deprecates RCLASS_SUPER */
+#ifdef HAVE_RUBY_BACKWARD_CLASSEXT_H
+#include <ruby/backward/classext.h>
+#endif
 
+/* Support for pre-1.9 rubies that don't provide RCLASS_SUPER */
 #ifndef RCLASS_SUPER
 #define RCLASS_SUPER(c) (RCLASS(c)->super)
 #endif
