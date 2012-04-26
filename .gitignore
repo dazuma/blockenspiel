@@ -9,3 +9,4 @@
 *.dSYM
 Makefile*
 /ext/*/mkmf.log
+Gemfile.lock

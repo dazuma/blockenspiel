@@ -87,7 +87,7 @@ module Blockenspiel
         end
         target_ = WriterTarget.new
         ::Blockenspiel.invoke(block_, target_)
-        assert_nil(target_.instance_variable_get(:@attr1))
+        assert_equal(false, target_.instance_variable_defined?(:@attr1))
         assert_equal(2, target_.instance_variable_get(:@attr2))
       end
       
@@ -123,7 +123,7 @@ module Blockenspiel
         end
         target_ = AccessorTarget.new
         ::Blockenspiel.invoke(block_, target_)
-        assert_nil(target_.instance_variable_get(:@attr1))
+        assert_equal(false, target_.instance_variable_defined?(:@attr1))
         assert_equal(2, target_.instance_variable_get(:@attr2))
       end
       
