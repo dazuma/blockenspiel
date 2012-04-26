@@ -1,17 +1,17 @@
 # -----------------------------------------------------------------------------
-# 
+#
 # Blockenspiel dynamic tests
-# 
+#
 # This file contains tests for dynamic DSL generation.
-# 
+#
 # -----------------------------------------------------------------------------
 # Copyright 2008-2011 Daniel Azuma
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the following disclaimer.
 # * Redistributions in binary form must reproduce the above copyright notice,
@@ -20,7 +20,7 @@
 # * Neither the name of the copyright holder, nor the names of any other
 #   contributors to this software, may be used to endorse or promote products
 #   derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -42,14 +42,14 @@ require 'blockenspiel'
 
 module Blockenspiel
   module Tests  # :nodoc:
-    
+
     class TestDynamic < ::Test::Unit::TestCase  # :nodoc:
-      
-      
+
+
       # Test the simple case.
-      # 
+      #
       # * Asserts that the simplest case works.
-      
+
       def test_simple
         block_ = ::Proc.new do
           set_value(:a, 1)
@@ -62,13 +62,13 @@ module Blockenspiel
         end
         assert_equal(1, hash_[:a])
       end
-      
-      
+
+
       # Test renaming.
-      # 
+      #
       # * Asserts that the method appears renamed in a parameterless block.
       # * Asserts that the method appears in its original name in a parametered block.
-      
+
       def test_renaming
         hash_ = ::Hash.new
         dsl_definition_ = ::Proc.new do
@@ -91,14 +91,14 @@ module Blockenspiel
         assert_equal(3, hash_[:c])
         assert_nil(hash_[:d])
       end
-      
-      
+
+
       # Test calls with blocks passed the usual way.
       # Note: this will fail in MRI < 1.8.7 and JRuby < 1.5.
-      # 
+      #
       # * Asserts that a block passed the usual way works
       # * Asserts that we can detect when a block has not been passed
-      
+
       def test_blocks_normal
         hash_ = ::Hash.new
         block_ = ::Proc.new do
@@ -118,14 +118,14 @@ module Blockenspiel
         assert_equal(true, hash_[:b])
         assert_equal(false, hash_[:c])
       end
-      
-      
+
+
       # Test calls with blocks passed as non-block parameters.
-      # 
+      #
       # * Asserts that a block passed "first" works.
       # * Asserts that a block passed "last" works.
       # * Asserts that a block passed "true" works.
-      
+
       def test_blocks_first_and_last
         hash_ = ::Hash.new
         block_ = ::Proc.new do
@@ -148,12 +148,12 @@ module Blockenspiel
         assert_equal(2, hash_[:b])
         assert_equal(3, hash_[:c])
       end
-      
-      
+
+
       # Test calls with blocks not passed.
-      # 
+      #
       # * Asserts that if a block isn't given, it is set to nil.
-      
+
       def test_blocks_nil
         hash_ = ::Hash.new
         block_ = ::Proc.new do
@@ -171,12 +171,12 @@ module Blockenspiel
         assert_nil(hash_[:a])
         assert_nil(hash_[:b])
       end
-      
-      
+
+
       # Test calls with blocks (legacy api)
-      # 
+      #
       # * Asserts that a block with receive_block works.
-      
+
       def test_blocks_legacy
         hash_ = ::Hash.new
         block_ = ::Proc.new do
@@ -189,12 +189,12 @@ module Blockenspiel
         end
         assert_equal(1, hash_[:a])
       end
-      
-      
+
+
       # Test passing options in.
-      # 
+      #
       # * Asserts that the "parameter" option is recognized
-      
+
       def test_options_recognized
         block_ = ::Proc.new do
           set_value(:a, 1)
@@ -208,9 +208,9 @@ module Blockenspiel
           end
         end
       end
-      
-      
+
+
     end
-    
+
   end
 end

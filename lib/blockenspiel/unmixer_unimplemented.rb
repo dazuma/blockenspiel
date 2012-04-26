@@ -1,15 +1,15 @@
 # -----------------------------------------------------------------------------
-# 
+#
 # Blockenspiel unmixer module when unmixer is not implemented
-# 
+#
 # -----------------------------------------------------------------------------
 # Copyright 2010-2011 Daniel Azuma
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the following disclaimer.
 # * Redistributions in binary form must reproduce the above copyright notice,
@@ -18,7 +18,7 @@
 # * Neither the name of the copyright holder, nor the names of any other
 #   contributors to this software, may be used to endorse or promote products
 #   derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -35,24 +35,24 @@
 
 
 module Blockenspiel
-  
-  
+
+
   # :stopdoc:
-  
+
   module Unmixer
-    
-    
+
+
     # Unmixer stub.
     # This throws an exception indicating the unmixer is not implemented.
-    
+
     def self.unmix(obj_, mod_)  # :nodoc:
       raise "Blockenspiel's mixin behavior is not implemented on this ruby platform."
     end
-    
-    
+
+
   end
-  
+
   # :startdoc:
-  
-  
+
+
 end

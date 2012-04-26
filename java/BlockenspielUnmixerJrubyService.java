@@ -1,16 +1,16 @@
 /*
   -----------------------------------------------------------------------------
-  
+
   Blockenspiel unmixer (JRuby implementation)
-  
+
   -----------------------------------------------------------------------------
   Copyright 2008-2011 Daniel Azuma
-  
+
   All rights reserved.
-  
+
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
-  
+
   * Redistributions of source code must retain the above copyright notice,
     this list of conditions and the following disclaimer.
   * Redistributions in binary form must reproduce the above copyright notice,
@@ -19,7 +19,7 @@
   * Neither the name of the copyright holder, nor the names of any other
     contributors to this software, may be used to endorse or promote products
     derived from this software without specific prior written permission.
-  
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -40,7 +40,7 @@
   written by Patrick Farley, anonymous z, Dan Manges, and Clint Bishop.
   http://rubyforge.org/projects/mixology
   http://github.com/dan-manges/mixology
-  
+
   It has been stripped down and modified for JRuby 1.2+ compatibility.
 */
 
@@ -65,7 +65,7 @@ import org.jruby.runtime.load.BasicLibraryService;
 
 public class BlockenspielUnmixerJrubyService implements BasicLibraryService
 {
-    
+
     public boolean basicLoad(final Ruby runtime) throws IOException
     {
         RubyModule blockenspielModule = runtime.getOrCreateModule("Blockenspiel");
@@ -73,8 +73,8 @@ public class BlockenspielUnmixerJrubyService implements BasicLibraryService
         unmixerModule.getSingletonClass().defineAnnotatedMethods(BlockenspielUnmixerJrubyService.class);
         return true;
     }
-    
-    
+
+
     @JRubyMethod(name = "unmix", required = 2)
     public synchronized static IRubyObject unmix(IRubyObject self, IRubyObject receiver, IRubyObject module, Block block)
         throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
@@ -98,9 +98,9 @@ public class BlockenspielUnmixerJrubyService implements BasicLibraryService
         }
         return receiver;
     }
-    
-    
-    protected synchronized static void removeNestedModule(RubyClass klass, RubyModule module) 
+
+
+    protected synchronized static void removeNestedModule(RubyClass klass, RubyModule module)
         throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
         if ((klass.getSuperClass() instanceof IncludedModuleWrapper) &&
@@ -115,8 +115,8 @@ public class BlockenspielUnmixerJrubyService implements BasicLibraryService
             setSuperClass(klass, klass.getSuperClass().getSuperClass());
         }
     }
-    
-    
+
+
     protected synchronized static void setSuperClass(RubyModule klass, RubyModule superClass)
         throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
@@ -126,8 +126,8 @@ public class BlockenspielUnmixerJrubyService implements BasicLibraryService
         Object[] superClassArg = new Object[] { superClass };
         method.invoke(klass, superClassArg);
     }
-    
-    
+
+
     protected synchronized static void invalidateCacheDescendants(RubyModule klass)
         throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
@@ -135,5 +135,5 @@ public class BlockenspielUnmixerJrubyService implements BasicLibraryService
         method.setAccessible(true);
         method.invoke(klass, new Object[0]);
     }
-    
+
 }

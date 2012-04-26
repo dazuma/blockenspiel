@@ -1,17 +1,17 @@
 # -----------------------------------------------------------------------------
-# 
+#
 # Blockenspiel basic tests
-# 
+#
 # This file contains tests for the simple use cases.
-# 
+#
 # -----------------------------------------------------------------------------
 # Copyright 2008-2011 Daniel Azuma
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the following disclaimer.
 # * Redistributions in binary form must reproduce the above copyright notice,
@@ -20,7 +20,7 @@
 # * Neither the name of the copyright holder, nor the names of any other
 #   contributors to this software, may be used to endorse or promote products
 #   derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -42,37 +42,37 @@ require 'blockenspiel'
 
 module Blockenspiel
   module Tests  # :nodoc:
-    
+
     class TestBasic < ::Test::Unit::TestCase  # :nodoc:
-      
-      
+
+
       class SimpleTarget < ::Blockenspiel::Base
-        
+
         def initialize
           @hash = ::Hash.new
         end
-        
+
         def set_value(key_, value_)
           @hash[key_] = value_
         end
-        
+
         def set_value_by_block(key_)
           @hash[key_] = yield
         end
-       
+
         def get_value(key_)
           @hash[key_]
         end
         dsl_method :get_value, false
-        
+
       end
-      
-      
+
+
       # Test basic usage with a parameter object.
-      # 
+      #
       # * Asserts that methods are not mixed in to self.
       # * Asserts that the specified target object does in fact receive the block messages.
-      
+
       def test_basic_param
         block_ = ::Proc.new do |t_|
           t_.set_value(:a, 1)
@@ -85,14 +85,14 @@ module Blockenspiel
         assert_equal(1, target_.get_value(:a))
         assert_equal(2, target_.get_value(:b))
       end
-      
-      
+
+
       # Test basic usage with a mixin.
-      # 
+      #
       # * Asserts that methods are mixed in to self.
       # * Asserts that methods are removed from self afterward.
       # * Asserts that the specified target object still receives the messages.
-      
+
       def test_basic_mixin
         block_ = ::Proc.new do
           set_value(:a, 1)
@@ -105,13 +105,13 @@ module Blockenspiel
         assert_equal(1, target_.get_value(:a))
         assert_equal(2, target_.get_value(:b))
       end
-      
-      
+
+
       # Test basic usage with a builder.
-      # 
+      #
       # * Asserts that the receivers are called.
       # * Asserts that receivers with blocks are handled properly.
-      
+
       def test_basic_builder
         block_ = ::Proc.new do
           set_value(:a, 1)
@@ -129,12 +129,12 @@ module Blockenspiel
         assert_equal(1, hash_[:a])
         assert_equal(2, hash_[:b])
       end
-      
-      
+
+
       # Test basic usage with a string.
-      # 
+      #
       # * Asserts that the specified target object receives the messages.
-      
+
       def test_basic_string
         string_ = <<-STR
           set_value(:a, 1)
@@ -146,12 +146,12 @@ module Blockenspiel
         assert_equal(1, target_.get_value(:a))
         assert_equal(2, target_.get_value(:b))
       end
-      
-      
+
+
       # Test basic usage with a file.
-      # 
+      #
       # * Asserts that the specified target object receives the messages.
-      
+
       def test_basic_file
         target_ = SimpleTarget.new
         ::Blockenspiel.invoke(target_, :file => "#{File.dirname(__FILE__)}/files/file1.rb")
@@ -159,9 +159,9 @@ module Blockenspiel
         assert_equal(1, target_.get_value(:a))
         assert_equal(2, target_.get_value(:b))
       end
-      
-      
+
+
     end
-    
+
   end
 end

@@ -1,17 +1,17 @@
 # -----------------------------------------------------------------------------
-# 
+#
 # Blockenspiel behavior tests
-# 
+#
 # This file contains tests for behavior settings.
-# 
+#
 # -----------------------------------------------------------------------------
 # Copyright 2008-2011 Daniel Azuma
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the following disclaimer.
 # * Redistributions in binary form must reproduce the above copyright notice,
@@ -20,7 +20,7 @@
 # * Neither the name of the copyright holder, nor the names of any other
 #   contributors to this software, may be used to endorse or promote products
 #   derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -42,43 +42,43 @@ require 'blockenspiel'
 
 module Blockenspiel
   module Tests  # :nodoc:
-    
+
     class TestEmbeddedBlock < ::Test::Unit::TestCase  # :nodoc:
-      
-      
+
+
       class Target1 < ::Blockenspiel::Base
-        
+
         def initialize(value_)
           @value = value_
           @block = nil
         end
-        
+
         def set_block(&block_)
           @block = block_
         end
-        
+
         def value
           @value
         end
-        
+
         dsl_methods false
-        
+
         def call_block
           @block.call
         end
-        
+
       end
-      
-      
+
+
       BLOCK = ::Proc.new do
         set_block do
           self.value
         end
       end
-      
-      
+
+
       # Test an embedded block with a proxy.
-      
+
       def test_proxy_embedded_block
         if false  # TEMP
           target_ = Target1.new(23)
@@ -86,9 +86,9 @@ module Blockenspiel
           assert_equal(23, target_.call_block)
         end
       end
-      
-      
+
+
     end
-    
+
   end
 end

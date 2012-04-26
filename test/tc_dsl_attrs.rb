@@ -1,17 +1,17 @@
 # -----------------------------------------------------------------------------
-# 
+#
 # Blockenspiel dsl attribute tests
-# 
+#
 # This file contains tests for the dsl attribute directives.
-# 
+#
 # -----------------------------------------------------------------------------
 # Copyright 2008-2011 Daniel Azuma
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the following disclaimer.
 # * Redistributions in binary form must reproduce the above copyright notice,
@@ -20,7 +20,7 @@
 # * Neither the name of the copyright holder, nor the names of any other
 #   contributors to this software, may be used to endorse or promote products
 #   derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -42,29 +42,29 @@ require 'blockenspiel'
 
 module Blockenspiel
   module Tests  # :nodoc:
-    
+
     class TestDSLAttrs < ::Test::Unit::TestCase  # :nodoc:
-      
-      
+
+
       class WriterTarget < ::Blockenspiel::Base
-        
+
         dsl_attr_writer(:attr1, :attr2)
-        
+
       end
-      
-      
+
+
       class AccessorTarget < ::Blockenspiel::Base
-        
+
         dsl_attr_accessor(:attr1, :attr2)
-        
+
       end
-      
-      
+
+
       # Test dsl attr writer in a parametered block
-      # 
+      #
       # * Asserts that the standard setter syntax works
       # * Asserts that the alternate setter syntax works
-      
+
       def test_writer_parametered
         block_ = ::Proc.new do |param_|
           param_.attr1 = 1
@@ -75,12 +75,12 @@ module Blockenspiel
         assert_equal(1, target_.instance_variable_get(:@attr1))
         assert_equal(2, target_.instance_variable_get(:@attr2))
       end
-      
-      
+
+
       # Test dsl attr writer in a parameterless block
-      # 
+      #
       # * Asserts that the alternate setter syntax works
-      
+
       def test_writer_parameterless
         block_ = ::Proc.new do
           assert_equal(2, attr2(2))
@@ -90,14 +90,14 @@ module Blockenspiel
         assert_equal(false, target_.instance_variable_defined?(:@attr1))
         assert_equal(2, target_.instance_variable_get(:@attr2))
       end
-      
-      
+
+
       # Test dsl attr accessor in a parametered block
-      # 
+      #
       # * Asserts that the standard setter syntax works
       # * Asserts that the alternate setter syntax works
       # * Asserts that the getter syntax works
-      
+
       def _test_accessor_parametered
         block_ = ::Proc.new do |param_|
           param_.attr1 = 1
@@ -109,13 +109,13 @@ module Blockenspiel
         assert_equal(1, target_.instance_variable_get(:@attr1))
         assert_equal(2, target_.instance_variable_get(:@attr2))
       end
-      
-      
+
+
       # Test dsl attr accessor in a parameterless block
-      # 
+      #
       # * Asserts that the alternate setter syntax works
       # * Asserts that the getter syntax works
-      
+
       def test_accessor_parameterless
         block_ = ::Proc.new do
           assert_equal(2, attr2(2))
@@ -126,9 +126,9 @@ module Blockenspiel
         assert_equal(false, target_.instance_variable_defined?(:@attr1))
         assert_equal(2, target_.instance_variable_get(:@attr2))
       end
-      
-      
+
+
     end
-    
+
   end
 end

@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
 #
-# Blockenspiel Gemfile
-#
-# This file indicates gems needed for testing.
+# Gemfile used for CI testing.
 #
 # -----------------------------------------------------------------------------
 # Copyright 2012 Daniel Azuma
