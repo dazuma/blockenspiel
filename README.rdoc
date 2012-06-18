@@ -74,7 +74,7 @@ For an extended analysis of different ways to implement DSL blocks, see
 
 === Development and support
 
-Documentation is available at http://virtuoso.rubyforge.org/blockenspiel/README_rdoc.html
+Documentation is available at http://dazuma.github.com/blockenspiel/rdoc
 
 Source code is hosted on Github at http://github.com/dazuma/blockenspiel
 

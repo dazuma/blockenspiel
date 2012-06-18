@@ -326,7 +326,7 @@ multiple threads trying to mix methods into the same object concurrently.
 
 === Development and support
 
-Documentation is available at http://virtuoso.rubyforge.org/blockenspiel/README_rdoc.html
+Documentation is available at http://dazuma.github.com/blockenspiel/rdoc
 
 Source code is hosted on Github at http://github.com/dazuma/blockenspiel
 
