@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+
+<title>class Blockenspiel::Builder - Blockenspiel 0.4.3 Documentation</title>
+
+<link type="text/css" media="screen" href="../rdoc.css" rel="stylesheet">
+
+<script type="text/javascript">
+  var rdoc_rel_prefix = "../";
+</script>
+
+<script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/navigation.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/search_index.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/searcher.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/darkfish.js"></script>
+
+
+<body id="top" class="class">
+<nav id="metadata">
+  <nav id="home-section" class="section">
+  <h3 class="section-header">
+    <a href="../index.html">Home</a>
+    <a href="../table_of_contents.html#classes">Classes</a>
+    <a href="../table_of_contents.html#methods">Methods</a>
+  </h3>
+</nav>
+
+
+  <nav id="search-section" class="section project-section" class="initially-hidden">
+  <form action="#" method="get" accept-charset="utf-8">
+    <h3 class="section-header">
+      <input type="text" name="search" placeholder="Search" id="search-field"
+             title="Type to search, Up and Down to navigate, Enter to load">
+    </h3>
+  </form>
+
+  <ul id="search-results" class="initially-hidden"></ul>
+</nav>
+
+
+  <div id="file-metadata">
+    <nav id="file-list-section" class="section">
+  <h3 class="section-header">Defined In</h3>
+  <ul>
+    <li>lib/blockenspiel/builder.rb
+  </ul>
+</nav>
+
+    
+  </div>
+
+  <div id="class-metadata">
+    
+    <nav id="parent-class-section" class="section">
+  <h3 class="section-header">Parent</h3>
+  
+  <p class="link">Object
+  
+</nav>
+
+    <!-- Included Modules -->
+<nav id="includes-section" class="section">
+  <h3 class="section-header">Included Modules</h3>
+
+  <ul class="link-list">
+  
+  
+    <li><a class="include" href="DSL.html">Blockenspiel::DSL</a>
+  
+  
+  </ul>
+</nav>
+
+    <!-- Method Quickref -->
+<nav id="method-list-section" class="section">
+  <h3 class="section-header">Methods</h3>
+
+  <ul class="link-list">
+    
+    <li><a href="#method-i-add_method">#add_method</a>
+    
+  </ul>
+</nav>
+
+  </div>
+
+  <div id="project-metadata">
+    <nav id="fileindex-section" class="section project-section">
+  <h3 class="section-header">Pages</h3>
+
+  <ul>
+  
+    <li class="file"><a href="../Blockenspiel_rdoc.html">Blockenspiel</a>
+  
+    <li class="file"><a href="../History_rdoc.html">History</a>
+  
+    <li class="file"><a href="../ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
+  
+    <li class="file"><a href="../README_rdoc.html">README</a>
+  
+  </ul>
+</nav>
+
+    <nav id="classindex-section" class="section project-section">
+  <h3 class="section-header">Class and Module Index</h3>
+
+  <ul class="link-list">
+  
+    <li><a href="../Blockenspiel.html">Blockenspiel</a>
+  
+    <li><a href="../Blockenspiel/Base.html">Blockenspiel::Base</a>
+  
+    <li><a href="../Blockenspiel/BlockParameterError.html">Blockenspiel::BlockParameterError</a>
+  
+    <li><a href="../Blockenspiel/BlockenspielError.html">Blockenspiel::BlockenspielError</a>
+  
+    <li><a href="../Blockenspiel/Builder.html">Blockenspiel::Builder</a>
+  
+    <li><a href="../Blockenspiel/DSL.html">Blockenspiel::DSL</a>
+  
+    <li><a href="../Blockenspiel/DSLMissingError.html">Blockenspiel::DSLMissingError</a>
+  
+    <li><a href="../Blockenspiel/DSLSetupMethods.html">Blockenspiel::DSLSetupMethods</a>
+  
+  </ul>
+</nav>
+
+  </div>
+</nav>
+
+<div id="documentation">
+  <h1 class="class">class Blockenspiel::Builder</h1>
+
+  <div id="description" class="description">
+    
+<h3 id="label-Dynamically+construct+a+target">Dynamically construct a target</h3>
+
+<p>These methods are available in a block passed to Blockenspiel#invoke and
+can be used to dynamically define what methods are available from a block.
+See Blockenspiel#invoke for more information.</p>
+
+  </div><!-- description -->
+
+  
+  
+  
+  <section id="5Buntitled-5D" class="documentation-section">
+    
+
+    
+
+    
+
+    
+
+    <!-- Methods -->
+    
+     <section id="public-instance-5Buntitled-5D-method-details" class="method-section section">
+      <h3 class="section-header">Public Instance Methods</h3>
+
+    
+      <div id="method-i-add_method" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">add_method</span><span
+            class="method-args">(name_, opts_={}, &block_)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <h3 id="method-i-add_method-label-Declare+a+DSL+method.">Declare a <a href="DSL.html">DSL</a> method.</h3>
+
+<p>This call creates a method that can be called from the <a
+href="DSL.html">DSL</a> block. Provide a name for the method, a block
+defining the method’s implementation, and an optional hash of options.</p>
+
+<p>By default, a method of the same name is also made available to
+parameterless blocks. To change the name of the parameterless method,
+provide its name as the value of the <code>:dsl_method</code> option. To
+disable this method for parameterless blocks, set the
+<code>:dsl_method</code> option to <code>false</code>.</p>
+
+<p>The <code>:mixin</code> option is a deprecated alias for
+<code>:dsl_method</code>.</p>
+
+<h3 id="method-i-add_method-label-Warning+about+the+return+keyword">Warning about the <code>return</code> keyword</h3>
+
+<p>Because you are implementing your method using a block, remember the
+distinction between <code>Proc.new</code> and <code>lambda</code>. Invoking
+<code>return</code> from the former does not return from the block, but
+returns from the surrounding method scope. Since normal blocks passed to
+methods are of the former type, be very careful about using the
+<code>return</code> keyword:</p>
+
+<pre class="ruby"><span class="ruby-identifier">add_method</span>(:<span class="ruby-identifier">foo</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">param</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;foo called with parameter &quot;</span><span class="ruby-operator">+</span><span class="ruby-identifier">param</span>.<span class="ruby-identifier">inspect</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-string">&quot;a return value&quot;</span>   <span class="ruby-comment"># DOESN'T WORK LIKE YOU EXPECT!</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>To return a value from the method you are creating, set the evaluation
+value at the end of the block:</p>
+
+<pre class="ruby"><span class="ruby-identifier">add_method</span>(:<span class="ruby-identifier">foo</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">param</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;foo called with parameter &quot;</span><span class="ruby-operator">+</span><span class="ruby-identifier">param</span>.<span class="ruby-identifier">inspect</span>
+  <span class="ruby-string">&quot;a return value&quot;</span>    <span class="ruby-comment"># Returns from method foo</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>If you must use the <code>return</code> keyword, create your block as a
+lambda as in this example:</p>
+
+<pre class="ruby"><span class="ruby-identifier">code</span> = <span class="ruby-identifier">lambda</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">param</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;foo called with parameter &quot;</span><span class="ruby-operator">+</span><span class="ruby-identifier">param</span>.<span class="ruby-identifier">inspect</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-string">&quot;a return value&quot;</span>   <span class="ruby-comment"># Returns from method foo</span>
+<span class="ruby-keyword">end</span>
+<span class="ruby-identifier">add_method</span>(:<span class="ruby-identifier">foo</span>, &amp;<span class="ruby-identifier">code</span>)
+</pre>
+
+<h3 id="method-i-add_method-label-Accepting+a+block+argument">Accepting a block argument</h3>
+
+<p>If you want your method to take a block, you have several options depending
+on your Ruby version. If you are running the standard Matz Ruby interpreter
+(MRI) version 1.8.7 or later (including 1.9.x), or a compatible interpreter
+such as JRuby 1.5 or later, you can use the standard “&amp;” block argument
+notation to receive the block. Note that you must call the passed block
+using the <code>call</code> method since Ruby doesn’t support invoking such
+a block with <code>yield</code>. For example, to create a method named
+“foo” that takes one parameter and a block, do this:</p>
+
+<pre class="ruby"><span class="ruby-identifier">add_method</span>(:<span class="ruby-identifier">foo</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">param</span>, &amp;<span class="ruby-identifier">block</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;foo called with parameter &quot;</span><span class="ruby-operator">+</span><span class="ruby-identifier">param</span>.<span class="ruby-identifier">inspect</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;the block returned &quot;</span><span class="ruby-operator">+</span><span class="ruby-identifier">block</span>.<span class="ruby-identifier">call</span>.<span class="ruby-identifier">inspect</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>In your <a href="DSL.html">DSL</a>, you can then call:</p>
+
+<pre>foo(&quot;hello&quot;){ &quot;a value&quot; }</pre>
+
+<p>If you are using MRI 1.8.6, or another Ruby interpreter that doesn’t fully
+support this syntax (such as JRuby versions older than 1.5), <a
+href="../Blockenspiel.html">Blockenspiel</a> provides an alternative in the
+form of the <code>:block</code> option. This option causes blocks provided
+by the caller to be included in the normal parameter list to your method,
+instead of as a block parameter. It can be set to <code>:first</code> or
+<code>:last</code> to prepend or append, respectively, the block (as a
+<code>Proc</code> object) to the parameter list. If the caller does not
+include a block when calling your <a href="DSL.html">DSL</a> method, nil is
+prepended/appended. For example:</p>
+
+<pre class="ruby"><span class="ruby-identifier">add_method</span>(:<span class="ruby-identifier">foo</span>, :<span class="ruby-identifier">block</span> =<span class="ruby-operator">&gt;</span> :<span class="ruby-identifier">last</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">param</span>, <span class="ruby-identifier">block</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;foo called with parameter &quot;</span><span class="ruby-operator">+</span><span class="ruby-identifier">param</span>.<span class="ruby-identifier">inspect</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">block</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;the block returned &quot;</span><span class="ruby-operator">+</span><span class="ruby-identifier">block</span>.<span class="ruby-identifier">call</span>.<span class="ruby-identifier">inspect</span>
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;no block passed&quot;</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>The <code>:receive_block</code> option is a deprecated alternative. Setting
+<code>:receive_block =&gt; true</code> is currently equivalent to setting
+<code>:block =&gt; :last</code>.</p>
+          
+
+          
+          <div class="method-source-code" id="add_method-source">
+            <pre><span class="ruby-comment"># File lib/blockenspiel/builder.rb, line 187</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">add_method</span>(<span class="ruby-identifier">name_</span>, <span class="ruby-identifier">opts_</span>={}, &amp;<span class="ruby-identifier">block_</span>)
+  <span class="ruby-identifier">receive_block_</span> = <span class="ruby-identifier">opts_</span>[<span class="ruby-value">:receive_block</span>] <span class="ruby-operator">?</span> <span class="ruby-value">:last</span> <span class="ruby-operator">:</span> <span class="ruby-identifier">opts_</span>[<span class="ruby-value">:block</span>]
+  <span class="ruby-identifier">receive_block_</span> = <span class="ruby-value">:first</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">receive_block_</span> <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-identifier">receive_block_</span> <span class="ruby-operator">!=</span> <span class="ruby-value">:last</span>
+  <span class="ruby-ivar">@target_class</span>.<span class="ruby-identifier">_add_methodinfo</span>(<span class="ruby-identifier">name_</span>, <span class="ruby-identifier">block_</span>, <span class="ruby-identifier">receive_block_</span>)
+  <span class="ruby-identifier">dsl_method_name_</span> = <span class="ruby-identifier">opts_</span>[<span class="ruby-value">:dsl_method</span>] <span class="ruby-operator">||</span> <span class="ruby-identifier">opts_</span>[<span class="ruby-value">:mixin</span>]
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">dsl_method_name_</span> <span class="ruby-operator">!=</span> <span class="ruby-keyword">false</span>
+    <span class="ruby-identifier">dsl_method_name_</span> = <span class="ruby-identifier">name_</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">dsl_method_name_</span>.<span class="ruby-identifier">nil?</span> <span class="ruby-operator">||</span> <span class="ruby-identifier">dsl_method_name_</span> <span class="ruby-operator">==</span> <span class="ruby-keyword">true</span>
+    <span class="ruby-ivar">@target_class</span>.<span class="ruby-identifier">dsl_method</span>(<span class="ruby-identifier">dsl_method_name_</span>, <span class="ruby-identifier">name_</span>)
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- add_method-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- add_method-method -->
+
+    
+    </section><!-- public-instance-method-details -->
+  
+  </section><!-- 5Buntitled-5D -->
+
+</div><!-- documentation -->
+
+
+<footer id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
+  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
+  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+</footer>
+

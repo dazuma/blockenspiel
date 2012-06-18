@@ -1,0 +1,12 @@
+/doc/
+/pkg/
+.DS_Store
+*.class
+*.jar
+*.bundle
+*.o
+*.rbc
+*.dSYM
+Makefile*
+/ext/*/mkmf.log
+Gemfile.lock

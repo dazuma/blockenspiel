@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+
+<title>Blockenspiel - Blockenspiel 0.4.3 Documentation</title>
+
+<link type="text/css" media="screen" href="./rdoc.css" rel="stylesheet">
+
+<script type="text/javascript">
+  var rdoc_rel_prefix = "./";
+</script>
+
+<script type="text/javascript" charset="utf-8" src="./js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/navigation.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search_index.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/searcher.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/darkfish.js"></script>
+
+
+<body class="file">
+<nav id="metadata">
+  <nav id="home-section" class="section">
+  <h3 class="section-header">
+    <a href="./index.html">Home</a>
+    <a href="./table_of_contents.html#classes">Classes</a>
+    <a href="./table_of_contents.html#methods">Methods</a>
+  </h3>
+</nav>
+
+
+  <nav id="search-section" class="section project-section" class="initially-hidden">
+  <form action="#" method="get" accept-charset="utf-8">
+    <h3 class="section-header">
+      <input type="text" name="search" placeholder="Search" id="search-field"
+             title="Type to search, Up and Down to navigate, Enter to load">
+    </h3>
+  </form>
+
+  <ul id="search-results" class="initially-hidden"></ul>
+</nav>
+
+
+  <div id="project-metadata">
+    <nav id="fileindex-section" class="section project-section">
+  <h3 class="section-header">Pages</h3>
+
+  <ul>
+  
+    <li class="file"><a href="./Blockenspiel_rdoc.html">Blockenspiel</a>
+  
+    <li class="file"><a href="./History_rdoc.html">History</a>
+  
+    <li class="file"><a href="./ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
+  
+    <li class="file"><a href="./README_rdoc.html">README</a>
+  
+  </ul>
+</nav>
+
+    <nav id="classindex-section" class="section project-section">
+  <h3 class="section-header">Class and Module Index</h3>
+
+  <ul class="link-list">
+  
+    <li><a href="./Blockenspiel.html">Blockenspiel</a>
+  
+    <li><a href="./Blockenspiel/Base.html">Blockenspiel::Base</a>
+  
+    <li><a href="./Blockenspiel/BlockParameterError.html">Blockenspiel::BlockParameterError</a>
+  
+    <li><a href="./Blockenspiel/BlockenspielError.html">Blockenspiel::BlockenspielError</a>
+  
+    <li><a href="./Blockenspiel/Builder.html">Blockenspiel::Builder</a>
+  
+    <li><a href="./Blockenspiel/DSL.html">Blockenspiel::DSL</a>
+  
+    <li><a href="./Blockenspiel/DSLMissingError.html">Blockenspiel::DSLMissingError</a>
+  
+    <li><a href="./Blockenspiel/DSLSetupMethods.html">Blockenspiel::DSLSetupMethods</a>
+  
+  </ul>
+</nav>
+
+  </div>
+</nav>
+
+<div id="documentation" class="description">
+  
+<h2 id="label-Blockenspiel"><a href="Blockenspiel.html">Blockenspiel</a></h2>
+
+<p><a href="Blockenspiel.html">Blockenspiel</a> is a helper library designed
+to make it easy to implement DSL blocks. It is designed to be comprehensive
+and robust, supporting most common usage patterns, and working correctly in
+the presence of nested blocks and multithreading.</p>
+
+<p>This is an introduction to DSL blocks and the features of <a
+href="Blockenspiel.html">Blockenspiel</a>.</p>
+
+<h3 id="label-What%27s+a+DSL+block%3F">What’s a DSL block?</h3>
+
+<p>A DSL block is an API pattern in which a method call takes a block that can
+provide further configuration for the call. A classic example is the <a
+href="http://www.rubyonrails.org/">Rails</a> route definition:</p>
+
+<pre class="ruby"><span class="ruby-constant">ActionController</span><span class="ruby-operator">::</span><span class="ruby-constant">Routing</span><span class="ruby-operator">::</span><span class="ruby-constant">Routes</span>.<span class="ruby-identifier">draw</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">map</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">connect</span> <span class="ruby-string">':controller/:action/:id'</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">connect</span> <span class="ruby-string">':controller/:action/:id.:format'</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Some libraries go one step further and eliminate the need for a block
+parameter. <a href="http://rspec.info/">RSpec</a> is a well-known example:</p>
+
+<pre>describe Stack do
+  before(:each) do
+    @stack = Stack.new
+  end
+  describe &quot;(empty)&quot; do
+    it { @stack.should be_empty }
+    it &quot;should complain when sent #peek&quot; do
+      lambda { @stack.peek }.should raise_error(StackUnderflowError)
+    end
+  end
+end</pre>
+
+<p>In both cases, the caller provides descriptive information in the block,
+using a domain-specific language. The second form, which eliminates the
+block parameter, often appears cleaner; however it is also sometimes less
+clear what is actually going on.</p>
+
+<h3 id="label-How+does+one+implement+such+a+beast%3F">How does one implement such a beast?</h3>
+
+<p>Implementing the first form is fairly straightforward. You would create a
+class defining the methods (such as <code>connect</code> in our Rails
+routing example above) that should be available within the block. When, for
+example, the <code>draw</code> method is called with a block, you
+instantiate the class and yield it to the block.</p>
+
+<p>The second form is perhaps more mystifying. Somehow you would need to make
+the DSL methods available on the “self” object inside the block. There are
+several plausible ways to do this, such as using
+<code>instance_eval</code>. However, there are many subtle pitfalls in such
+techniques, and quite a bit of discussion has taken place in the Ruby
+community regarding how–or whether–to safely implement such a syntax.</p>
+
+<p>I have included a critical survey of the discussion in the document <a
+href="ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks.rdoc</a> for
+the curious. <a href="Blockenspiel.html">Blockenspiel</a> takes what I
+consider the best of the solutions and implements them in a comprehensive
+way, shielding you from the complexity of the Ruby metaprogramming while
+offering a simple way to implement both forms of DSL blocks.</p>
+
+<h3 id="label-So+what+is+Blockenspiel%3F">So what <em>is</em> <a href="Blockenspiel.html">Blockenspiel</a>?</h3>
+
+<p><a href="Blockenspiel.html">Blockenspiel</a> operates on the following
+observations:</p>
+<ul><li>
+<p>Implementing a DSL block that takes a parameter is straightforward.</p>
+</li><li>
+<p>Safely implementing a DSL block that <em>doesn’t</em> take a parameter is
+tricky.</p>
+</li></ul>
+
+<p>With that in mind, <a href="Blockenspiel.html">Blockenspiel</a> provides a
+set of tools that allow you to take an implementation of the first form of
+a DSL block, one that takes a parameter, and turn it into an implementation
+of the second form, one that doesn’t take a parameter.</p>
+
+<p>Suppose you wanted to write a simple DSL block that takes a parameter:</p>
+
+<pre class="ruby"><span class="ruby-identifier">configure_me</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">config</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">add_foo</span>(<span class="ruby-value">1</span>)
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">add_bar</span>(<span class="ruby-value">2</span>)
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>You could write this as follows:</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">ConfigMethods</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_foo</span>(<span class="ruby-identifier">value</span>)
+    <span class="ruby-comment"># do something</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_bar</span>(<span class="ruby-identifier">value</span>)
+    <span class="ruby-comment"># do something</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">configure_me</span>
+  <span class="ruby-keyword">yield</span> <span class="ruby-constant">ConfigMethods</span>.<span class="ruby-identifier">new</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>That was easy. However, now suppose you wanted to support usage
+<em>without</em> the “config” parameter. e.g.</p>
+
+<pre>configure_me do
+  add_foo(1)
+  add_bar(2)
+end</pre>
+
+<p>With <a href="Blockenspiel.html">Blockenspiel</a>, you can do this in two
+quick steps. First, tell <a href="Blockenspiel.html">Blockenspiel</a> that
+your <code>ConfigMethods</code> class is a DSL.</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">ConfigMethods</span>
+  <span class="ruby-identifier">include</span> <span class="ruby-constant">Blockenspiel</span><span class="ruby-operator">::</span><span class="ruby-constant">DSL</span>   <span class="ruby-comment"># &lt;--- Add this line</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_foo</span>(<span class="ruby-identifier">value</span>)
+    <span class="ruby-comment"># do something</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_bar</span>(<span class="ruby-identifier">value</span>)
+    <span class="ruby-comment"># do something</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Next, write your <code>configure_me</code> method using Blockenspiel:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">configure_me</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-constant">Blockenspiel</span>.<span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">block</span>, <span class="ruby-constant">ConfigMethods</span>.<span class="ruby-identifier">new</span>)
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Now, your <code>configure_me</code> method supports <em>both</em> DSL block
+forms. A caller can opt to use the first form, with a parameter, simply by
+providing a block that takes a parameter. Or, if the caller provides a
+block that doesn’t take a parameter, the second form without a parameter is
+used.</p>
+
+<h3 id="label-How+does+that+help+me%3F+%28Or%2C+why+not+just+use+instance_eval%3F%29">How does that help me? (Or, why not just use instance_eval?)</h3>
+
+<p>As noted earlier, some libraries that provide parameter-less DSL blocks use
+<code>instance_eval</code>, and they could even support both the parameter
+and parameter-less mechanisms by checking the block arity:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">configure_me</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">block</span>.<span class="ruby-identifier">arity</span> <span class="ruby-operator">==</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">yield</span> <span class="ruby-constant">ConfigMethods</span>.<span class="ruby-identifier">new</span>
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-constant">ConfigMethods</span>.<span class="ruby-identifier">new</span>.<span class="ruby-identifier">instance_eval</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>That seems like a simple and effective technique that doesn’t require a
+separate library, so why use <a href="Blockenspiel.html">Blockenspiel</a>?
+Because <code>instance_eval</code> introduces a number of surprising
+problems. I discuss these issues in detail in <a
+href="ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks.rdoc</a>, but
+just to get your feet wet, suppose the caller wanted to call its own
+methods inside the block:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">callers_helper_method</span>
+  <span class="ruby-comment"># ...</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-identifier">configure_me</span> <span class="ruby-keyword">do</span>
+  <span class="ruby-identifier">add_foo</span>(<span class="ruby-value">1</span>)
+  <span class="ruby-identifier">callers_helper_method</span>  <span class="ruby-comment"># Error! self is now an instance of ConfigMethods</span>
+                         <span class="ruby-comment"># so this will fail with a NameError</span>
+  <span class="ruby-identifier">add_bar</span>(<span class="ruby-value">2</span>)
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p><a href="Blockenspiel.html">Blockenspiel</a> by default does <em>not</em>
+use the <code>instance_eval</code> technique. Instead, it implements a
+mechanism using mixin modules, a technique proposed by the late <a
+href="http://en.wikipedia.org/wiki/Why_the_lucky_stiff">Why</a>. In this
+technique, the <code>add_foo</code> and <code>add_bar</code> methods are
+temporarily mixed into the caller's <code>self</code> object. That is,
+<code>self</code> does not change, as it would if we used
+<code>instance_eval</code>, so helper methods like
+<code>callers_helper_method</code> still remain available as expected. But,
+the <code>add_foo</code> and <code>add_bar</code> methods are also made
+available temporarily for the duration of the block. When called, they are
+intercepted and redirected to your <code>ConfigMethods</code> instance just
+as if you had called them directly via a block parameter. <a
+href="Blockenspiel.html">Blockenspiel</a> handles the object redirection
+behind the scenes so you do not have to think about it. With <a
+href="Blockenspiel.html">Blockenspiel</a>, the caller retains access to its
+helper methods, and even its own instance variables, within the block,
+because <code>self</code> has not been modified.</p>
+
+<h3 id="label-Is+that+it%3F">Is that it?</h3>
+
+<p>Although the basic usage is very simple, <a
+href="Blockenspiel.html">Blockenspiel</a> is designed to be
+<em>comprehensive</em>. It supports all the use cases that I’ve run into
+during my own implementation of DSL blocks. Notably:</p>
+
+<p>By default, <a href="Blockenspiel.html">Blockenspiel</a> lets the caller
+choose to use a parametered block or a parameterless block, based on
+whether or not the block actually takes a parameter. You can also disable
+one or the other, to force the use of either a parametered or parameterless
+block.</p>
+
+<p>You can also let the caller use your DSL by passing you a string or a file
+rather than a block. That is, you can create file-based DSLs such as the
+Rails routes file.</p>
+
+<p>You can control wich methods of the class are available from parameterless
+blocks, and/or make some methods available under different names. Here are
+a few examples:</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">ConfigMethods</span>
+  <span class="ruby-identifier">include</span> <span class="ruby-constant">Blockenspiel</span><span class="ruby-operator">::</span><span class="ruby-constant">DSL</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_foo</span>         <span class="ruby-comment"># automatically added to the dsl</span>
+    <span class="ruby-comment"># do stuff...</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">my_private_method</span>
+    <span class="ruby-comment"># do stuff...</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">dsl_method</span> :<span class="ruby-identifier">my_private_method</span>, <span class="ruby-keyword">false</span>   <span class="ruby-comment"># remove from the dsl</span>
+
+  <span class="ruby-identifier">dsl_methods</span> <span class="ruby-keyword">false</span>   <span class="ruby-comment"># stop automatically adding methods to the dsl</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">another_private_method</span>  <span class="ruby-comment"># not added</span>
+    <span class="ruby-comment"># do stuff...</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-identifier">dsl_methods</span> <span class="ruby-keyword">true</span>    <span class="ruby-comment"># resume automatically adding methods to the dsl</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_bar</span>         <span class="ruby-comment"># this method is automatically added</span>
+    <span class="ruby-comment"># do stuff...</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_baz</span>
+    <span class="ruby-comment"># do stuff</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">dsl_method</span> :<span class="ruby-identifier">add_baz_in_dsl</span>, :<span class="ruby-identifier">add_baz</span>  <span class="ruby-comment"># Method named differently</span>
+                                        <span class="ruby-comment"># in a parameterless block</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>This is also useful, for example, when you use <code>attr_writer</code>.
+Parameterless blocks do not support <code>attr_writer</code> (or, by
+corollary, <code>attr_accessor</code>) well because methods with names of
+the form “attribute=” are syntactically indistinguishable from variable
+assignments:</p>
+
+<pre class="ruby"><span class="ruby-identifier">configure_me</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">config</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">foo</span> = <span class="ruby-value">1</span>    <span class="ruby-comment"># works fine when the block has a parameter</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-identifier">configure_me</span> <span class="ruby-keyword">do</span>
+  <span class="ruby-comment"># foo = 1     # &lt;--- Doesn't work: looks like a variable assignment</span>
+  <span class="ruby-identifier">set_foo</span>(<span class="ruby-value">1</span>)    <span class="ruby-comment"># &lt;--- Fix it by renaming to this instead</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-comment"># This is implemented like this::</span>
+<span class="ruby-keyword">class</span> <span class="ruby-constant">ConfigMethods</span>
+  <span class="ruby-identifier">include</span> <span class="ruby-constant">Blockenspiel</span><span class="ruby-operator">::</span><span class="ruby-constant">DSL</span>
+  <span class="ruby-identifier">attr_writer</span> :<span class="ruby-identifier">foo</span>
+  <span class="ruby-identifier">dsl_method</span> :<span class="ruby-identifier">set_foo</span>, :<span class="ruby-identifier">foo=</span>    <span class="ruby-comment"># Make &quot;foo=&quot; available as &quot;set_foo&quot;</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>This is in fact a common enough case that <a
+href="Blockenspiel.html">Blockenspiel</a> includes conveninence tools for a
+DSL-friendly attr_writer and attr_accessor, providing an alternate syntax
+for setting attributes within a parameterless block:</p>
+
+<pre class="ruby"><span class="ruby-identifier">configure_me</span> <span class="ruby-keyword">do</span>
+  <span class="ruby-comment"># foo = 1             # This syntax wouldn't work, but</span>
+  <span class="ruby-identifier">foo</span> <span class="ruby-value">1</span>                 <span class="ruby-comment"># this syntax is now supported.</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;foo is #{foo}&quot;</span>  <span class="ruby-comment"># The getter still works.</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-comment"># This is implemented like this::</span>
+<span class="ruby-keyword">class</span> <span class="ruby-constant">ConfigMethods</span>
+  <span class="ruby-identifier">include</span> <span class="ruby-constant">Blockenspiel</span><span class="ruby-operator">::</span><span class="ruby-constant">DSL</span>
+  <span class="ruby-identifier">dsl_attr_accessor</span> :<span class="ruby-identifier">foo</span>     <span class="ruby-comment"># DSL-friendly attr_accessor</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>In some cases, you might want to dynamically generate a DSL object rather
+than defining a static class. <a href="Blockenspiel.html">Blockenspiel</a>
+provides a tool to do just that. Here’s an example:</p>
+
+<pre class="ruby"><span class="ruby-constant">Blockenspiel</span>.<span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">block</span>) <span class="ruby-keyword">do</span>
+  <span class="ruby-identifier">add_method</span>(:<span class="ruby-identifier">set_foo</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">value</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">my_foo</span> = <span class="ruby-identifier">value</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">add_method</span>(:<span class="ruby-identifier">set_things_using_block</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">value</span>, &amp;<span class="ruby-identifier">blk</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">my_foo</span> = <span class="ruby-identifier">value</span>
+    <span class="ruby-identifier">my_bar</span> = <span class="ruby-identifier">blk</span>.<span class="ruby-identifier">call</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>That API is itself a DSL block, and yes, <a
+href="Blockenspiel.html">Blockenspiel</a> uses itself to implement this
+feature.</p>
+
+<p>By default <a href="Blockenspiel.html">Blockenspiel</a> uses mixins, which
+usually exhibit fairly safe and non-surprising behavior. However, there are
+a few cases when you might want the <code>instance_eval</code> behavior
+anyway. RSpec is a good example of such a case, since the DSL is being used
+to construct objects, so it makes sense for instance variables inside the
+block to belong to the object being constructed. <a
+href="Blockenspiel.html">Blockenspiel</a> gives you the option of choosing
+<code>instance_eval</code> in case you need it. <a
+href="Blockenspiel.html">Blockenspiel</a> also provides a compromise
+behavior that uses a proxy to dispatch methods to the DSL object or the
+block’s context.</p>
+
+<p><a href="Blockenspiel.html">Blockenspiel</a> also correctly handles nested
+blocks. e.g.</p>
+
+<pre>configure_me do
+  set_foo(1)
+  configure_another do     # A block within another block
+    set_bar(2)
+    configure_another do   # A block within itself
+      set_bar(3)
+    end
+  end
+end</pre>
+
+<p>Finally, it is thread safe, correctly handling, for example, the case of
+multiple threads trying to mix methods into the same object concurrently.</p>
+
+<h3 id="label-Requirements">Requirements</h3>
+<ul><li>
+<p>Ruby 1.8.7, Ruby 1.9.1 or later, JRuby 1.5 or later, or Rubinius 1.0 or
+later.</p>
+</li></ul>
+
+<h3 id="label-Installation">Installation</h3>
+
+<pre>gem install blockenspiel</pre>
+
+<h3 id="label-Known+issues+and+to-do+items">Known issues and to-do items</h3>
+<ul><li>
+<p>Implementing wildcard DSL methods using <code>method_missing</code> doesn’t
+work. I haven’t yet decided on the right semantics for this case, or
+whether it is even a reasonable feature at all.</p>
+</li><li>
+<p>Including <a href="Blockenspiel/DSL.html">Blockenspiel::DSL</a> in a module
+(rather than a class) is not yet supported, but this is planned for a
+future release.</p>
+</li><li>
+<p>Installing on Windows may be a challenge because blockenspiel includes a
+native extension. I’m considering evaluating Luis Lavena’s rake-compiler to
+simplify this process.</p>
+</li></ul>
+
+<h3 id="label-Development+and+support">Development and support</h3>
+
+<p>Documentation is available at <a
+href="http://dazuma.github.com/blockenspiel/rdoc">dazuma.github.com/blockenspiel/rdoc</a></p>
+
+<p>Source code is hosted on Github at <a
+href="http://github.com/dazuma/blockenspiel">github.com/dazuma/blockenspiel</a></p>
+
+<p>Report bugs on Github issues at <a
+href="http://github.org/dazuma/blockenspiel/issues">github.org/dazuma/blockenspiel/issues</a></p>
+
+<p>Contact the author at dazuma at gmail dot com.</p>
+
+<h3 id="label-Author+%2F+Credits">Author / Credits</h3>
+
+<p><a href="Blockenspiel.html">Blockenspiel</a> is written by Daniel Azuma (<a
+href="http://www.daniel-azuma.com/">www.daniel-azuma.com/</a>).</p>
+
+<p>The mixin implementation is based on a concept by the late Why The Lucky
+Stiff, documented in his 6 October 2008 blog posting entitled “Mixing Our
+Way Out Of Instance Eval?”. The original link is gone, but you may find
+copies or mirrors out there.</p>
+
+<p>The unmixer code is based on <a
+href="http://rubyforge.org/projects/mixology">Mixology</a>, version by
+Patrick Farley, anonymous z, Dan Manges, and Clint Bishop. The MRI C
+extension and the JRuby code were adapted from Mixology 0.1, and have been
+stripped down and modified to support Ruby 1.9 and JRuby &gt;= 1.2. The
+Rubinius code was adapted from unreleased code in the Mixology source tree
+and modified to support Rubinius 1.0. I know Mixology 0.2 is now available,
+but its Rubinius support is not active, and I’d rather keep the unmixer
+bundled with <a href="Blockenspiel.html">Blockenspiel</a> for now to reduce
+dependencies.</p>
+
+<p>The dsl_attr_writer and dsl_attr_accessor feature came from a suggestion by
+Luis Lavena.</p>
+
+<h3 id="label-License">License</h3>
+
+<p>Copyright 2008-2011 Daniel Azuma.</p>
+
+<p>All rights reserved.</p>
+
+<p>Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:</p>
+<ul><li>
+<p>Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.</p>
+</li><li>
+<p>Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.</p>
+</li><li>
+<p>Neither the name of the copyright holder, nor the names of any other
+contributors to this software, may be used to endorse or promote products
+derived from this software without specific prior written permission.</p>
+</li></ul>
+
+<p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.</p>
+
+</div>
+
+
+
+<footer id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
+  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
+  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+</footer>
+

@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+
+<title>ImplementingDSLblocks - Blockenspiel 0.4.3 Documentation</title>
+
+<link type="text/css" media="screen" href="./rdoc.css" rel="stylesheet">
+
+<script type="text/javascript">
+  var rdoc_rel_prefix = "./";
+</script>
+
+<script type="text/javascript" charset="utf-8" src="./js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/navigation.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search_index.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/searcher.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/darkfish.js"></script>
+
+
+<body class="file">
+<nav id="metadata">
+  <nav id="home-section" class="section">
+  <h3 class="section-header">
+    <a href="./index.html">Home</a>
+    <a href="./table_of_contents.html#classes">Classes</a>
+    <a href="./table_of_contents.html#methods">Methods</a>
+  </h3>
+</nav>
+
+
+  <nav id="search-section" class="section project-section" class="initially-hidden">
+  <form action="#" method="get" accept-charset="utf-8">
+    <h3 class="section-header">
+      <input type="text" name="search" placeholder="Search" id="search-field"
+             title="Type to search, Up and Down to navigate, Enter to load">
+    </h3>
+  </form>
+
+  <ul id="search-results" class="initially-hidden"></ul>
+</nav>
+
+
+  <div id="project-metadata">
+    <nav id="fileindex-section" class="section project-section">
+  <h3 class="section-header">Pages</h3>
+
+  <ul>
+  
+    <li class="file"><a href="./Blockenspiel_rdoc.html">Blockenspiel</a>
+  
+    <li class="file"><a href="./History_rdoc.html">History</a>
+  
+    <li class="file"><a href="./ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
+  
+    <li class="file"><a href="./README_rdoc.html">README</a>
+  
+  </ul>
+</nav>
+
+    <nav id="classindex-section" class="section project-section">
+  <h3 class="section-header">Class and Module Index</h3>
+
+  <ul class="link-list">
+  
+    <li><a href="./Blockenspiel.html">Blockenspiel</a>
+  
+    <li><a href="./Blockenspiel/Base.html">Blockenspiel::Base</a>
+  
+    <li><a href="./Blockenspiel/BlockParameterError.html">Blockenspiel::BlockParameterError</a>
+  
+    <li><a href="./Blockenspiel/BlockenspielError.html">Blockenspiel::BlockenspielError</a>
+  
+    <li><a href="./Blockenspiel/Builder.html">Blockenspiel::Builder</a>
+  
+    <li><a href="./Blockenspiel/DSL.html">Blockenspiel::DSL</a>
+  
+    <li><a href="./Blockenspiel/DSLMissingError.html">Blockenspiel::DSLMissingError</a>
+  
+    <li><a href="./Blockenspiel/DSLSetupMethods.html">Blockenspiel::DSLSetupMethods</a>
+  
+  </ul>
+</nav>
+
+  </div>
+</nav>
+
+<div id="documentation" class="description">
+  
+<h2 id="label-Implementing+DSL+Blocks">Implementing DSL Blocks</h2>
+
+<p>by Daniel Azuma</p>
+
+<p>A <em>DSL block</em> is a construct commonly used in Ruby APIs, in which a
+DSL (domain-specific language) is made available inside a block passed to
+an API call. In this paper I present an overview of different
+implementation strategies for this important pattern. I will first describe
+the features of DSL blocks, utilizing illustrations from several well-known
+Ruby libraries. I will then survey and critique five implementation
+strategies that have been put forth. Finally, I will present a new library,
+<a href="http://virtuoso.rubyforge.org/blockenspiel">Blockenspiel</a>,
+designed to be a comprehensive implementation of DSL blocks.</p>
+
+<p>Originally written on 29 October 2008.</p>
+
+<p>Minor modifications on 28 October 2009 to deal with Why’s disappearance.</p>
+
+<h3 id="label-An+illustrative+overview+of+DSL+blocks">An illustrative overview of DSL blocks</h3>
+
+<p>If you’ve done much Ruby programming, chances are you’ve run into mini-DSLs
+(domain-specific languages) that live inside blocks. Perhaps you’ve
+encountered them in Ruby standard library calls, such as
+<code>File#open</code>, a call that lets you interact with a stream while
+performing automatic setup and cleanup for you:</p>
+
+<pre class="ruby"><span class="ruby-constant">File</span>.<span class="ruby-identifier">open</span>(<span class="ruby-string">&quot;myfile.txt&quot;</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">io</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">io</span>.<span class="ruby-identifier">each_line</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">line</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-identifier">line</span> <span class="ruby-keyword">unless</span> <span class="ruby-identifier">line</span> <span class="ruby-operator">=~</span> <span class="ruby-node">%r^\s*#/</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Perhaps you’ve used the XML <a
+href="http://builder.rubyforge.org/">builder</a> library, which uses nested
+blocks to match the structure of the XML being generated:</p>
+
+<pre>builder = Builder::XmlMarkup.new
+builder.page do
+  builder.element1('hello')
+  builder.element2('world')
+  builder.collection do
+    builder.interior do
+      builder.element3('foo')
+    end
+  end
+end</pre>
+
+<p>The <a href="http://github.com/markaby/markaby">Markaby</a> library also
+uses nested blocks to generate html, but is able to do so more succinctly
+without requiring you to explicitly reference a builder object:</p>
+
+<pre>Markaby::Builder.new.html do
+  head { title &quot;Boats.com&quot; }
+  body do
+    h1 &quot;Boats.com has great deals&quot;
+    ul do
+      li &quot;$49 for a canoe&quot;
+      li &quot;$39 for a raft&quot;
+      li &quot;$29 for a huge boot that floats and can fit 5 people&quot;
+    end
+  end
+end</pre>
+
+<p>Perhaps you’ve described testing scenarios using <a
+href="http://rspec.info/">RSpec</a>, building and documenting test cases
+using English-sounding commands such as “describe” and
+“it_should_behave_like”:</p>
+
+<pre>describe Stack do
+
+  before(:each) do
+    @stack = Stack.new
+  end
+
+  describe &quot;(empty)&quot; do
+
+    it { @stack.should be_empty }
+
+    it_should_behave_like &quot;non-full Stack&quot;
+
+    it &quot;should complain when sent #peek&quot; do
+      lambda { @stack.peek }.should raise_error(StackUnderflowError)
+    end
+
+    it &quot;should complain when sent #pop&quot; do
+      lambda { @stack.pop }.should raise_error(StackUnderflowError)
+    end
+
+  end
+
+  # etc...</pre>
+
+<p>Perhaps you were introduced to Ruby via the <a
+href="http://www.rubyonrails.org/">Rails</a> framework, which sets up
+configuration via blocks:</p>
+
+<pre class="ruby"><span class="ruby-constant">ActionController</span><span class="ruby-operator">::</span><span class="ruby-constant">Routing</span><span class="ruby-operator">::</span><span class="ruby-constant">Routes</span>.<span class="ruby-identifier">draw</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">map</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">connect</span> <span class="ruby-string">':controller/:action/:id'</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">connect</span> <span class="ruby-string">':controller/:action/:page/:format'</span>
+  <span class="ruby-comment"># etc...</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-constant">Rails</span><span class="ruby-operator">::</span><span class="ruby-constant">Initializer</span>.<span class="ruby-identifier">run</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">config</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">time_zone</span> = <span class="ruby-string">'UTC'</span>
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">log_level</span> = :<span class="ruby-identifier">debug</span>
+  <span class="ruby-comment"># etc...</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Blocks are central to Ruby as a language, and it feels natural to Ruby
+programmers to use them to delimit specialized code. When designing an API
+for a Ruby library, blocks like these are, in many cases, a natural and
+effective pattern.</p>
+
+<h3 id="label-Defining+DSL+blocks">Defining DSL blocks</h3>
+
+<p>Blocks in Ruby are used for a variety of purposes. In many cases, they are
+used to provide <em>callbacks</em>, specifying functionality to inject into
+an operation. If you come from a functional programming background, you
+might see them as lambda expressions; in object-oriented-speak, they
+implement the Visitor pattern. A simple example is the <code>each</code>
+method, which iterates over a collection, using the given block as a
+callback that allows the caller to specify processing to perform on each
+element.</p>
+
+<p>When we speak of DSL blocks, we are describing something conceptually and
+semanticaly different. Rather than looking for a specification of
+<em>functionality</em>, the method wants to provide the caller with a
+<em>language</em> to <em>describe</em> something. The block merely serves
+as a space in which to use that language.</p>
+
+<p>Consider the Rails Routing example above. The Rails application needs to
+specify how URLs should be interpreted as commands sent to controllers,
+and, conversely, how command descriptions should be expressed as URLs.
+Rails thus defines a language that can be used to describe these mappings.
+The language uses the “connect” verb, which interprets a string with
+embedded codes describing the URL’s various parts, and optional parameters
+that specify further details about the mapping.</p>
+
+<p>The Rails Initializer illustrates another common pattern: that of using a
+DSL block to perform extended configuration of the method call. Again, a
+language is being defined here: certain property names such as “time_zone”
+have meanings understood by the Rails framework.</p>
+
+<p>Note that in both this case and the Routing case, the information contained
+in the block is descriptive. It is possible to imagine a syntax in which
+all the necessary information is passed into the method
+(<code>Routes#draw</code> or <code>Initializer#run</code>) as parameters,
+perhaps as a large hash or other complex data structure. However, in many
+cases, providing this information via a block-based language makes the code
+much more readable.</p>
+
+<p>The RSpec example illustrates a more sophisticated case with many keywords
+and multiple levels of blocks, but it shares common features with the Rails
+examples. Again, a language is being defined to describe things that could
+conceivably have been passed in as parameters, but are being specified in a
+block for clarity and readability.</p>
+
+<p>Based on this discussion, we can see that DSL blocks have the following
+properties:</p>
+<ul><li>
+<p>An API requires a caller to communicate complex descriptive information.</p>
+</li><li>
+<p>The API defines a domain-specific language designed to express this
+information.</p>
+</li><li>
+<p>A method accepts a block from the caller, and executes the block exactly
+once.</p>
+</li><li>
+<p>The domain-specific language is available to the caller lexically within
+the block.</p>
+</li></ul>
+
+<p>As far as I have been able to determine, the term “DSL block” originated in
+2007 with a <a href="http://blog.8thlight.com/articles/2007/05/20/">blog
+post</a> by Micah Martin. In it, he describes a way to implement certain
+types of DSL blocks using <code>instance_eval</code>, calling the technique
+the “DSL Block Pattern”. We will discuss the nuances of the
+<code>instance_eval</code> implementation in greater detail below. But
+first, let us ease into the implementation discussion by describing a
+simple strategy that has worked very well for many libraries, including
+Rails.</p>
+
+<h3 id="label-Implementation+strategy+1%3A+block+parameters">Implementation strategy 1: block parameters</h3>
+
+<p>In 2006, Jamis Buck, one of the Rails core developers, posted a set of
+articles describing the Rails routing implementation. Tucked away at the
+top the <a
+href="http://weblog.jamisbuck.org/2006/10/2/under-the-hood-rails-routing-dsl">first
+article</a> is a code snippet showing the DSL block implementation for
+Rails routing. This code, along with some of its context in the file
+<code>action_controller/routing/route_set.rb</code> (from Rails version
+2.1.1), is listed below.</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">RouteSet</span>
+
+  <span class="ruby-keyword">class</span> <span class="ruby-constant">Mapper</span>
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">set</span>)
+      <span class="ruby-ivar">@set</span> = <span class="ruby-identifier">set</span>
+    <span class="ruby-keyword">end</span>
+
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">connect</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+      <span class="ruby-ivar">@set</span>.<span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span>)
+    <span class="ruby-keyword">end</span>
+    <span class="ruby-comment"># ...</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>
+    <span class="ruby-identifier">clear!</span>
+    <span class="ruby-keyword">yield</span> <span class="ruby-constant">Mapper</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword">self</span>)
+    <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+    <span class="ruby-comment"># ...</span>
+</pre>
+
+<p>Recall how we specify routes in Rails: we call the <code>draw</code>
+method, and pass it a block. The block receives a parameter that we call
+“<code>map</code>”. We can then create routes by calling the
+<code>connect</code> method on the parameter, as follows:</p>
+
+<pre class="ruby"><span class="ruby-constant">ActionController</span><span class="ruby-operator">::</span><span class="ruby-constant">Routing</span><span class="ruby-operator">::</span><span class="ruby-constant">Routes</span>.<span class="ruby-identifier">draw</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">map</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">connect</span> <span class="ruby-string">':controller/:action/:id'</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">connect</span> <span class="ruby-string">':controller/:action/:page/:format'</span>
+  <span class="ruby-comment"># etc.</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>It should be fairly easy to see how the code above accomplishes this. The
+<code>draw</code> method creates an object of class <code>Mapper</code>.
+The <code>Mapper</code> class defines the domain-specific language, in
+particular the <code>connect</code> method that we are familiar with. Note
+how its implementation is simply to proxy calls into the routing system: it
+keeps an instance variable called “<code>@set</code>” that points back at
+the <code>RouteSet</code> we are modifying. Then, <code>draw</code> yields
+the mapper instance back to the block, where we receive it as our
+<code>map</code> variable.</p>
+
+<p>A large number of DSL block implementations are variations on this theme.
+We define a proxy class (<code>Mapper</code> in this case) that exposes the
+domain-specific language we want and communicates back to the system we are
+describing. We then yield an instance of that proxy back to the block,
+which receives it as a parameter. The block then manipulates the DSL using
+its parameter.</p>
+
+<p>This pattern is extremely powerful and pervasive. It is simple and clean to
+implement, and straightforward to use by the caller. The caller knows
+exactly when it is interacting with the DSL: when it calls methods on the
+block parameter.</p>
+
+<p>However, some have argued that it is too verbose. Why, in a DSL, is it
+necessary to litter the entire block with references to the block variable?
+If we know that the caller is supposed to be interacting with the DSL in
+the block, is it really necessary to have the explicit parameter? Perhaps
+Rails routing, for example, could be specified more succinctly like the
+following, in which the <code>map</code> variable is implied.</p>
+
+<pre>ActionController::Routing::Routes.draw do
+  connect ':controller/:action/:id'
+  connect ':controller/:action/:page/:format'
+  # etc.
+end</pre>
+
+<p>In the next section we will look more closely at the pros and cons of this
+alternate syntax. But first, let us summarize our discussion of the “block
+parameter” implementation.</p>
+
+<p><strong>Implementation</strong>:</p>
+<ul><li>
+<p>Create a proxy class defining the DSL.</p>
+</li><li>
+<p>Yield the proxy object to the block as a parameter.</p>
+</li></ul>
+
+<p><strong>Pros</strong>:</p>
+<ul><li>
+<p>Easy to implement.</p>
+</li><li>
+<p>Clear syntax for the caller.</p>
+</li><li>
+<p>Clear separation between the DSL and surrounding code.</p>
+</li></ul>
+
+<p><strong>Cons</strong>:</p>
+<ul><li>
+<p>Requires a block parameter, sometimes resulting in verbose or clumsy
+syntax.</p>
+</li></ul>
+
+<p><strong>Use it when</strong>: you want a simple, effective DSL block and
+don't mind requiring a parameter.</p>
+
+<h3 id="label-The+parameterless+block+syntax">The parameterless block syntax</h3>
+
+<p>Much of the recent discussion surrounding DSL blocks originates from a
+desire to eliminate the block parameter. A domain-specific
+<em>language</em>, it is reasoned, should be as natural and concise as
+possible, and should not be tied down to the syntax of method invocation.
+In many cases, eliminating the block parameter would have an enormous
+impact on the readability of a DSL block. One common example is the case of
+nested blocks, which, because of Ruby 1.8’s scoping semantics, require
+different variable and parameter names. Consider an imaginary DSL block
+that looks like this:</p>
+
+<pre class="ruby"><span class="ruby-identifier">create_container</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">container</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">container</span>.<span class="ruby-identifier">create_subcontainer</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">subcontainer1</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">subcontainer1</span>.<span class="ruby-identifier">create_subcontainer</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">subcontainer2</span><span class="ruby-operator">|</span>
+      <span class="ruby-identifier">subcontainer2</span>.<span class="ruby-identifier">create_object</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">objconfig</span><span class="ruby-operator">|</span>
+        <span class="ruby-identifier">objconfig</span>.<span class="ruby-identifier">set_value</span>(<span class="ruby-value">3</span>)
+      <span class="ruby-keyword">end</span>
+    <span class="ruby-keyword">end</span>
+    <span class="ruby-identifier">subcontainer1</span>.<span class="ruby-identifier">create_subcontainer</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">subcontainer3</span><span class="ruby-operator">|</span>
+      <span class="ruby-identifier">subcontainer3</span>.<span class="ruby-identifier">create_object</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">objconfig2</span><span class="ruby-operator">|</span>
+        <span class="ruby-identifier">objconfig2</span>.<span class="ruby-identifier">set_value</span>(<span class="ruby-value">1</span>)
+      <span class="ruby-keyword">end</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>That was clunky. Wouldn’t it be nice to instead see this?…</p>
+
+<pre>create_container do
+  create_subcontainer do
+    create_subcontainer do
+      create_object do
+        set_value(3)
+      end
+    end
+    create_subcontainer do
+      create_object do
+        set_value(1)
+      end
+    end
+  end
+end</pre>
+
+<p>While this appears to be an improvement, it does come at a cost. First,
+certain method names become syntactically unavailable when you eliminate
+the method call syntax. Consider, for example, this simple DSL proxy object
+that uses <code>attr_writer</code>…</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">ConfigMethods</span>
+  <span class="ruby-identifier">attr_writer</span> :<span class="ruby-identifier">author</span>
+  <span class="ruby-identifier">attr_writer</span> :<span class="ruby-identifier">title</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>You might interact with it in a DSL block that uses parameters, like so:</p>
+
+<pre class="ruby"><span class="ruby-identifier">create_paper</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">config</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">author</span> = <span class="ruby-string">&quot;Daniel Azuma&quot;</span>
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">title</span> = <span class="ruby-string">&quot;Implementing DSL Blocks&quot;</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>However, if you try to eliminate the block parameter, you run into this
+dilemma:</p>
+
+<pre>create_paper do
+  author = &quot;Daniel Azuma&quot;            # Whoops! These no longer work because they
+  title = &quot;Implementing DSL Blocks&quot;  # look like local variable assignments!
+end</pre>
+
+<p>If you want to retain the <code>attr_writer</code> syntax, you must make it
+clear to the Ruby parser that you are invoking a method call. For example:</p>
+
+<pre>create_paper do
+  self.author = &quot;Daniel Azuma&quot;            # These are now clearly method calls
+  self.title = &quot;Implementing DSL Blocks&quot;
+end</pre>
+
+<p>Unfortunately, this negates some of the benefit of removing the block
+parameter in the first place. A similar syntactic issue occurs with many
+operators, notably <code>[]=</code>.</p>
+
+<p>Second, and more importantly, by eliminating the block parameter, we
+eliminate the primary means of distinguishing which methods belong to the
+DSL, and which methods do not. For example, in our routing example, if we
+eliminate the parameter, like so:</p>
+
+<pre>ActionController::Routing::Routes.draw do
+  connect ':controller/:action/:id'
+  connect ':controller/:action/:page/:format'
+  # etc.
+end</pre>
+
+<p>…we now <em>assume</em> that the <code>connect</code> method is part of the
+DSL, but that is no longer explicit in the syntax. If, <code>connect</code>
+also happens to be a method of whatever object was <code>self</code> in the
+context of the block, which method should be called? There is a method
+lookup ambiguity inherent to the syntax itself, and, as we shall see,
+different implementations of parameterless blocks will resolve this
+ambiguity in different, and sometimes confusing, ways.</p>
+
+<p>Despite the above caveats inherent to the syntax, the desire to eliminate
+the block parameter is quite strong. Let’s consider how it can be done.</p>
+
+<h3 id="label-Implementation+strategy+2%3A+instance_eval">Implementation strategy 2: instance_eval</h3>
+
+<p>Micah Martin’s <a href="http://blog.8thlight.com/articles/2007/05/20/">blog
+post</a> describes an implementation strategy that does not require the
+block to take a parameter. He suggests using a powerful, if sometimes
+confusing, Ruby metaprogramming tool called <code>instance_eval</code>.
+This method, defined on the <code>Object</code> class so it is available to
+every object, has a simple function: it executes a block given it, but does
+so with the <code>self</code> reference redirected to the receiver. Hence,
+within the block, calling a method, or accessing an instance variable or
+class variable, (or, in Ruby 1.9, accessing a constant), will begin the
+lookup process at a different place.</p>
+
+<p>It is perhaps instructive to see an example. Let’s create a simple class</p>
+
+<pre class="ruby"><span class="ruby-constant">Class</span> <span class="ruby-constant">MyClass</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>
+    <span class="ruby-ivar">@instvar</span> = <span class="ruby-value">1</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">foo</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;in foo: var=#{@instvar}&quot;</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Things to note here is that the method <code>foo</code> and the instance
+variable <code>@instvar</code> are defined on instances of
+<code>MyClass</code>. Now let’s <code>instance_eval</code> an instance of
+<code>MyClass</code> from another class.</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">Tester</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">test</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-ivar">@instvar</span>.<span class="ruby-identifier">inspect</span>    <span class="ruby-comment"># prints &quot;nil&quot; since the Tester object has no @instvar</span>
+    <span class="ruby-identifier">x</span> = <span class="ruby-constant">MyClass</span>.<span class="ruby-identifier">new</span>          <span class="ruby-comment"># create a new instance of MyClass</span>
+    <span class="ruby-identifier">x</span>.<span class="ruby-identifier">instance_eval</span> <span class="ruby-keyword">do</span>       <span class="ruby-comment"># change self to point to x during the block</span>
+      <span class="ruby-identifier">puts</span> <span class="ruby-ivar">@instvar</span>.<span class="ruby-identifier">inspect</span>  <span class="ruby-comment"># prints &quot;1&quot; since self now points at x</span>
+      <span class="ruby-ivar">@instvar</span> = <span class="ruby-value">2</span>           <span class="ruby-comment"># changes x's @instvar to 2</span>
+      <span class="ruby-identifier">foo</span>                    <span class="ruby-comment"># calls x's foo and prints &quot;in foo: var=2&quot;</span>
+      <span class="ruby-identifier">puts</span> <span class="ruby-identifier">x</span> <span class="ruby-operator">==</span> <span class="ruby-keyword">self</span>         <span class="ruby-comment"># prints &quot;true&quot;. The local variable x is still accessible</span>
+    <span class="ruby-keyword">end</span>                      <span class="ruby-comment"># end of the block. self is now back to the Tester instance</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-identifier">x</span> <span class="ruby-operator">==</span> <span class="ruby-keyword">self</span>           <span class="ruby-comment"># prints &quot;false&quot;</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-ivar">@instvar</span>.<span class="ruby-identifier">inspect</span>    <span class="ruby-comment"># prints &quot;nil&quot; since Tester still has no @instvar</span>
+    <span class="ruby-identifier">foo</span>                      <span class="ruby-comment"># NameError since Tester has no foo method.</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+<span class="ruby-constant">Tester</span>.<span class="ruby-identifier">new</span>.<span class="ruby-identifier">test</span>   <span class="ruby-comment"># Runs the above test</span>
+</pre>
+
+<p>How does this help us? Notice that within the <code>instance_eval</code>
+block, the methods of <code>x</code> can be called without explicitly
+naming <code>x</code> because the <code>self</code> reference points to
+<code>x</code>. So in the Rails Routing example, if we used
+<code>instance_eval</code> to get <code>self</code> to point to the
+<code>Mapper</code> instance in the block, then we wouldn’t need to pass it
+explicitly as a parameter, and the block could call methods on it without
+explicitly naming it.</p>
+
+<p>Here is a revised version of the Rails routing code:</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">RouteSet</span>
+
+  <span class="ruby-keyword">class</span> <span class="ruby-constant">Mapper</span>
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">set</span>)
+      <span class="ruby-ivar">@set</span> = <span class="ruby-identifier">set</span>
+    <span class="ruby-keyword">end</span>
+
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">connect</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+      <span class="ruby-ivar">@set</span>.<span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span>)
+    <span class="ruby-keyword">end</span>
+    <span class="ruby-comment"># ...</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-comment"># We need to pass the block itself to instance_eval, so get it</span>
+  <span class="ruby-comment"># as a parameter to the draw method.</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(&amp;<span class="ruby-identifier">block</span>)
+    <span class="ruby-identifier">clear!</span>
+    <span class="ruby-identifier">map</span> = <span class="ruby-constant">Mapper</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword">self</span>)     <span class="ruby-comment"># Create the proxy object as before</span>
+    <span class="ruby-identifier">map</span>.<span class="ruby-identifier">instance_eval</span>(&amp;<span class="ruby-identifier">block</span>)  <span class="ruby-comment"># Call the block, setting self to point to map.</span>
+    <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+    <span class="ruby-comment"># ...</span>
+</pre>
+
+<p>This modified version of the routing API now no longer requires a block
+parameter, and the DSL is correspondingly more succinct. Sounds like a win
+all around, right?</p>
+
+<p>Well, not so fast. Our implementation here has a number of subtle and
+surprising side effects. Suppose, for instance, we were to write a little
+helper method to help us generate URLs:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">makeurl</span>(*<span class="ruby-identifier">params</span>)
+  <span class="ruby-string">'mywebsite/:controller/:action/'</span> <span class="ruby-operator">+</span> <span class="ruby-identifier">params</span>.<span class="ruby-identifier">map</span>{ <span class="ruby-operator">|</span><span class="ruby-identifier">e</span><span class="ruby-operator">|</span> <span class="ruby-identifier">e</span>.<span class="ruby-identifier">inspect</span> }.<span class="ruby-identifier">join</span>(<span class="ruby-string">'/'</span>)
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Using the above method, it becomes easy to generate URL strings:</p>
+
+<pre>makeurl(:id, :style)   # --&gt; &quot;mywebsite/:controller/:action/:id/:style&quot;</pre>
+
+<p>Our <code>routes.rb</code> file, utilizing our “improvement” to the routing
+DSL, might now like this:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">makeurl</span>(*<span class="ruby-identifier">params</span>)
+  <span class="ruby-string">'mywebsite/:controller/:action/'</span> <span class="ruby-operator">+</span> <span class="ruby-identifier">params</span>.<span class="ruby-identifier">map</span>{ <span class="ruby-operator">|</span><span class="ruby-identifier">e</span><span class="ruby-operator">|</span> <span class="ruby-identifier">e</span>.<span class="ruby-identifier">inspect</span> }.<span class="ruby-identifier">join</span>(<span class="ruby-string">'/'</span>)
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-constant">ActionController</span><span class="ruby-operator">::</span><span class="ruby-constant">Routing</span><span class="ruby-operator">::</span><span class="ruby-constant">Routes</span>.<span class="ruby-identifier">draw</span> <span class="ruby-keyword">do</span>
+  <span class="ruby-identifier">connect</span> <span class="ruby-identifier">makeurl</span> :<span class="ruby-identifier">id</span>
+  <span class="ruby-identifier">connect</span> <span class="ruby-identifier">makeurl</span> :<span class="ruby-identifier">page</span>, :<span class="ruby-identifier">format</span>
+  <span class="ruby-comment"># etc.</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Looks nice, right? Except that when we try to run it, we get:</p>
+
+<pre>NoMethodError: undefined method `[]' for :id:Symbol
+from /usr/local/lib/ruby/gems/1.8/gems/actionpack-2.1.1/lib/action_controller/routing/builder.rb:168:in `build'
+from /usr/local/lib/ruby/gems/1.8/gems/actionpack-2.1.1/lib/action_controller/routing/route_set.rb:261:in `add_route'
+...</pre>
+
+<p>What’s up with that cryptic error? After some furious digging into the guts
+of Rails, we discover to our surprise Ruby is trying to call
+<code>makeurl</code> on the <code><em>Mapper</code></em> object, rather
+than calling our <code>makeurl</code> helper method. And then it dawns on
+us. We used <code>instance_eval</code> to change <code>self</code> to point
+to the <code>Mapper</code> proxy inside the block, and it did exactly what
+we asked. It let us call the <code>connect</code> method on the
+<code>Mapper</code> without having to pass it in as a block parameter. But
+it similarly also tried to call <code>makeurl</code> on the
+<code>Mapper</code>. The helper method we so cleverly wrote is being
+bypassed.</p>
+
+<p>The problem gets worse. Changing <code>self</code> affects not only how
+methods are looked up, but also how instance variables are looked up. For
+example, we are now able to do this:</p>
+
+<pre>ActionController::Routing::Routes.draw do
+  @set = nil
+  connect ':controller/:action/:id'            # Exception raised here!
+  connect ':controller/:action/:page/:format'
+  # etc.
+end</pre>
+
+<p>What happened? If we recall, <code>@set</code> is used by the
+<code>Mapper</code> object to point back to the routing
+<code>RouteSet</code>. It is how the proxy knows what it is proxying for.
+But since we’ve used <code>instance_eval</code>, we now have free access to
+the <code>Mapper</code> object’s internal instance variables, including the
+ability to clobber them. And that’s precisely what we did here.
+Furthermore, maybe we were actually expecting to access our own
+<code>@set</code> variable, and we haven’t done that. Any instance
+variables from the caller’s closure are in fact no longer accessible inside
+the block.</p>
+
+<p>Similarly, if you are using Ruby 1.9, constants are also looked up using
+<code>self</code> as the starting point. So by changing <code>self</code>,
+<code>instance_eval</code> affects the availability of constants in
+surprising ways.</p>
+
+<p>The problem gets even worse. If we think about the cryptic error message we
+got when we tried to use our <code>makeurl</code> helper method, we begin
+to realize that we’ve run into the method lookup ambiguity discussed in the
+previous section. If <code>self</code> has changed inside the block, and we
+tried to call <code>makeurl</code>, we might expect a
+<code>NoMethodError</code> to be raised for <code>makeurl</code> on the
+<code>Mapper</code> class, rather than for “<code>[]</code>” on the
+<code>Symbol</code> class. However, things change when we recall that
+Rails’s routing DSL supports named routes. You do not have to call the
+specific <code>connect</code> method to create a route. In fact, you can
+call <em>any</em> method name. Any name is a valid DSL method name. It is
+thus ambiguous, when we invoke <code>makeurl</code>, whether we mean our
+helper method or a named route called “makeurl”. Rails assumed we meant the
+named route, but in fact that isn’t what we had intended.</p>
+
+<p>This all sounds pretty bad. Do we give up on <code>instance_eval</code>?
+Some members of the Ruby community have, and indeed the technique has
+generally fallen out of favor in many major libraries. Jim Weirich, for
+instance, <a
+href="http://onestepback.org/index.cgi/Tech/Ruby/BuilderObjects.rdoc">originally</a>
+utilized <code>instance_eval</code> in the XML Builder library illustrated
+earlier, but later deprecated and removed it because of its surprising
+behavior. Why’s <a href="http://github.com/markaby/markaby">Markaby</a>
+still uses <code>instance_eval</code> but includes a caveat in the <a
+href="http://markaby.rubyforge.org/">documentation</a> explaining the
+issues and recommending caution.</p>
+
+<p>There are, however, a few specific cases when <code>instance_eval</code>
+may be uniquely appropriate. RSpec’s DSL is intended as a
+class-constructive language: it constructs ruby classes behind the scenes.
+In the RSpec example at the beginning of this paper, you may notice the use
+of the <code>@stack</code> instance variable. In fact, this is intended as
+an instance variable of the RSpec test story being written, and as such,
+<code>instance_eval</code> is required because of the kind of language that
+RSpec wants to use. But in more common cases, such as specifying
+configuration, <code>instance_eval</code> does not give us the most
+desirable behavior. The general consensus now, expressed for example in
+recent articles from Why (no longer available) and <a
+href="http://olabini.com/blog/2008/09/dont-overuse-instance_eval-and-instance_exec/">Ola
+Bini</a>, is that it should be avoided.</p>
+
+<p>So does this mean we’re stuck with block parameters for better or worse?
+Not quite. Several alternatives have been proposed recently, and we’ll take
+a look at them in the next few sections. But first, let’s summarize the
+discussion of <code>instance_eval</code>.</p>
+
+<p><strong>Implementation</strong>:</p>
+<ul><li>
+<p>Create a proxy class defining the DSL.</p>
+</li><li>
+<p>Use <code>instance_eval</code> to change <code>self</code> to the proxy in
+the block.</p>
+</li></ul>
+
+<p><strong>Pros</strong>:</p>
+<ul><li>
+<p>Easy to implement.</p>
+</li><li>
+<p>Concise: does not require a block parameter.</p>
+</li><li>
+<p>Useful for class-constructive DSLs.</p>
+</li></ul>
+
+<p><strong>Cons</strong>:</p>
+<ul><li>
+<p>Surprising lookup behavior for helper methods.</p>
+</li><li>
+<p>Surprising lookup behavior for instance variables.</p>
+</li><li>
+<p>Breaks encapuslation of the proxy class.</p>
+</li><li>
+<p>Encounters the helper method vs DSL method ambiguity.</p>
+</li></ul>
+
+<p><strong>Use it when</strong>: you are writing a DSL that constructs classes
+or modifies class internals.</p>
+
+<h3 id="label-Implementation+strategy+3%3A+delegation">Implementation strategy 3: delegation</h3>
+
+<p>In our discussion of <code>instance_eval</code>, a major problem we
+identified is that helper methods, and indeed all other methods from the
+calling context, are not available within the block. One way to improve the
+situation, perhaps, is by redirecting any methods not defined in the DSL
+(that is, not defined on the proxy object) back to the original context.
+That way, we still have access to our helper methods–they’ll appear to be
+part of the DSL. This “delegation” approach was proposed by Dan Manges in
+his <a
+href="http://www.dcmanges.com/blog/ruby-dsls-instance-eval-with-delegation">blog</a>.</p>
+
+<p>The basic implementation here is not difficult, if we pull out another tool
+from Ruby’s metaprogramming toolbox, <code>method_missing</code>. This
+method is called whenever you call a method that is not explicitly defined
+on an object’s class. It provides a “last ditch” opportunity to handle the
+method before Ruby bails with a dreaded <code>NoMethodError</code>. Again,
+an example is probably useful here.</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">MyClass</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">foo</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;in foo&quot;</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">method_missing</span>(<span class="ruby-identifier">name</span>, *<span class="ruby-identifier">params</span>)
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;last ditch method #{name.inspect} called with params: #{params.inspect}&quot;</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-identifier">x</span> = <span class="ruby-constant">MyClass</span>.<span class="ruby-identifier">new</span>
+<span class="ruby-identifier">x</span>.<span class="ruby-identifier">foo</span>       <span class="ruby-comment"># prints &quot;in foo&quot;</span>
+<span class="ruby-identifier">x</span>.<span class="ruby-identifier">bar</span>       <span class="ruby-comment"># prints &quot;last ditch method :bar called with params: []&quot;</span>
+<span class="ruby-identifier">x</span>.<span class="ruby-identifier">baz</span>(<span class="ruby-value">1</span>,<span class="ruby-value">2</span>)  <span class="ruby-comment"># prints &quot;last ditch method :baz called with params: [1,2]&quot;</span>
+</pre>
+
+<p>How does this help us? Well, our goal is to redirect any calls that aren’t
+available in the DSL, back to the block’s original context. To do that, we
+simply define <code>method_missing</code> on our proxy class. In that
+method, we delegate the call, using <code>send</code>, back to the original
+<code>self</code> from the block’s context.</p>
+
+<p>The remaining trick is how to get the block’s original <code>self</code>.
+This can be done with a little bit of hackery if we realize that any
+<code>Proc</code> object lets you access the binding of the context where
+it came from. We can get the original <code>self</code> reference by
+eval-ing “self” in that binding.</p>
+
+<p>Going back to our modification of the Rails routing code, let’s see what
+this looks like.</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">RouteSet</span>
+
+  <span class="ruby-keyword">class</span> <span class="ruby-constant">Mapper</span>
+    <span class="ruby-comment"># We save the block's original &quot;self&quot; reference also, so that we</span>
+    <span class="ruby-comment"># can redirect unhandled methods back to the original context.</span>
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">set</span>, <span class="ruby-identifier">original_self</span>)
+      <span class="ruby-ivar">@set</span> = <span class="ruby-identifier">set</span>
+      <span class="ruby-ivar">@original_self</span> = <span class="ruby-identifier">original_self</span>
+    <span class="ruby-keyword">end</span>
+
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">connect</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+      <span class="ruby-ivar">@set</span>.<span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span>)
+    <span class="ruby-keyword">end</span>
+
+    <span class="ruby-comment"># ...</span>
+
+    <span class="ruby-comment"># Redirect all other methods</span>
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">method_missing</span>(<span class="ruby-identifier">name</span>, *<span class="ruby-identifier">params</span>, &amp;<span class="ruby-identifier">blk</span>)
+      <span class="ruby-ivar">@original_self</span>.<span class="ruby-identifier">send</span>(<span class="ruby-identifier">name</span>, *<span class="ruby-identifier">params</span>, &amp;<span class="ruby-identifier">blk</span>)
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(&amp;<span class="ruby-identifier">block</span>)
+    <span class="ruby-identifier">clear!</span>
+    <span class="ruby-identifier">original_self</span> = <span class="ruby-constant">Kernel</span>.<span class="ruby-identifier">eval</span>(<span class="ruby-string">'self'</span>, <span class="ruby-identifier">block</span>.<span class="ruby-identifier">binding</span>)  <span class="ruby-comment"># Get block's context self</span>
+    <span class="ruby-identifier">map</span> = <span class="ruby-constant">Mapper</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword">self</span>, <span class="ruby-identifier">original_self</span>)               <span class="ruby-comment"># Give it to the proxy</span>
+    <span class="ruby-identifier">map</span>.<span class="ruby-identifier">instance_eval</span>(&amp;<span class="ruby-identifier">block</span>)
+    <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+    <span class="ruby-comment"># ...</span>
+</pre>
+
+<p>Now people familiar with how Rails is implemented will probably object that
+<code>Mapper</code> already <em>has</em> a <code>method_missing</code>
+defined. It’s used to implement the named routes that caused the ambiguity
+we described earlier. We have not solved that ambiguity: by replacing
+Rails’s <code>method_missing</code> with my own
+<code>method_missing</code>, I effectively disable named routes. Granted,
+I’m ignoring that issue right now, and just trying to illustrate how method
+delegation works. As long as we don’t use named routes, our
+<code>makeurl</code> example will now work as we expect:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">makeurl</span>(*<span class="ruby-identifier">params</span>)
+  <span class="ruby-string">'mywebsite/:controller/:action/'</span> <span class="ruby-operator">+</span> <span class="ruby-identifier">params</span>.<span class="ruby-identifier">map</span>{ <span class="ruby-operator">|</span><span class="ruby-identifier">e</span><span class="ruby-operator">|</span> <span class="ruby-identifier">e</span>.<span class="ruby-identifier">inspect</span> }.<span class="ruby-identifier">join</span>(<span class="ruby-string">'/'</span>)
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-constant">ActionController</span><span class="ruby-operator">::</span><span class="ruby-constant">Routing</span><span class="ruby-operator">::</span><span class="ruby-constant">Routes</span>.<span class="ruby-identifier">draw</span> <span class="ruby-keyword">do</span>
+  <span class="ruby-identifier">connect</span> <span class="ruby-identifier">makeurl</span> :<span class="ruby-identifier">id</span>
+  <span class="ruby-identifier">connect</span> <span class="ruby-identifier">makeurl</span> :<span class="ruby-identifier">page</span>, :<span class="ruby-identifier">format</span>
+  <span class="ruby-comment"># etc.</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>While this would appear to have solved the helper method issue, so far it
+does nothing to address the other issues we encountered. For example,
+invoking instance variables inside the block will still reference the
+instance variables of the <code>Mapper</code> proxy object. By using
+<code>instance_eval</code>, we still break encapsulation of the proxy
+class, and lose access to any instance variables from the block’s context.</p>
+
+<p>Addressing the instance variable issue is not as straightforward as
+delegating method calls. There is, as far as I know, no direct way to
+delegate instance variable lookup, and Manges’s blog posting does not
+attempt to provide a solution either. However, we can imagine a few
+techniques to mitigate the problem. First, we could eliminate the proxy
+object’s dependence on instance variables altogether, by replacing them
+with a global hash. In our example, instead of keeping a reference to the
+<code>RouteSet</code> as an instance variable of <code>Mapper</code>, we
+can maintain a global hash that looks up the <code>RouteSet</code> using
+the <code>Mapper</code> instance as the key. In this way, we eliminate the
+risk of the block clobbering the proxy’s state, and minimize the problem of
+breaking encapsulation of the proxy object.</p>
+
+<p>Second, we could make instance variables from the block’s context partially
+available through a “pull-push” technique using
+<code>instance_variable_set</code> and <code>instance_variable_get</code>
+calls. Before calling the block, we “pull” in the block context object’s
+instance variables, by iterating over them and setting the same instance
+variables on the proxy object. Then those instance variables will appear to
+be still available during the block. On completing the block, we then
+“push” any changes back to the block context object, by iterating over the
+proxy’s instance variables and setting them on the block context object.</p>
+
+<p>Here is a sample implementation of these two techniques for handling
+instance variables:</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">RouteSet</span>
+
+  <span class="ruby-keyword">class</span> <span class="ruby-constant">Mapper</span>
+
+    <span class="ruby-identifier">@@routeset_map</span> = <span class="ruby-constant">Hash</span>.<span class="ruby-identifier">new</span>        <span class="ruby-comment"># Global hashes to replace</span>
+    <span class="ruby-identifier">@@original_self_map</span> = <span class="ruby-constant">Hash</span>.<span class="ruby-identifier">new</span>   <span class="ruby-comment"># Mapper's instance variables</span>
+
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">set</span>, <span class="ruby-identifier">original_self</span>)
+      <span class="ruby-identifier">@@routeset_map</span>[<span class="ruby-keyword">self</span>] = <span class="ruby-identifier">set</span>                       <span class="ruby-comment"># Add me to global hashes</span>
+      <span class="ruby-identifier">@@original_self_map</span>[<span class="ruby-keyword">self</span>] = <span class="ruby-identifier">original_self</span>
+      <span class="ruby-identifier">original_self</span>.<span class="ruby-identifier">instance_variables</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">name</span><span class="ruby-operator">|</span>  <span class="ruby-comment"># &quot;pull&quot; instance variables</span>
+        <span class="ruby-identifier">instance_variable_set</span>(<span class="ruby-identifier">name</span>, <span class="ruby-identifier">original_self</span>.<span class="ruby-identifier">instance_variable_get</span>(<span class="ruby-identifier">name</span>))
+      <span class="ruby-keyword">end</span>
+    <span class="ruby-keyword">end</span>
+
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">cleanup</span>
+      <span class="ruby-identifier">@@routeset_map</span>.<span class="ruby-identifier">delete</span>(<span class="ruby-keyword">self</span>)                      <span class="ruby-comment"># Remove from global hashes</span>
+      <span class="ruby-identifier">original_self</span> = <span class="ruby-identifier">@@original_self_map</span>.<span class="ruby-identifier">delete</span>(<span class="ruby-keyword">self</span>)
+      <span class="ruby-identifier">instance_variables</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">name</span><span class="ruby-operator">|</span>                <span class="ruby-comment"># &quot;push&quot; instance variables</span>
+        <span class="ruby-identifier">original_self</span>.<span class="ruby-identifier">instance_variable_set</span>(<span class="ruby-identifier">name</span>, <span class="ruby-identifier">instance_variable_get</span>(<span class="ruby-identifier">name</span>))
+      <span class="ruby-keyword">end</span>
+    <span class="ruby-keyword">end</span>
+
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">connect</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+      <span class="ruby-identifier">@@routeset_map</span>[<span class="ruby-keyword">self</span>].<span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span>)  <span class="ruby-comment"># Lookup set from global hash</span>
+    <span class="ruby-keyword">end</span>
+
+    <span class="ruby-comment"># ...</span>
+
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">method_missing</span>(<span class="ruby-identifier">name</span>, *<span class="ruby-identifier">params</span>, &amp;<span class="ruby-identifier">blk</span>)                 <span class="ruby-comment"># Lookup original self</span>
+       <span class="ruby-identifier">@@original_self_map</span>[<span class="ruby-keyword">self</span>].<span class="ruby-identifier">send</span>(<span class="ruby-identifier">name</span>, *<span class="ruby-identifier">params</span>, &amp;<span class="ruby-identifier">blk</span>)  <span class="ruby-comment"># from global hash</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(&amp;<span class="ruby-identifier">block</span>)
+    <span class="ruby-identifier">clear!</span>
+    <span class="ruby-identifier">original_self</span> = <span class="ruby-constant">Kernel</span>.<span class="ruby-identifier">eval</span>(<span class="ruby-string">'self'</span>, <span class="ruby-identifier">block</span>.<span class="ruby-identifier">binding</span>)
+    <span class="ruby-identifier">map</span> = <span class="ruby-constant">Mapper</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword">self</span>, <span class="ruby-identifier">original_self</span>)
+    <span class="ruby-keyword">begin</span>
+      <span class="ruby-identifier">map</span>.<span class="ruby-identifier">instance_eval</span>(&amp;<span class="ruby-identifier">block</span>)
+    <span class="ruby-keyword">ensure</span>                      <span class="ruby-comment"># Ensure the hashes are cleaned up and instance</span>
+      <span class="ruby-identifier">map</span>.<span class="ruby-identifier">cleanup</span>               <span class="ruby-comment"># variables are pushed back to original_self,</span>
+    <span class="ruby-keyword">end</span>                         <span class="ruby-comment"># even if the block threw an exception</span>
+    <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+    <span class="ruby-comment"># ...</span>
+</pre>
+
+<p>While these measures seem to handle most of the cases, the implementation
+is getting more complex, and includes the additional overhead of hash
+lookups and copying of instance variables. More significantly, the
+“pull-push” technique does not quite preserve the expected semantics of
+instance variables. For instance, if you change an instance variable’s
+value inside the block, it will get “pushed” back to the context object
+after the block is completed, but until then, the context object will not
+know about the change. So if, in the meantime, you called a helper method
+that relies on that instance variable, you will get the old value, and this
+can result in confusion. Using global hashes might be an effective means of
+protecting the proxy object’s internals from the block. However, I find the
+“pull-push” technique to delegate instance variables to be of questionable
+value.</p>
+
+<p>Several variations on the delegation theme have been proposed. One such
+variation uses a technique proposed by Jim Weirich called <a
+href="http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/19153">MethodDirector</a>.
+In this variation, we create a small object whose sole purpose is to
+receive methods and delegate them to whatever object it thinks should
+handle them. Utilizing Jim’s <code>MethodDirector</code> implementation
+rather than adding a <code>method_missing</code> to our <code>Mapper</code>
+proxy, we could rewrite the <code>draw</code> method as follows:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-identifier">clear!</span>
+  <span class="ruby-identifier">original_self</span> = <span class="ruby-constant">Kernel</span>.<span class="ruby-identifier">eval</span>(<span class="ruby-string">'self'</span>, <span class="ruby-identifier">block</span>.<span class="ruby-identifier">binding</span>)   <span class="ruby-comment"># Get the block's context self</span>
+  <span class="ruby-identifier">map</span> = <span class="ruby-constant">Mapper</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword">self</span>)                               <span class="ruby-comment"># Get the proxy</span>
+  <span class="ruby-identifier">director</span> = <span class="ruby-constant">MethodDirector</span>.<span class="ruby-identifier">new</span>([<span class="ruby-identifier">map</span>, <span class="ruby-identifier">original_self</span>])  <span class="ruby-comment"># Create a director</span>
+  <span class="ruby-identifier">director</span>.<span class="ruby-identifier">instance_eval</span>(&amp;<span class="ruby-identifier">block</span>)                       <span class="ruby-comment"># Use the director as self</span>
+  <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>The upshot is not much different from Manges’s delegation technique. Method
+calls get delegated in approximately the same way (though Weirich
+speculates that <code>MethodDirector</code>‘s dispatch process may be
+slow). Within the block, <code>self</code> now points to the
+<code>MethodDirector</code> object rather than the <code>Mapper</code>
+object. This means that we’re no longer breaking encapsulation of the
+mapper proxy (but we are breaking the encapsulation of the
+<code>MethodDirector</code> itself.) We still cannot access instance
+variables from the block’s context. We no longer clobber
+<code>Mapper</code>‘s instance variables, but now we can clobber
+<code>MethodDirector</code>’s. In short, it might be considered a slight
+improvement, but not much, at a possible performance cost.</p>
+
+<p>Let’s wrap up our discussion of delegation and then delve into an entirely
+different approach.</p>
+
+<p><strong>Implementation</strong>:</p>
+<ul><li>
+<p>Create a proxy class defining the DSL.</p>
+</li><li>
+<p>Use <code>method_missing</code> to delegate unhandled methods back to the
+block’s context.</p>
+</li><li>
+<p>Use <code>instance_eval</code> to change <code>self</code> to the proxy in
+the block.</p>
+</li></ul>
+
+<p><strong>Pros</strong>:</p>
+<ul><li>
+<p>Concise: does not require a block parameter.</p>
+</li><li>
+<p>Better than a straight <code>instance_eval</code> in that it handles helper
+methods.</p>
+</li></ul>
+
+<p><strong>Cons</strong>:</p>
+<ul><li>
+<p>No complete way to eliminate the surprising lookup behavior for instance
+variables.</p>
+</li><li>
+<p>Does not solve the helper method vs DSL method ambiguity.</p>
+</li><li>
+<p>Harder to implement than a simple <code>instance_eval</code>.</p>
+</li></ul>
+
+<p><strong>Use it when</strong>: you have a case where
+<code>instance_eval</code> is appropriate (i.e. if you are writing a DSL
+that constructs classes or modifies class internals) but you want to retain
+helper methods.</p>
+
+<h3 id="label-Implementation+strategy+4%3A+arity+detection">Implementation strategy 4: arity detection</h3>
+
+<p>Intrigued by the discussion surrounding <code>instance_eval</code> and DSL
+blocks, James Edward Gray II (of <a
+href="http://rubyquiz.com/">RubyQuiz</a> fame) chimed in with a compromise.
+In his <a
+href="http://blog.grayproductions.net/articles/dsl_block_styles">blog</a>,
+he argues that the the issue boils down to two basic strategies: block
+parameters and <code>instance_eval</code>, both of which have their own
+strengths and weaknesses. On one hand, block parameters avoid surprising
+behavior and ambiguity in exchange for somewhat more verbose syntax. On the
+other hand, <code>instance_eval</code> offers a more concise and perhaps
+more pleasing syntax in exchange for some ambiguity and surprising side
+effects. Neither solution is clearly better than the other, and either
+might be more appropriate in different circumstances. Thus, why not let the
+<em>caller</em> decide which one to use?</p>
+
+<p>This is in fact easier to do than we might think. When you call a method
+using a DSL block, you’ve already make the choice to have your block take a
+parameter or not. The caller does one of the following:</p>
+
+<pre class="ruby"><span class="ruby-constant">ActionController</span><span class="ruby-operator">::</span><span class="ruby-constant">Routing</span><span class="ruby-operator">::</span><span class="ruby-constant">Routes</span>.<span class="ruby-identifier">draw</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">map</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">connect</span> <span class="ruby-string">':controller/:action/:id'</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">connect</span> <span class="ruby-string">':controller/:action/:page/:format'</span>
+  <span class="ruby-comment"># etc.</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>or</p>
+
+<pre>ActionController::Routing::Routes.draw do
+  connect ':controller/:action/:id'
+  connect ':controller/:action/:page/:format'
+  # etc.
+end</pre>
+
+<p>It is possible for the method itself to detect which case it is, just by
+examining the block. Every <code>Proc</code> object provides a method
+called <code>arity</code>, which returns a notion of how many parameters
+the block expects. If you receive a block that expects a parameter, use the
+block parameter strategy; if you receive a block that doesn’t expect a
+parmaeter, use <code>instance_eval</code> or one of its modifications.
+Under this technique, our Routing <code>draw</code> method might look like
+this:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-identifier">clear!</span>
+  <span class="ruby-identifier">map</span> = <span class="ruby-constant">Mapper</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword">self</span>)     <span class="ruby-comment"># Create the proxy object as before</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">block</span>.<span class="ruby-identifier">arity</span> <span class="ruby-operator">==</span> <span class="ruby-value">1</span>
+    <span class="ruby-identifier">block</span>.<span class="ruby-identifier">call</span>(<span class="ruby-identifier">map</span>)            <span class="ruby-comment"># Block takes one parameter: use block parameter technique</span>
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-identifier">map</span>.<span class="ruby-identifier">instance_eval</span>(&amp;<span class="ruby-identifier">block</span>)  <span class="ruby-comment"># otherwise, use instance_eval technique.</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Gray’s proposal has a compelling advantage. The basis for the entire
+discussion is the suggestion that eliminating block parameters is desirable
+for the caller, and the objections raised are also, almost without
+exception, based on the experience of the caller. The basic question is
+thus whether the <em>caller</em> ought to consider the benefits of
+eliminating block parameters to outweigh the costs. Therefore, it makes
+sense to put that choice in the hands of the caller rather than letting the
+library API designer dictate one choice or the other.</p>
+
+<p>For example, one apparently inherent issue with a DSL block style that
+eliminates block parameters is the ambiguity between DSL methods and helper
+methods. By giving the caller the choice, we at once solve the ambiguity by
+providing a language for it. If the caller does not need to distinguish
+between the two, because she is not using helper methods or named routes,
+then she can choose to omit the block parameter and use
+<code>instance_eval</code> without harm. If, on the other hand, she
+<em>does</em> need to distinguish between the two, as in the case of Rails
+routing where any method name could be a DSL method because of the named
+routes feature, then she can choose to make the block parameter explicit.</p>
+
+<p>There is, however, a subtle disadvantage to providing the choice. By
+effectively allowing two DSL styles, a library that offers Gray’s choice
+dilutes the identity and “branding” of its DSL. If there are two “dialects”
+of the DSL, one that uses a block parameter and one that does not, it
+becomes harder for programmers to recognize the language. The two dialects
+might develop separate followings and distinct “best-practices” on account
+of their syntactic differences, and the schism would diminish the overall
+power of the DSL. While the actual cost of this diluting effect can be
+difficult to measure, it cannot be ignored, because the whole point of
+defining a DSL is to make code more understandable and recognizable.</p>
+
+<p>Finally, there are some cases when one choice is specifically called for by
+the nature of the DSL being implemented. RSpec is a good example: it
+requires <code>instance_eval</code> in order to support access to the test
+story’s instance variables. Allowing the caller to choose would not make
+sense in this case.</p>
+
+<p>Let us summarize Gray’s arity detection technique, and then proceed to an
+interesting new idea recently proposed by Why The Lucky Stiff.</p>
+
+<p><strong>Implementation</strong>:</p>
+<ul><li>
+<p>Create a proxy class defining the DSL.</p>
+</li><li>
+<p>Detect the choice of the caller based on block arity.</p>
+</li><li>
+<p>Use either a block parameter or <code>instance_eval</code> to invoke the
+block.</p>
+</li></ul>
+
+<p><strong>Pros</strong>:</p>
+<ul><li>
+<p>Gives the caller the ability to choose which syntax works best.</p>
+</li><li>
+<p>Solves method lookup ambiguity.</p>
+</li><li>
+<p>Implementation cost is not significant.</p>
+</li></ul>
+
+<p><strong>Cons</strong>:</p>
+<ul><li>
+<p>Not an all-encompassing solution– either choice still has its own pros and
+cons.</p>
+</li><li>
+<p>Possibility of dilution of DSL branding.</p>
+</li></ul>
+
+<p><strong>Use it when</strong>: it is not clear whether block parameters or
+<code>instance_eval</code> is better, or if you need a way to mitigate the
+method lookup ambiguity.</p>
+
+<h3 id="label-Implementation+strategy+5%3A+mixins">Implementation strategy 5: mixins</h3>
+
+<p>One of the most interesting entries into the DSL blocks discussion was
+proposed by Why The Lucky Stiff in his blog. Unfortunately, with Why’s
+disappearance, the original article is no longer available, but we can
+summarize its contents here. Why observes that the problem with
+<code>instance_eval</code> is that it does too much. Most DSL blocks merely
+want to be able to intercept and respond to certain method calls, whereas
+<code>instance_eval</code> actually changes <code>self</code>, which has
+the additional side effects of blocking access to other methods and
+instance variables, and breaking encapsulation. A better solution, he
+maintains, is not to change <code>self</code>, but instead temporarily to
+add the DSL’s methods to the block’s context for the duration of the block.
+That is, instead of having the DSL proxy object delegate back to the
+block’s context object, do the opposite: cause the block’s context object
+to delegate to the DSL proxy object.</p>
+
+<p>Implementing this is actually harder than it sounds. We need to take the
+block context object, dynamically add methods to it before calling the
+block, and then dynamically remove them afterward. We already know how to
+get the block context object, but adding and removing methods requires some
+more Ruby metaprogramming wizardry. And now we’re stretching our toolbox to
+the breaking point.</p>
+
+<p>Ruby provides tools for dynamically defining methods on and removing
+methods from an existing module. We might be tempted to try something like
+this:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-identifier">clear!</span>
+  <span class="ruby-identifier">save_self</span> = <span class="ruby-keyword">self</span>
+  <span class="ruby-identifier">original_self</span> = <span class="ruby-constant">Kernel</span>.<span class="ruby-identifier">eval</span>(<span class="ruby-string">'self'</span>, <span class="ruby-identifier">block</span>.<span class="ruby-identifier">binding</span>)
+  <span class="ruby-identifier">original_self</span>.<span class="ruby-identifier">class</span>.<span class="ruby-identifier">module_eval</span> <span class="ruby-keyword">do</span>
+    <span class="ruby-identifier">define_method</span>(:<span class="ruby-identifier">connect</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">path</span>,<span class="ruby-identifier">options</span><span class="ruby-operator">|</span>
+      <span class="ruby-identifier">save_self</span>.<span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>,<span class="ruby-identifier">options</span>)
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">yield</span>
+  <span class="ruby-identifier">original_self</span>.<span class="ruby-identifier">class</span>.<span class="ruby-identifier">module_eval</span> <span class="ruby-keyword">do</span>
+    <span class="ruby-identifier">remove_method</span>(:<span class="ruby-identifier">connect</span>)
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>This implementation, however, is fraught with problems. Notably, we are
+modifying the entire class of objects, including instances other than
+<code>original_self</code>, which is probably not what we intended. In
+addition, we could be unknowingly clobbering another <code>connect</code>
+method defined on <code>original_self</code>‘s class. (There are, of
+course, many other problems that I’m just ignoring for the sake of clarity,
+such as exception safety, and the fact that the <code>options</code>
+parameter cannot take a default value when using
+<code>define_method</code>. Suffice to say that the above implementation is
+quite broken.)</p>
+
+<p>What we would really like is a way to add methods to just one object
+temporarily, and then remove them, restoring the original state (including
+any methods we may have overridden when we added ours.) Ruby
+<em>almost</em> provides a reasonable way to do this, using the
+<code>extend</code> method. This method lets you add a module’s methods to
+a single specific object, like this:</p>
+
+<pre class="ruby"><span class="ruby-keyword">module</span> <span class="ruby-constant">MyExtension</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">foo</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;foo called&quot;</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-identifier">s1</span> = <span class="ruby-string">'hello'</span>
+<span class="ruby-identifier">s2</span> = <span class="ruby-string">'world'</span>
+<span class="ruby-identifier">s1</span>.<span class="ruby-identifier">extend</span>(<span class="ruby-constant">MyExtension</span>)  <span class="ruby-comment"># adds the &quot;foo&quot; method only to object s1,</span>
+                        <span class="ruby-comment">#   not to the entire string class.</span>
+<span class="ruby-identifier">s1</span>.<span class="ruby-identifier">foo</span>                  <span class="ruby-comment"># prints &quot;foo called&quot;</span>
+<span class="ruby-identifier">s2</span>.<span class="ruby-identifier">foo</span>                  <span class="ruby-comment"># NameError: s2 is unchanged</span>
+</pre>
+
+<p>Unfortunately, there is no way to remove the module from the object. Ruby
+has no “unextend” capability. This omission led Why to implement it himself
+as a Ruby language extension called <a
+href="http://github.com/rkh/mixico">Mixico</a>. The name comes from the
+library’s ability to add and remove “mixins” at will. A similar library
+exists as a gem called <a
+href="http://www.somethingnimble.com/bliki/mixology">Mixology</a>. The two
+libraries use different APIs but perform the same basic function. For the
+discussion below, I will assume Mixico is installed. However, the library I
+describe in the next section uses a custom implementation that is
+compatible with MRI 1.9 and JRuby.</p>
+
+<p>Using Mixico, we can now write the <code>draw</code> method like this:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-identifier">clear!</span>
+  <span class="ruby-constant">Module</span>.<span class="ruby-identifier">mix_eval</span>(<span class="ruby-constant">MapperModule</span>, &amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Wow! That was simple. Mixico even handles all the eval-block-binding
+hackery for us. But the simplicity is a little deceptive: when we want to
+do a robust implementation, we run into two issues. First, we run into a
+challenge if we want to support multiple DSL blocks being invoked at once:
+for example in the case of nested blocks or multithreading. It is possible
+in such cases that a MapperModule is already mixed into the block’s
+context. The <code>mix_eval</code> method by itself, as of this writing,
+doesn’t handle this case well: the inner invocation will remove the module
+prematurely. Additional logic is necessary to track how many nested
+invocations (or invocations from other threads) want to mix-in each
+particular module into each object.</p>
+
+<p>The other challenge is that of creating the <code>MapperModule</code>
+module, implementing the <code>connect</code> method and any others we want
+to mix-in. Because we’re adding methods to someone else’s object, we need
+to be as unobtrusive as possible, yet we need to provide the necessary
+functionality, including invoking the <code>add_route</code> method back on
+the <code>RouteSet</code>. This is unfortunately not trivial. In
+particular, we need to give <code>MapperModule</code> a way to reference
+the <code>RouteSet</code>. I’ll describe a full implementation of this in
+the next section, but for now let’s explore some possible approaches.</p>
+
+<p>Rails’s original <code>Mapper</code> proxy class, we recall from our
+earlier discussion, used an instance variable, <code>@set</code>, which
+pointed back to the <code>RouteSet</code> instance and thus provided a way
+to invoke <code>add_route</code>. One approach could be to add such an
+instance variable to the block’s context object, so it’s available in
+methods of <code>MapperModule</code>. This seems to be the easiest
+approach, but it is also dangerous because it intrudes on the context
+object, adding an instance variable and potentially clobbering one used by
+the caller. Furthermore, in the case of nested blocks that try to add
+methods to the same object, the two blocks may clobber each other’s
+instance variables.</p>
+
+<p>Instead of adding information to the block’s context object, we could stash
+the information away in a global location, such as a class variable, that
+can be accessed by the <code>MapperModule</code> from within the block.
+This is of course the same strategy we used to eliminate instance variables
+in the section on delegation. Again, this seems to work, until you have
+nested or multithreaded usage. It then becomes neccessary to keep a stack
+of references to handle nesting, and thread-local variables to handle
+multithreading– all feasible to do, but a lot of work.</p>
+
+<p>A third approach involves dynamically generating a singleton module, “hard
+coding” a reference to the <code>RouteSet</code> in the module. For
+example:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-identifier">clear!</span>
+  <span class="ruby-identifier">save_self</span> = <span class="ruby-keyword">self</span>
+  <span class="ruby-identifier">mapper_module</span> = <span class="ruby-constant">Module</span>.<span class="ruby-identifier">new</span>
+  <span class="ruby-identifier">mapper_module</span>.<span class="ruby-identifier">module_eval</span> <span class="ruby-keyword">do</span>
+    <span class="ruby-identifier">define_method</span>(:<span class="ruby-identifier">connect</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">path</span>,<span class="ruby-identifier">options</span><span class="ruby-operator">|</span>
+      <span class="ruby-identifier">save_self</span>.<span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>,<span class="ruby-identifier">options</span>)
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-constant">Module</span>.<span class="ruby-identifier">mix_eval</span>(<span class="ruby-identifier">mapper_module</span>, &amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>This probably can be made to work, and it also has the benefit of solving
+the nesting and multithreading issue neatly since each mixin is done
+exactly once. However, it seems to be a fairly heavyweight solution:
+creating a new module for every DSL block invocation may have performance
+implications. It is also not clear how to support constructs that are not
+available to <code>define_method</code>, such as blocks and parameter
+default values. However, such an approach may still be useful in certain
+cases when you need to generate a DSL dynamically based on the context.</p>
+
+<p>One more issue with the mixin strategy is that, like all implementations
+that drop the block parameter, there remains an ambiguity regarding whether
+methods should be directed to the DSL or to the surrounding context. In the
+implementations we’ve discussed previously, based on
+<code>instance_eval</code>, the actual behavior is fairly straightforward
+to reason about. A simple <code>instance_eval</code> disables method calls
+to the block’s context altogether: you can call <em>only</em> the DSL
+methods. An <code>instance_eval</code> with delegation re-enables method
+calls to the block’s context but gives the DSL priority. If both the DSL
+and the surrounding block define the same method name, the DSL’s method
+will be take precedence.</p>
+
+<p>Mixin’s behavior is less straightforward, because of a subtlety in Ruby’s
+method lookup behavior. Under most cases, it behaves similarly to an
+<code>instance_eval</code> with delegation: the DSL’s methods take
+priority. However, if methods have been added directly to the object, they
+will take precedence over the DSL’s methods. Following is an example of
+this case:</p>
+
+<pre class="ruby"><span class="ruby-comment"># Suppose we have a DSL block available, via &quot;call_my_dsl&quot;,</span>
+<span class="ruby-comment"># that implements the methods &quot;foo&quot; and &quot;bar&quot;...</span>
+
+<span class="ruby-comment"># First, let's implement a simple class</span>
+<span class="ruby-keyword">class</span> <span class="ruby-constant">MyClass</span>
+
+  <span class="ruby-comment"># A test method</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">foo</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;in foo&quot;</span>
+  <span class="ruby-keyword">end</span>
+
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-comment"># Create an instance of MyClass</span>
+<span class="ruby-identifier">obj</span> = <span class="ruby-constant">MyClass</span>.<span class="ruby-identifier">new</span>
+
+<span class="ruby-comment"># Now, add a new method &quot;bar&quot; to the object.</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">obj</span>.<span class="ruby-identifier">bar</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;in bar&quot;</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-comment"># Finally, add a method &quot;run&quot; that runs a DSL block</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">obj</span>.<span class="ruby-identifier">run</span>
+  <span class="ruby-identifier">call_my_dsl</span> <span class="ruby-keyword">do</span>
+    <span class="ruby-identifier">foo</span>         <span class="ruby-comment"># DSL &quot;foo&quot; method takes precedence over MyClass#foo</span>
+    <span class="ruby-identifier">bar</span>         <span class="ruby-comment"># The object's &quot;bar&quot; method takes precedence over DSL &quot;bar&quot;</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-comment"># At this point, obj has methods &quot;foo&quot;, &quot;bar&quot;, and &quot;run&quot;</span>
+<span class="ruby-comment"># Run the DSL block to test the behavior</span>
+<span class="ruby-identifier">obj</span>.<span class="ruby-identifier">run</span>
+</pre>
+
+<p>In the above example, suppose both <code>foo</code> and <code>bar</code>
+are methods of the DSL. They are also both defined as methods of
+<code>obj</code>. (<code>foo</code> is available because it is a method of
+<code>MyClass</code>, while <code>bar</code> is available because it is
+explicitly added to <code>obj</code>.) However, if you run the code, it
+calls the DSL’s <code>foo</code> but <code>obj</code>‘s <code>bar</code>.
+Why?</p>
+
+<p>The reason points to a subtlety in how Ruby does method lookup. When you
+define a method in the way <code>foo</code> is defined, it is just added to
+the class. However, when you define a method in the way <code>bar</code> is
+defined, it is defined as a “singleton method”, and added to the “singleton
+class”, which is an anonymous class that holds methods defined directly on
+a particular object. It turns out that the singleton class is always given
+the highest priority in method lookup. So, for example, the lookup order
+for methods of <code>obj</code> within the block would look like this:</p>
+
+<pre class="ruby"><span class="ruby-identifier">singleton</span> <span class="ruby-identifier">methods</span> <span class="ruby-identifier">of</span> <span class="ruby-identifier">obj</span>  <span class="ruby-operator">-</span><span class="ruby-operator">&gt;</span>  <span class="ruby-identifier">mixin</span> <span class="ruby-keyword">module</span> <span class="ruby-identifier">from</span> <span class="ruby-identifier">the</span> <span class="ruby-constant">DSL</span>  <span class="ruby-operator">-</span><span class="ruby-operator">&gt;</span>  <span class="ruby-identifier">methods</span> <span class="ruby-identifier">of</span> <span class="ruby-constant">MyClass</span>
+(<span class="ruby-identifier">e</span>.<span class="ruby-identifier">g</span>. <span class="ruby-identifier">bar</span>, <span class="ruby-identifier">run</span>)               (<span class="ruby-identifier">e</span>.<span class="ruby-identifier">g</span>. <span class="ruby-identifier">foo</span>, <span class="ruby-identifier">bar</span>)                (<span class="ruby-identifier">e</span>.<span class="ruby-identifier">g</span>. <span class="ruby-identifier">foo</span>)
+</pre>
+
+<p>So when the <code>foo</code> method is called, it is not found in the
+singleton class, but it is found in the mixin, so the mixin’s version is
+invoked. However, when <code>bar</code> is called, it is found in the
+singleton class, so that version is invoked in favor of the mixin’s
+version.</p>
+
+<p>Does this esoteric-sounding case actually happen in practice? In fact it
+does, quite frequently: class methods are singleton methods of the class
+object, so you should beware of this issue when designing a DSL block that
+will be called from a class method.</p>
+
+<p>Well, that was confusing. It is on account of such behavior that we need to
+take the method lookup ambiguity seriously when dealing with mixins. In
+fact, I would go so far as to suggest that the mixin implementation should
+always go hand-in-hand with a way to mitigate that ambiguity, such as
+Gray’s arity check.</p>
+
+<p>As we have seen, the mixin idea seems like it may be a compelling solution,
+particularly in conjunction with Gray’s arity check, but the implementation
+details present some challenges. It may be viable if a library can be
+written to hide the implementation complexity. Let’s summarize this
+approach, and then proceed to examine such a library, one that uses some of
+the best of what we’ve discussed to make implementing DSL blocks simple.</p>
+
+<p><strong>Implementation</strong>:</p>
+<ul><li>
+<p>Install a mixin library such as mixico or mixology (or roll your own if
+necessary).</p>
+</li><li>
+<p>Define the DSL methods in a module.</p>
+</li><li>
+<p>Mix the module into the block’s context before invoking the block, and
+remove it afterwards.</p>
+</li><li>
+<p>Carefully handle any issues involving nested blocks and multithreading
+while remaining unobtrusive.</p>
+</li></ul>
+
+<p><strong>Pros</strong>:</p>
+<ul><li>
+<p>Allows the concise syntax without a block parameter.</p>
+</li><li>
+<p>Doesn’t change <code>self</code>, thus preserving the right behavior
+regarding helper methods and instance variables.</p>
+</li></ul>
+
+<p><strong>Cons</strong>:</p>
+<ul><li>
+<p>Requires an extension to Ruby to implement mixin removal.</p>
+</li><li>
+<p>Implementation is complicated and error-prone.</p>
+</li><li>
+<p>The helper method vs DSL method ambiguity remains, exhibiting surprising
+behavior in the presence of singleton methods.</p>
+</li></ul>
+
+<p><strong>Use it when</strong>: parameterless blocks are desired and the
+method lookup ambiguity can be mitigated, as long as a library is available
+to handle the details of the implementation.</p>
+
+<h3 id="label-Blockenspiel%3A+a+comprehensive+implementation">Blockenspiel: a comprehensive implementation</h3>
+
+<p>Some of the implementations we have covered, especially the mixin
+implementation, have some compelling qualities, but are hampered by the
+difficulty of implementing them in a robust way. They could be viable if a
+library were present to handle the details.</p>
+
+<p><a href="http://virtuoso.rubyforge.org/blockenspiel">Blockenspiel</a> was
+written to be that library. It first provides a comprehensive and robust
+implementation of the mixin strategy, correctly handling nesting and
+multithreading. It offers the option to perform an arity check, giving the
+caller the choice of whether or not to use a block parameter. You can even
+tell blockenspiel to use an alternate implementation, such as
+<code>instance_eval</code>, instead of a mixin, in those cases when it is
+appropriate. Finally, blockenspiel also provides an API for dynamic
+construction of DSLs.</p>
+
+<p>But most importantly, it is easy to use. To write a basic DSL, just follow
+the first and easiest implementation strategy, creating a proxy class that
+can be passed into the block as a parameter. Then instead of yielding the
+proxy object, pass it to blockenspiel, and it will do the rest.</p>
+
+<p>Our Rails routing example implemented using blockenspiel might look like
+this:</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">RouteSet</span>
+
+  <span class="ruby-keyword">class</span> <span class="ruby-constant">Mapper</span>
+    <span class="ruby-identifier">include</span> <span class="ruby-constant">Blockenspiel</span><span class="ruby-operator">::</span><span class="ruby-constant">DSL</span>   <span class="ruby-comment"># tell blockenspiel this is a DSL proxy</span>
+
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">set</span>)
+      <span class="ruby-ivar">@set</span> = <span class="ruby-identifier">set</span>
+    <span class="ruby-keyword">end</span>
+
+    <span class="ruby-keyword">def</span> <span class="ruby-identifier">connect</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+      <span class="ruby-ivar">@set</span>.<span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span>)
+    <span class="ruby-keyword">end</span>
+    <span class="ruby-comment"># ...</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(&amp;<span class="ruby-identifier">block</span>)
+    <span class="ruby-identifier">clear!</span>
+    <span class="ruby-constant">Blockenspiel</span>.<span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">block</span>, <span class="ruby-constant">Mapper</span>.<span class="ruby-identifier">new</span>(<span class="ruby-keyword">self</span>))   <span class="ruby-comment"># blockenspiel does the rest</span>
+    <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+    <span class="ruby-comment"># ...</span>
+</pre>
+
+<p>The code above is as simple as a block parameter or
+<code>instance_eval</code> implementation. However, it performs a
+full-fledged mixin implementation, and even throws in the arity check. We
+recall from the previous section that one of the chief challenges is to
+mediate communication between the mixin and proxy in a re-entrant and
+thread-safe way. The blockenspiel library implements this mediation using a
+global hash, avoiding the compatibility risk of adding instance variables
+to the block’s context object, and avoiding the performance hit of
+dynamically generating proxies. All the implementation details are
+carefully handled behind the scenes.</p>
+
+<p>Atop this basic usage, blockenspiel provides two types of customization.
+First, you can customize the DSL, using a few simple directives to specify
+which methods on your proxy should be available in the mixin
+implementation. You can also cause methods to be available in the mixin
+under different names, thus sidestepping the <code>attr_writer</code> issue
+we discussed earlier. If you want methods of the form “attribute=” on your
+proxy object, blockenspiel provides a simple syntax for renaming them:</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">ConfigMethods</span>
+  <span class="ruby-identifier">include</span> <span class="ruby-constant">Blockenspiel</span><span class="ruby-operator">::</span><span class="ruby-constant">DSL</span>
+  <span class="ruby-identifier">attr_writer</span> :<span class="ruby-identifier">author</span>
+  <span class="ruby-identifier">attr_writer</span> :<span class="ruby-identifier">title</span>
+  <span class="ruby-identifier">dsl_method</span> :<span class="ruby-identifier">set_author</span>, :<span class="ruby-identifier">author=</span>   <span class="ruby-comment"># Make the methods available in parameterless</span>
+  <span class="ruby-identifier">dsl_method</span> :<span class="ruby-identifier">set_title</span>, :<span class="ruby-identifier">title=</span>     <span class="ruby-comment"># blocks under these alternate names.</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>Now, when we use block parameters, we use the methods of the original
+<code>ConfigMethods</code> class:</p>
+
+<pre class="ruby"><span class="ruby-identifier">create_paper</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">config</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">author</span> = <span class="ruby-string">&quot;Daniel Azuma&quot;</span>
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">title</span> = <span class="ruby-string">&quot;Implementing DSL Blocks&quot;</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>And, when we omit the parameter, the alternate method names are mixed in:</p>
+
+<pre>create_paper do
+  set_author &quot;Daniel Azuma&quot;
+  set_title &quot;Implementing DSL Blocks&quot;
+end</pre>
+
+<p>Second, you can customize the invocation– for example specifying whether to
+perform an arity check, whether to use <code>instance_eval</code> instead
+of mixins, and various other minor behavioral adjustments– simply by
+providing parameters to the <code>Blockenspiel#invoke</code> method. All
+the implementation details are handled by the blockenspiel library, leaving
+you free to focus on your API.</p>
+
+<p>Third, blockenspiel provides an API, itself a DSL block, letting you
+dynamically construct DSLs. Suppose, for the sake of argument, we wanted to
+let the caller optionally rename the <code>connect</code> method. (Maybe we
+want to make the name “connect” available for named routes.) That is,
+suppose we wanted to provide this behavior:</p>
+
+<pre class="ruby"><span class="ruby-constant">ActionController</span><span class="ruby-operator">::</span><span class="ruby-constant">Routing</span><span class="ruby-operator">::</span><span class="ruby-constant">Routes</span>.<span class="ruby-identifier">draw</span>(:<span class="ruby-identifier">method</span> =<span class="ruby-operator">&gt;</span> :<span class="ruby-identifier">myconnect</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">map</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">myconnect</span> <span class="ruby-string">':controller/:action/:id'</span>
+  <span class="ruby-identifier">map</span>.<span class="ruby-identifier">myconnect</span> <span class="ruby-string">':controller/:action/:page/:format'</span>
+  <span class="ruby-comment"># etc.</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>This requires dynamic generation of the proxy class. We could implement it
+using blockenspiel as follows:</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">RouteSet</span>
+
+  <span class="ruby-comment"># We don't define a static Mapper class anymore. Now it's dynamically generated.</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">draw</span>(<span class="ruby-identifier">options</span>={}, &amp;<span class="ruby-identifier">block</span>)
+    <span class="ruby-identifier">clear!</span>
+    <span class="ruby-identifier">method_name</span> = <span class="ruby-identifier">options</span>[:<span class="ruby-identifier">method</span>] <span class="ruby-operator">||</span> :<span class="ruby-identifier">connect</span>   <span class="ruby-comment"># The method name for the DSL to use</span>
+    <span class="ruby-identifier">save_self</span> = <span class="ruby-keyword">self</span>                             <span class="ruby-comment"># Save a reference to the RouteSet</span>
+    <span class="ruby-constant">Blockenspiel</span>.<span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">block</span>) <span class="ruby-keyword">do</span>                <span class="ruby-comment"># Dynamically create a &quot;mapper&quot; object</span>
+      <span class="ruby-identifier">add_method</span>(<span class="ruby-identifier">method_name</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">path</span>, *<span class="ruby-identifier">args</span><span class="ruby-operator">|</span>   <span class="ruby-comment"># Dynamically add the method</span>
+        <span class="ruby-identifier">save_self</span>.<span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, *<span class="ruby-identifier">args</span>)         <span class="ruby-comment"># Call back to the RouteSet</span>
+      <span class="ruby-keyword">end</span>
+    <span class="ruby-keyword">end</span>
+    <span class="ruby-identifier">named_routes</span>.<span class="ruby-identifier">install</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># ...</span>
+
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_route</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">options</span> = {})
+    <span class="ruby-comment"># ...</span>
+</pre>
+
+<p>You can install blockenspiel as a gem. It is compatible with MRI 1.8.7 or
+later, MRI 1.9.1 or later, and JRuby 1.5 or later.</p>
+
+<pre>gem install blockenspiel</pre>
+
+<p>More information is available on blockenspiel’s Rubyforge page at <a
+href="http://virtuoso.rubyforge.org/blockenspiel">virtuoso.rubyforge.org/blockenspiel</a></p>
+
+<p>Source code is available on Github at <a
+href="http://github.com/dazuma/blockenspiel">github.com/dazuma/blockenspiel</a></p>
+
+<h3 id="label-Summary">Summary</h3>
+
+<p>DSL blocks are a valuable and ubiquitous pattern for designing Ruby APIs. A
+flurry of discussion has recently surrounded the implementation of DSL
+blocks, particularly addressing the desire to eliminate block parameters.
+We have discussed several different strategies for DSL block
+implementation, each with its own advantages and disadvantages.</p>
+
+<p>The simplest strategy, creating a proxy object and passing a reference to
+the block as a parameter, is straightforward, safe, and widely used.
+However, sometimes we might want to provide a cleaner API by eliminating
+the block parameter.</p>
+
+<p>Parameterless blocks inherently pose some syntactic issues. First, it may
+be ambiguous whether a method is meant to be directed to the DSL or to the
+block’s surrounding context. Second, certain constructions, such as those
+created by <code>attr_writer</code>, are syntactically not allowed and must
+be renamed.</p>
+
+<p>The simplest way to eliminate the block parameter is to change
+<code>self</code> inside the block using <code>instance_eval</code>. This
+has the side effects of opening the implementation of the proxy object, and
+cutting off access to the context’s helper methods and instance variables.</p>
+
+<p>It is possible to mitigate these side effects by delegating methods, and
+partially delegating instance variables, back to the context object. These
+are not foolproof mechanisms and are subject to a few cases of surprising
+behavior.</p>
+
+<p>The mixin strategy takes a different approach to parameterless blocks by
+temporarily “mixing” the DSL methods into the context object itself. This
+eliminates the side effects of changing the <code>self</code> reference,
+but requires a more complex implementation, and somewhat exacerbates the
+method lookup ambiguity.</p>
+
+<p>Since the question of whether or not to take a block parameter may be best
+answered by the caller, it is often useful for an implementation to check
+the block’s arity to determine whether to use a block parameter or a
+parameterless implementation. However, it is possible for this step to lead
+to dilution of the DSL’s branding.</p>
+
+<p>The <a href="Blockenspiel.html">Blockenspiel</a> library provides a
+concrete and robust implementation of DSL blocks, based on the best of
+these ideas. It hides the implementation complexity while providing a
+number of features useful for writing DSL blocks.</p>
+
+<h3 id="label-References">References</h3>
+
+<p><a href="http://www.daniel-azuma.com/">Daniel Azuma</a>, <em><a
+href="http://virtuoso.rubyforge.org/blockenspiel">Blockenspiel</a></em>
+(Ruby library), 2008.</p>
+
+<p><a href="http://olabini.com/">Ola Bini</a>, <em><a
+href="http://olabini.com/blog/2008/09/dont-overuse-instance_eval-and-instance_exec">Don't
+overuse instance_eval and instance_exec</a></em>, 2008.09.18</p>
+
+<p><a href="http://jamisbuck.org">Jamis Buck</a>, <em><a
+href="http://weblog.jamisbuck.org/2006/10/2/under-the-hood-rails-routing-dsl">Under
+the hood: Rails' routing DSL</a></em>, 2006.10.02.</p>
+
+<p><a href="http://blog.grayproductions.net/">James Edward Gray II</a>, <em><a
+href="http://blog.grayproductions.net/articles/dsl_block_styles">DSL Block
+Styles</a></em>, 2008.10.07</p>
+
+<p><a href="http://www.dcmanges.com">Dan Manges</a>, <em><a
+href="http://www.dcmanges.com/blog/ruby-dsls-instance-eval-with-delegation">Ruby
+DSLs: instance_eval with delegation</a></em>, 2008.10.07</p>
+
+<p><a href="http://www.8thlight.com/main/bios/micah">Micah Martin</a>, <em><a
+href="http://blog.8thlight.com/articles/2007/05/20/">Ruby DSL
+Blocks</a></em>, 2007.05.20.</p>
+
+<p><em><a
+href="http://www.somethingnimble.com/bliki/mixology">Mixology</a></em>
+(Ruby library), 2007.</p>
+
+<p><em><a href="http://rspec.info/">RSpec</a></em> (Ruby library), 2005-2008.</p>
+
+<p><a href="http://onestepback.org/">Jim Weirich</a>, <em><a
+href="http://builder.rubyforge.org">Builder</a></em> (Ruby library),
+2004-2008.</p>
+
+<p><a href="http://onestepback.org/">Jim Weirich</a>, <em><a
+href="http://onestepback.org/index.cgi/Tech/Ruby/BuilderObjects.rdoc">Builder
+Objects</a></em> 2004.08.24.</p>
+
+<p><a href="http://onestepback.org/">Jim Weirich</a>, <em><a
+href="http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/19153">ruby-core:19153</a></em>,
+2008.10.07</p>
+
+<p><a href="http://en.wikipedia.org/wiki/Why_the_lucky_stiff">Why The Lucky
+Stiff</a>, <em><a href="http://github.com/markaby/markaby">Markaby</a></em>
+(Ruby library), 2006.</p>
+
+<p><a href="http://en.wikipedia.org/wiki/Why_the_lucky_stiff">Why The Lucky
+Stiff</a>, <em><a href="http://github.com/rkh/mixico">Mixico</a></em> (Ruby
+library), 2008.</p>
+
+<p><a href="http://en.wikipedia.org/wiki/Why_the_lucky_stiff">Why The Lucky
+Stiff</a>, <em>Mixing Our Way Out Of Instance Eval?</em> (no longer
+online), 2008.10.06.</p>
+
+<h3 id="label-About+the+author">About the author</h3>
+
+<p>Daniel Azuma is Chief Software Architect at GeoPage. He has been working
+with Ruby since 2005, and finds the language generally pleasant to work
+with, though he thinks the scoping rules could use some improvement. His
+home page is at <a
+href="http://www.daniel-azuma.com/">www.daniel-azuma.com/</a></p>
+
+</div>
+
+
+
+<footer id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
+  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
+  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+</footer>
+

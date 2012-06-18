@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+
+<title>module Blockenspiel - Blockenspiel 0.4.3 Documentation</title>
+
+<link type="text/css" media="screen" href="./rdoc.css" rel="stylesheet">
+
+<script type="text/javascript">
+  var rdoc_rel_prefix = "./";
+</script>
+
+<script type="text/javascript" charset="utf-8" src="./js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/navigation.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search_index.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/searcher.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/darkfish.js"></script>
+
+
+<body id="top" class="module">
+<nav id="metadata">
+  <nav id="home-section" class="section">
+  <h3 class="section-header">
+    <a href="./index.html">Home</a>
+    <a href="./table_of_contents.html#classes">Classes</a>
+    <a href="./table_of_contents.html#methods">Methods</a>
+  </h3>
+</nav>
+
+
+  <nav id="search-section" class="section project-section" class="initially-hidden">
+  <form action="#" method="get" accept-charset="utf-8">
+    <h3 class="section-header">
+      <input type="text" name="search" placeholder="Search" id="search-field"
+             title="Type to search, Up and Down to navigate, Enter to load">
+    </h3>
+  </form>
+
+  <ul id="search-results" class="initially-hidden"></ul>
+</nav>
+
+
+  <div id="file-metadata">
+    <nav id="file-list-section" class="section">
+  <h3 class="section-header">Defined In</h3>
+  <ul>
+    <li>lib/blockenspiel/builder.rb
+    <li>lib/blockenspiel/dsl_setup.rb
+    <li>lib/blockenspiel/errors.rb
+    <li>lib/blockenspiel/impl.rb
+    <li>lib/blockenspiel/unmixer_rubinius.rb
+    <li>lib/blockenspiel/unmixer_unimplemented.rb
+    <li>lib/blockenspiel/version.rb
+    <li>lib/blockenspiel/versionomy.rb
+    <li>lib/blockenspiel.rb
+  </ul>
+</nav>
+
+    
+  </div>
+
+  <div id="class-metadata">
+    
+    
+    
+    <!-- Method Quickref -->
+<nav id="method-list-section" class="section">
+  <h3 class="section-header">Methods</h3>
+
+  <ul class="link-list">
+    
+    <li><a href="#method-c-invoke">::invoke</a>
+    
+  </ul>
+</nav>
+
+  </div>
+
+  <div id="project-metadata">
+    <nav id="fileindex-section" class="section project-section">
+  <h3 class="section-header">Pages</h3>
+
+  <ul>
+  
+    <li class="file"><a href="./Blockenspiel_rdoc.html">Blockenspiel</a>
+  
+    <li class="file"><a href="./History_rdoc.html">History</a>
+  
+    <li class="file"><a href="./ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
+  
+    <li class="file"><a href="./README_rdoc.html">README</a>
+  
+  </ul>
+</nav>
+
+    <nav id="classindex-section" class="section project-section">
+  <h3 class="section-header">Class and Module Index</h3>
+
+  <ul class="link-list">
+  
+    <li><a href="./Blockenspiel.html">Blockenspiel</a>
+  
+    <li><a href="./Blockenspiel/Base.html">Blockenspiel::Base</a>
+  
+    <li><a href="./Blockenspiel/BlockParameterError.html">Blockenspiel::BlockParameterError</a>
+  
+    <li><a href="./Blockenspiel/BlockenspielError.html">Blockenspiel::BlockenspielError</a>
+  
+    <li><a href="./Blockenspiel/Builder.html">Blockenspiel::Builder</a>
+  
+    <li><a href="./Blockenspiel/DSL.html">Blockenspiel::DSL</a>
+  
+    <li><a href="./Blockenspiel/DSLMissingError.html">Blockenspiel::DSLMissingError</a>
+  
+    <li><a href="./Blockenspiel/DSLSetupMethods.html">Blockenspiel::DSLSetupMethods</a>
+  
+  </ul>
+</nav>
+
+  </div>
+</nav>
+
+<div id="documentation">
+  <h1 class="module">module Blockenspiel</h1>
+
+  <div id="description" class="description">
+    
+<h2 id="label-Blockenspiel"><a href="Blockenspiel.html">Blockenspiel</a></h2>
+
+<p>The <a href="Blockenspiel.html">Blockenspiel</a> module provides a
+namespace for <a href="Blockenspiel.html">Blockenspiel</a>, as well as the
+main entry point method “invoke”.</p>
+
+  </div><!-- description -->
+
+  
+  
+  
+  <section id="5Buntitled-5D" class="documentation-section">
+    
+
+    
+
+    
+    <!-- Constants -->
+    <section id="constants-list" class="section">
+      <h3 class="section-header">Constants</h3>
+      <dl>
+      
+        <dt id="VERSION">VERSION
+        
+        <dd class="description"><p>Current gem version, as a Versionomy::Value if the versionomy library is
+available, or as a frozen string if not.</p>
+        
+      
+        <dt id="VERSION_STRING">VERSION_STRING
+        
+        <dd class="description"><p>Current gem version, as a frozen string.</p>
+        
+      
+      </dl>
+    </section>
+    
+
+    
+
+    <!-- Methods -->
+    
+     <section id="public-class-5Buntitled-5D-method-details" class="method-section section">
+      <h3 class="section-header">Public Class Methods</h3>
+
+    
+      <div id="method-c-invoke" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">invoke</span><span
+            class="method-args">(*args_, &builder_block_)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <h3 id="method-c-invoke-label-Invoke+a+given+DSL">Invoke a given <a href="Blockenspiel/DSL.html">DSL</a></h3>
+
+<p>This is the entry point for <a href="Blockenspiel.html">Blockenspiel</a>.
+Call this function to invoke a set of <a
+href="Blockenspiel/DSL.html">DSL</a> code provided by the user of your API.</p>
+
+<p>For example, if you want users of your API to be able to do this:</p>
+
+<pre>call_dsl do
+  foo(1)
+  bar(2)
+end</pre>
+
+<p>Then you should implement <code>call_dsl</code> like this:</p>
+
+<pre class="ruby"><span class="ruby-keyword">def</span> <span class="ruby-identifier">call_dsl</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-identifier">my_dsl</span> = <span class="ruby-identifier">create_block_implementation</span>
+  <span class="ruby-constant">Blockenspiel</span>.<span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">block</span>, <span class="ruby-identifier">my_dsl</span>)
+  <span class="ruby-identifier">do_something_with</span>(<span class="ruby-identifier">my_dsl</span>)
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>In the above, <code>create_block_implementation</code> is a placeholder
+that returns an instance of your <a href="Blockenspiel/DSL.html">DSL</a>
+methods class. This class includes the <a
+href="Blockenspiel/DSL.html">Blockenspiel::DSL</a> module and defines the
+<a href="Blockenspiel/DSL.html">DSL</a> methods <code>foo</code> and
+<code>bar</code>. See <a
+href="Blockenspiel/DSLSetupMethods.html">Blockenspiel::DSLSetupMethods</a>
+for a set of tools you can use in your <a
+href="Blockenspiel/DSL.html">DSL</a> methods class for creating a <a
+href="Blockenspiel/DSL.html">DSL</a>.</p>
+
+<h3 id="method-c-invoke-label-Usage+patterns">Usage patterns</h3>
+
+<p>The invoke method has a number of forms, depending on whether the API
+user’s <a href="Blockenspiel/DSL.html">DSL</a> code is provided as a block
+or a string, and depending on whether the <a
+href="Blockenspiel/DSL.html">DSL</a> methods are specified statically using
+a <a href="Blockenspiel/DSL.html">DSL</a> class or dynamically using a
+block.</p>
+<dl class="rdoc-list label-list"><dt><code>Blockenspiel.invoke(<em>user_block</em>, <em>my_dsl</em>, <em>opts</em>)</code>
+<dd>
+<p>This form takes the user’s code as a block, and the <a
+href="Blockenspiel/DSL.html">DSL</a> itself as an object with <a
+href="Blockenspiel/DSL.html">DSL</a> methods. The opts hash is optional and
+provides a set of arguments as described below under “Block <a
+href="Blockenspiel/DSL.html">DSL</a> options”.</p>
+</dd><dt><code>Blockenspiel.invoke(<em>user_block</em>, <em>opts</em>) { ... }</code>
+<dd>
+<p>This form takes the user’s code as a block, while the <a
+href="Blockenspiel/DSL.html">DSL</a> itself is specified in the given
+block, as described below under “Dynamic target generation”. The opts hash
+is optional and provides a set of arguments as described below under “Block
+<a href="Blockenspiel/DSL.html">DSL</a> options”.</p>
+</dd><dt><code>Blockenspiel.invoke(<em>user_string</em>, <em>my_dsl</em>, <em>opts</em>)</code>
+<dd>
+<p>This form takes the user’s code as a string, and the <a
+href="Blockenspiel/DSL.html">DSL</a> itself as an object with <a
+href="Blockenspiel/DSL.html">DSL</a> methods. The opts hash is optional and
+provides a set of arguments as described below under “String <a
+href="Blockenspiel/DSL.html">DSL</a> options”.</p>
+</dd><dt><code>Blockenspiel.invoke(<em>user_string</em>, <em>opts</em>) { ... }</code>
+<dd>
+<p>This form takes the user’s code as a block, while the <a
+href="Blockenspiel/DSL.html">DSL</a> itself is specified in the given
+block, as described below under “Dynamic target generation”. The opts hash
+is optional and provides a set of arguments as described below under
+“String <a href="Blockenspiel/DSL.html">DSL</a> options”.</p>
+</dd><dt><code>Blockenspiel.invoke(<em>my_dsl</em>, <em>opts</em>)</code>
+<dd>
+<p>This form reads the user’s code from a file, and takes the <a
+href="Blockenspiel/DSL.html">DSL</a> itself as an object with <a
+href="Blockenspiel/DSL.html">DSL</a> methods. The opts hash is required and
+provides a set of arguments as described below under “String <a
+href="Blockenspiel/DSL.html">DSL</a> options”. The <code>:file</code>
+option is required.</p>
+</dd><dt><code>Blockenspiel.invoke(<em>opts</em>) { ... }</code>
+<dd>
+<p>This form reads the user’s code from a file, while the <a
+href="Blockenspiel/DSL.html">DSL</a> itself is specified in the given
+block, as described below under “Dynamic target generation”. The opts hash
+is required and provides a set of arguments as described below under
+“String <a href="Blockenspiel/DSL.html">DSL</a> options”. The
+<code>:file</code> option is required.</p>
+</dd></dl>
+
+<h3 id="method-c-invoke-label-Block+DSL+options">Block <a href="Blockenspiel/DSL.html">DSL</a> options</h3>
+
+<p>When a user provides <a href="Blockenspiel/DSL.html">DSL</a> code using a
+block, you simply pass that block as the first parameter to <a
+href="Blockenspiel.html#method-c-invoke">::invoke</a>. Normally, <a
+href="Blockenspiel.html">Blockenspiel</a> will first check the block’s
+arity to see whether it takes a parameter. If so, it will pass the given
+target to the block. If the block takes no parameter, and the given target
+is an instance of a class with <a href="Blockenspiel/DSL.html">DSL</a>
+capability, the <a href="Blockenspiel/DSL.html">DSL</a> methods are made
+available on the caller’s self object so they may be called without a block
+parameter.</p>
+
+<p>Following are the options understood by <a
+href="Blockenspiel.html">Blockenspiel</a> when providing code using a
+block:</p>
+<dl class="rdoc-list label-list"><dt><code>:parameterless</code>
+<dd>
+<p>If set to false, disables parameterless blocks and always attempts to pass
+a parameter to the block. Otherwise, you may set it to one of three
+behaviors for parameterless blocks: <code>:mixin</code> (the default),
+<code>:instance</code>, and <code>:proxy</code>. See below for detailed
+descriptions of these behaviors. This option key is also available as
+<code>:behavior</code>.</p>
+</dd><dt><code>:parameter</code>
+<dd>
+<p>If set to false, disables blocks with parameters, and always attempts to
+use parameterless blocks. Default is true, enabling parameter mode.</p>
+</dd></dl>
+
+<p>The following values control the precise behavior of parameterless blocks.
+These are values for the <code>:parameterless</code> option.</p>
+<dl class="rdoc-list label-list"><dt><code>:mixin</code>
+<dd>
+<p>This is the default behavior. <a href="Blockenspiel/DSL.html">DSL</a>
+methods from the target are temporarily overlayed on the caller’s
+<code>self</code> object, but <code>self</code> still points to the same
+object, so the helper methods and instance variables from the caller’s
+closure remain available. The <a href="Blockenspiel/DSL.html">DSL</a>
+methods are removed when the block completes.</p>
+</dd><dt><code>:instance</code>
+<dd>
+<p>This behavior actually changes <code>self</code> to the target object using
+<code>instance_eval</code>. Thus, the caller loses access to its own helper
+methods and instance variables, and instead gains access to the target
+object’s instance variables. The target object’s methods are not modified:
+this behavior does not apply any <a href="Blockenspiel/DSL.html">DSL</a>
+method changes specified using <code>dsl_method</code> directives.</p>
+</dd><dt><code>:proxy</code>
+<dd>
+<p>This behavior changes <code>self</code> to a proxy object created by
+applying the <a href="Blockenspiel/DSL.html">DSL</a> methods to an empty
+object, whose <code>method_missing</code> points back at the block’s
+context. This behavior is a compromise between instance and mixin. As with
+instance, <code>self</code> is changed, so the caller loses access to its
+own instance variables. However, the caller’s own methods should still be
+available since any methods not handled by the <a
+href="Blockenspiel/DSL.html">DSL</a> are delegated back to the caller.
+Also, as with mixin, the target object’s instance variables are not
+available (and thus cannot be clobbered) in the block, and the
+transformations specified by <code>dsl_method</code> directives are
+honored.</p>
+</dd></dl>
+
+<h3 id="method-c-invoke-label-String+DSL+options">String <a href="Blockenspiel/DSL.html">DSL</a> options</h3>
+
+<p>When a user provides <a href="Blockenspiel/DSL.html">DSL</a> code using a
+string (either directly or via a file), <a
+href="Blockenspiel.html">Blockenspiel</a> always treats it as a
+“parameterless” invocation, since there is no way to “pass a parameter” to
+a string. Thus, the two options recognized for block DSLs,
+<code>:parameterless</code>, and <code>:parameter</code>, are meaningless
+and ignored. However, the following new options are recognized:</p>
+<dl class="rdoc-list label-list"><dt><code>:file</code>
+<dd>
+<p>The value of this option should be a string indicating the path to the file
+from which the user’s <a href="Blockenspiel/DSL.html">DSL</a> code is
+coming. It is passed as the “file” parameter to eval; that is, it is
+included in the stack trace should an exception be thrown out of the <a
+href="Blockenspiel/DSL.html">DSL</a>. If no code string is provided
+directly, this option is required and must be set to the path of the file
+from which to load the code.</p>
+</dd><dt><code>:line</code>
+<dd>
+<p>This option is passed as the “line” parameter to eval; that is, it
+indicates the starting line number for the code string, and is used to
+compute line numbers for the stack trace should an exception be thrown out
+of the <a href="Blockenspiel/DSL.html">DSL</a>. This option is optional and
+defaults to 1.</p>
+</dd><dt><code>:behavior</code>
+<dd>
+<p>Controls how the <a href="Blockenspiel/DSL.html">DSL</a> is called.
+Recognized values are <code>:proxy</code> (the default) and
+<code>:instance</code>. See below for detailed descriptions of these
+behaviors. Note that <code>:mixin</code> is not allowed in this case
+because its behavior would be indistinguishable from the proxy behavior.</p>
+</dd></dl>
+
+<p>The following values are recognized for the <code>:behavior</code> option:</p>
+<dl class="rdoc-list label-list"><dt><code>:proxy</code>
+<dd>
+<p>This behavior changes <code>self</code> to a proxy object created by
+applying the <a href="Blockenspiel/DSL.html">DSL</a> methods to an empty
+object. Thus, the code in the <a href="Blockenspiel/DSL.html">DSL</a>
+string does not have access to the target object’s internal instance
+variables or private methods. Furthermore, the transformations specified by
+<code>dsl_method</code> directives are honored. This is the default
+behavior.</p>
+</dd><dt><code>:instance</code>
+<dd>
+<p>This behavior actually changes <code>self</code> to the target object using
+<code>instance_eval</code>. Thus, the code in the <a
+href="Blockenspiel/DSL.html">DSL</a> string gains access to the target
+object’s instance variables and private methods. Also, the target object’s
+methods are not modified: this behavior does not apply any <a
+href="Blockenspiel/DSL.html">DSL</a> method changes specified using
+<code>dsl_method</code> directives.</p>
+</dd></dl>
+
+<h3 id="method-c-invoke-label-Dynamic+target+generation">Dynamic target generation</h3>
+
+<p>It is also possible to dynamically generate a target object by passing a
+block to this method. This is probably best illustrated by example:</p>
+
+<pre class="ruby"><span class="ruby-constant">Blockenspiel</span>.<span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">block</span>) <span class="ruby-keyword">do</span>
+  <span class="ruby-identifier">add_method</span>(:<span class="ruby-identifier">set_foo</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">value</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">my_foo</span> = <span class="ruby-identifier">value</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">add_method</span>(:<span class="ruby-identifier">set_things_from_block</span>) <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">value</span>, &amp;<span class="ruby-identifier">blk</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">my_foo</span> = <span class="ruby-identifier">value</span>
+    <span class="ruby-identifier">my_bar</span> = <span class="ruby-identifier">blk</span>.<span class="ruby-identifier">call</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>The above is roughly equivalent to invoking <a
+href="Blockenspiel.html">Blockenspiel</a> with an instance of this target
+class:</p>
+
+<pre class="ruby"><span class="ruby-keyword">class</span> <span class="ruby-constant">MyFooTarget</span>
+  <span class="ruby-identifier">include</span> <span class="ruby-constant">Blockenspiel</span><span class="ruby-operator">::</span><span class="ruby-constant">DSL</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">set_foo</span>(<span class="ruby-identifier">value</span>)
+    <span class="ruby-identifier">set_my_foo_from</span>(<span class="ruby-identifier">value</span>)
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">set_things_from_block</span>(<span class="ruby-identifier">value</span>)
+    <span class="ruby-identifier">set_my_foo_from</span>(<span class="ruby-identifier">value</span>)
+    <span class="ruby-identifier">set_my_bar_from</span>(<span class="ruby-keyword">yield</span>)
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-constant">Blockenspiel</span>.<span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">block</span>, <span class="ruby-constant">MyFooTarget</span>.<span class="ruby-identifier">new</span>)
+</pre>
+
+<p>The obvious advantage of using dynamic object generation is that you are
+creating methods using closures, which provides the opportunity to, for
+example, modify closure local variables such as my_foo. This is more
+difficult to do when you create a target class since its methods do not
+have access to outside data. Hence, in the above example, we hand-waved,
+assuming the existence of some method called “set_my_foo_from”.</p>
+
+<p>The disadvantage is performance. If you dynamically generate a target
+object, it involves parsing and creating a new class whenever it is
+invoked. Thus, it is recommended that you use this technique for calls that
+are not used repeatedly, such as one-time configuration.</p>
+
+<p>See the <a href="Blockenspiel/Builder.html">Blockenspiel::Builder</a> class
+for more details on add_method.</p>
+
+<p>(And yes, you guessed it: this API is a <a
+href="Blockenspiel/DSL.html">DSL</a> block, and is itself implemented using
+<a href="Blockenspiel.html">Blockenspiel</a>.)</p>
+          
+
+          
+          <div class="method-source-code" id="invoke-source">
+            <pre><span class="ruby-comment"># File lib/blockenspiel/impl.rb, line 256</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">invoke</span>(*<span class="ruby-identifier">args_</span>, &amp;<span class="ruby-identifier">builder_block_</span>)
+  <span class="ruby-comment"># This method itself is responsible for parsing the args to invoke,</span>
+  <span class="ruby-comment"># and handling the dynamic target generation. It then passes control</span>
+  <span class="ruby-comment"># to one of the _invoke_with_* methods.</span>
+
+  <span class="ruby-comment"># The arguments.</span>
+  <span class="ruby-identifier">block_</span> = <span class="ruby-keyword">nil</span>
+  <span class="ruby-identifier">eval_str_</span> = <span class="ruby-keyword">nil</span>
+  <span class="ruby-identifier">target_</span> = <span class="ruby-keyword">nil</span>
+  <span class="ruby-identifier">opts_</span> = {}
+
+  <span class="ruby-comment"># Get the code</span>
+  <span class="ruby-keyword">case</span> <span class="ruby-identifier">args_</span>.<span class="ruby-identifier">first</span>
+  <span class="ruby-keyword">when</span> <span class="ruby-operator">::</span><span class="ruby-constant">String</span>
+    <span class="ruby-identifier">eval_str_</span> = <span class="ruby-identifier">args_</span>.<span class="ruby-identifier">shift</span>
+  <span class="ruby-keyword">when</span> <span class="ruby-operator">::</span><span class="ruby-constant">Proc</span>
+    <span class="ruby-identifier">block_</span> = <span class="ruby-identifier">args_</span>.<span class="ruby-identifier">shift</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># Get the target, performing dynamic target generation if requested</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">builder_block_</span>
+    <span class="ruby-identifier">builder_</span> = <span class="ruby-operator">::</span><span class="ruby-constant">Blockenspiel</span><span class="ruby-operator">::</span><span class="ruby-constant">Builder</span>.<span class="ruby-identifier">new</span>
+    <span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">builder_block_</span>, <span class="ruby-identifier">builder_</span>)
+    <span class="ruby-identifier">target_</span> = <span class="ruby-identifier">builder_</span>.<span class="ruby-identifier">_create_target</span>
+    <span class="ruby-identifier">args_</span>.<span class="ruby-identifier">shift</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">args_</span>.<span class="ruby-identifier">first</span>.<span class="ruby-identifier">nil?</span>
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-identifier">target_</span> = <span class="ruby-identifier">args_</span>.<span class="ruby-identifier">shift</span>
+    <span class="ruby-keyword">unless</span> <span class="ruby-identifier">target_</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-operator">::</span><span class="ruby-constant">ArgumentError</span>, <span class="ruby-string">&quot;No DSL target provided&quot;</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># Get the options hash</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">args_</span>.<span class="ruby-identifier">first</span>.<span class="ruby-identifier">kind_of?</span>(<span class="ruby-operator">::</span><span class="ruby-constant">Hash</span>)
+    <span class="ruby-identifier">opts_</span> = <span class="ruby-identifier">args_</span>.<span class="ruby-identifier">shift</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">args_</span>.<span class="ruby-identifier">size</span> <span class="ruby-operator">&gt;</span> <span class="ruby-value">0</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-operator">::</span><span class="ruby-constant">ArgumentError</span>, <span class="ruby-string">&quot;Unexpected arguments&quot;</span>
+  <span class="ruby-keyword">end</span>
+
+  <span class="ruby-comment"># Invoke</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">block_</span>
+    <span class="ruby-identifier">_invoke_with_block</span>(<span class="ruby-identifier">block_</span>, <span class="ruby-identifier">target_</span>, <span class="ruby-identifier">opts_</span>)
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-identifier">_invoke_with_string</span>(<span class="ruby-identifier">eval_str_</span>, <span class="ruby-identifier">target_</span>, <span class="ruby-identifier">opts_</span>)
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- invoke-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- invoke-method -->
+
+    
+    </section><!-- public-class-method-details -->
+  
+  </section><!-- 5Buntitled-5D -->
+
+</div><!-- documentation -->
+
+
+<footer id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
+  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
+  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+</footer>
+

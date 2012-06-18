@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+
+<title>Blockenspiel 0.4.3 Documentation</title>
+
+<link type="text/css" media="screen" href="./rdoc.css" rel="stylesheet">
+
+<script type="text/javascript">
+  var rdoc_rel_prefix = "./";
+</script>
+
+<script type="text/javascript" charset="utf-8" src="./js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/navigation.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search_index.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/searcher.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/darkfish.js"></script>
+
+
+<body>
+<nav id="metadata">
+  <nav id="home-section" class="section">
+  <h3 class="section-header">
+    <a href="./index.html">Home</a>
+    <a href="./table_of_contents.html#classes">Classes</a>
+    <a href="./table_of_contents.html#methods">Methods</a>
+  </h3>
+</nav>
+
+
+  <nav id="search-section" class="section project-section" class="initially-hidden">
+  <form action="#" method="get" accept-charset="utf-8">
+    <h3 class="section-header">
+      <input type="text" name="search" placeholder="Search" id="search-field"
+             title="Type to search, Up and Down to navigate, Enter to load">
+    </h3>
+  </form>
+
+  <ul id="search-results" class="initially-hidden"></ul>
+</nav>
+
+
+  <div id="project-metadata">
+    <nav id="fileindex-section" class="section project-section">
+  <h3 class="section-header">Pages</h3>
+
+  <ul>
+  
+    <li class="file"><a href="./Blockenspiel_rdoc.html">Blockenspiel</a>
+  
+    <li class="file"><a href="./History_rdoc.html">History</a>
+  
+    <li class="file"><a href="./ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
+  
+    <li class="file"><a href="./README_rdoc.html">README</a>
+  
+  </ul>
+</nav>
+
+    <nav id="classindex-section" class="section project-section">
+  <h3 class="section-header">Class and Module Index</h3>
+
+  <ul class="link-list">
+  
+    <li><a href="./Blockenspiel.html">Blockenspiel</a>
+  
+    <li><a href="./Blockenspiel/Base.html">Blockenspiel::Base</a>
+  
+    <li><a href="./Blockenspiel/BlockParameterError.html">Blockenspiel::BlockParameterError</a>
+  
+    <li><a href="./Blockenspiel/BlockenspielError.html">Blockenspiel::BlockenspielError</a>
+  
+    <li><a href="./Blockenspiel/Builder.html">Blockenspiel::Builder</a>
+  
+    <li><a href="./Blockenspiel/DSL.html">Blockenspiel::DSL</a>
+  
+    <li><a href="./Blockenspiel/DSLMissingError.html">Blockenspiel::DSLMissingError</a>
+  
+    <li><a href="./Blockenspiel/DSLSetupMethods.html">Blockenspiel::DSLSetupMethods</a>
+  
+  </ul>
+</nav>
+
+  </div>
+</nav>
+
+<div id="documentation" class="description">
+  
+<h2 id="label-Blockenspiel"><a href="Blockenspiel.html">Blockenspiel</a></h2>
+
+<p><a href="Blockenspiel.html">Blockenspiel</a> is a helper library designed
+to make it easy to implement DSL blocks. It is designed to be comprehensive
+and robust, supporting most common usage patterns, and working correctly in
+the presence of nested blocks and multithreading.</p>
+
+<h3 id="label-Summary">Summary</h3>
+
+<p><a href="Blockenspiel.html">Blockenspiel</a> is a helper library providing
+several different strategies for implementing DSL blocks. It supports both
+DSLs that take a block parameter and those that do not. For example:</p>
+
+<pre class="ruby"><span class="ruby-comment"># Call DSL block with parameter</span>
+<span class="ruby-identifier">configure_me</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">config</span><span class="ruby-operator">|</span>
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">add_foo</span>(<span class="ruby-value">1</span>)
+  <span class="ruby-identifier">config</span>.<span class="ruby-identifier">add_bar</span>(<span class="ruby-value">2</span>)
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-comment"># Call DSL block without parameter</span>
+<span class="ruby-identifier">configure_me</span> <span class="ruby-keyword">do</span>
+  <span class="ruby-identifier">add_foo</span>(<span class="ruby-value">3</span>)
+  <span class="ruby-identifier">add_bar</span>(<span class="ruby-value">4</span>)
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>To support the above usage, you can do this:</p>
+
+<pre class="ruby"><span class="ruby-comment"># Implement DSL block methods</span>
+<span class="ruby-keyword">class</span> <span class="ruby-constant">ConfigMethods</span>
+  <span class="ruby-identifier">include</span> <span class="ruby-constant">Blockenspiel</span><span class="ruby-operator">::</span><span class="ruby-constant">DSL</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_foo</span>(<span class="ruby-identifier">value</span>)
+    <span class="ruby-comment"># do something</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">def</span> <span class="ruby-identifier">add_bar</span>(<span class="ruby-identifier">value</span>)
+    <span class="ruby-comment"># do something</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span>
+
+<span class="ruby-comment"># Implement configure_me method</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">configure_me</span>(&amp;<span class="ruby-identifier">block</span>)
+  <span class="ruby-constant">Blockenspiel</span>.<span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">block</span>, <span class="ruby-constant">ConfigMethods</span>.<span class="ruby-identifier">new</span>)
+<span class="ruby-keyword">end</span>
+</pre>
+
+<p>By default, <a href="Blockenspiel.html">Blockenspiel</a> uses a mixin
+technique (proposed by the late Why The Lucky Stiff) to support
+parameterless blocks without the complications introduced by
+<code>instance_eval</code>. It supports nested blocks and multithreaded
+access, and provides a variety of tools for handling the typical issues you
+may encounter when writing DSLs.</p>
+
+<p>For more detailed usage and examples, see <a
+href="Blockenspiel_rdoc.html">Blockenspiel.rdoc</a>.</p>
+
+<p>For an extended analysis of different ways to implement DSL blocks, see <a
+href="ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks.rdoc</a>.</p>
+
+<h3 id="label-Requirements">Requirements</h3>
+<ul><li>
+<p>Ruby 1.8.7, Ruby 1.9.1 or later, JRuby 1.5 or later, or Rubinius 1.0 or
+later.</p>
+</li></ul>
+
+<h3 id="label-Installation">Installation</h3>
+
+<pre>gem install blockenspiel</pre>
+
+<h3 id="label-Known+issues+and+to-do+items">Known issues and to-do items</h3>
+<ul><li>
+<p>Implementing wildcard DSL methods using <code>method_missing</code> doesn’t
+work. I haven’t yet decided on the right semantics for this case, or
+whether it is even a reasonable feature at all.</p>
+</li><li>
+<p>Including <a href="Blockenspiel/DSL.html">Blockenspiel::DSL</a> in a module
+(rather than a class) is not yet supported, but this is planned for a
+future release.</p>
+</li><li>
+<p>Installing on Windows may be a challenge because blockenspiel includes a
+native extension. I’m considering evaluating Luis Lavena’s rake-compiler to
+simplify this process.</p>
+</li></ul>
+
+<h3 id="label-Development+and+support">Development and support</h3>
+
+<p>Documentation is available at <a
+href="http://dazuma.github.com/blockenspiel/rdoc">dazuma.github.com/blockenspiel/rdoc</a></p>
+
+<p>Source code is hosted on Github at <a
+href="http://github.com/dazuma/blockenspiel">github.com/dazuma/blockenspiel</a></p>
+
+<p>Report bugs on Github issues at <a
+href="http://github.org/dazuma/blockenspiel/issues">github.org/dazuma/blockenspiel/issues</a></p>
+
+<p>Contact the author at dazuma at gmail dot com.</p>
+
+<h3 id="label-Author+%2F+Credits">Author / Credits</h3>
+
+<p><a href="Blockenspiel.html">Blockenspiel</a> is written by Daniel Azuma (<a
+href="http://www.daniel-azuma.com/">www.daniel-azuma.com/</a>).</p>
+
+<p>The mixin implementation is based on a concept by the late Why The Lucky
+Stiff, documented in his 6 October 2008 blog posting entitled “Mixing Our
+Way Out Of Instance Eval?”. The original link has disappeared along with
+its author, but you may find copies or mirrors out there.</p>
+
+<p>The unmixer code is based on <a
+href="http://rubyforge.org/projects/mixology">Mixology</a>, version by
+Patrick Farley, anonymous z, Dan Manges, and Clint Bishop. The MRI C
+extension and the JRuby code were adapted from Mixology 0.1, and have been
+stripped down and modified to support Ruby 1.9 and JRuby &gt;= 1.2. The
+Rubinius code was adapted from unreleased code in the Mixology source tree
+and modified to support Rubinius 1.0. I know Mixology 0.2 is now available,
+but its Rubinius support is not active, and I’d rather keep the unmixer
+bundled with <a href="Blockenspiel.html">Blockenspiel</a> for now to reduce
+dependencies.</p>
+
+<p>The dsl_attr_writer and dsl_attr_accessor feature came from a suggestion by
+Luis Lavena.</p>
+
+<h3 id="label-License">License</h3>
+
+<p>Copyright 2008-2011 Daniel Azuma.</p>
+
+<p>All rights reserved.</p>
+
+<p>Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:</p>
+<ul><li>
+<p>Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.</p>
+</li><li>
+<p>Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.</p>
+</li><li>
+<p>Neither the name of the copyright holder, nor the names of any other
+contributors to this software, may be used to endorse or promote products
+derived from this software without specific prior written permission.</p>
+</li></ul>
+
+<p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.</p>
+
+</div>
+
+
+<footer id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
+  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
+  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+</footer>
+

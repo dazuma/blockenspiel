@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+
+<title>History - Blockenspiel 0.4.3 Documentation</title>
+
+<link type="text/css" media="screen" href="./rdoc.css" rel="stylesheet">
+
+<script type="text/javascript">
+  var rdoc_rel_prefix = "./";
+</script>
+
+<script type="text/javascript" charset="utf-8" src="./js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/navigation.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search_index.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/searcher.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/darkfish.js"></script>
+
+
+<body class="file">
+<nav id="metadata">
+  <nav id="home-section" class="section">
+  <h3 class="section-header">
+    <a href="./index.html">Home</a>
+    <a href="./table_of_contents.html#classes">Classes</a>
+    <a href="./table_of_contents.html#methods">Methods</a>
+  </h3>
+</nav>
+
+
+  <nav id="search-section" class="section project-section" class="initially-hidden">
+  <form action="#" method="get" accept-charset="utf-8">
+    <h3 class="section-header">
+      <input type="text" name="search" placeholder="Search" id="search-field"
+             title="Type to search, Up and Down to navigate, Enter to load">
+    </h3>
+  </form>
+
+  <ul id="search-results" class="initially-hidden"></ul>
+</nav>
+
+
+  <div id="project-metadata">
+    <nav id="fileindex-section" class="section project-section">
+  <h3 class="section-header">Pages</h3>
+
+  <ul>
+  
+    <li class="file"><a href="./Blockenspiel_rdoc.html">Blockenspiel</a>
+  
+    <li class="file"><a href="./History_rdoc.html">History</a>
+  
+    <li class="file"><a href="./ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
+  
+    <li class="file"><a href="./README_rdoc.html">README</a>
+  
+  </ul>
+</nav>
+
+    <nav id="classindex-section" class="section project-section">
+  <h3 class="section-header">Class and Module Index</h3>
+
+  <ul class="link-list">
+  
+    <li><a href="./Blockenspiel.html">Blockenspiel</a>
+  
+    <li><a href="./Blockenspiel/Base.html">Blockenspiel::Base</a>
+  
+    <li><a href="./Blockenspiel/BlockParameterError.html">Blockenspiel::BlockParameterError</a>
+  
+    <li><a href="./Blockenspiel/BlockenspielError.html">Blockenspiel::BlockenspielError</a>
+  
+    <li><a href="./Blockenspiel/Builder.html">Blockenspiel::Builder</a>
+  
+    <li><a href="./Blockenspiel/DSL.html">Blockenspiel::DSL</a>
+  
+    <li><a href="./Blockenspiel/DSLMissingError.html">Blockenspiel::DSLMissingError</a>
+  
+    <li><a href="./Blockenspiel/DSLSetupMethods.html">Blockenspiel::DSLSetupMethods</a>
+  
+  </ul>
+</nav>
+
+  </div>
+</nav>
+
+<div id="documentation" class="description">
+  
+<h3 id="label-0.4.3+%2F+2011-06-22">0.4.3 / 2011-06-22</h3>
+<ul><li>
+<p>MRI C extension experienced a compile error under the current MRI head
+(e.g. 1.9.3). Fixed.</p>
+</li><li>
+<p>Rake-based build of the MRI C extension failed under newer rakes. Fixed.</p>
+</li><li>
+<p>Eliminated some Rakefile deprecation warnings under newer rakes.</p>
+</li></ul>
+
+<h3 id="label-0.4.2+%2F+2011-06-02">0.4.2 / 2011-06-02</h3>
+<ul><li>
+<p>Fixed an unmixer compatibility issue with Rubinius &gt; 1.2.x. (Thanks to
+@meh for the fix.)</p>
+</li><li>
+<p>Recent versions of Rubinius raised exceptions involving Fiber. Fixed.</p>
+</li><li>
+<p>Workaround for a JRuby NullPointerException (JRUBY-5842).</p>
+</li><li>
+<p>Integrated JRuby platform gem back into main gem.</p>
+</li><li>
+<p>A .gemspec file is now available for gem building and bundler git
+integration.</p>
+</li><li>
+<p>Some cleanup of the Rakefile and tests.</p>
+</li></ul>
+
+<h3 id="label-0.4.1+%2F+2010-06-23">0.4.1 / 2010-06-23</h3>
+<ul><li>
+<p>Support for rubinius 1.0.</p>
+</li></ul>
+
+<h3 id="label-0.4.0+%2F+2010-06-21">0.4.0 / 2010-06-21</h3>
+<ul><li>
+<p>Implemented string- and file-based DSLs (in addition to block-based).</p>
+</li><li>
+<p>Correctly handle separate active DSLs in different fibers within the same
+thread, when fibers are avaialble.</p>
+</li><li>
+<p>Updated ruby runtime dependencies to reflect what I’m actually testing.</p>
+</li><li>
+<p>Organized the source a little better, and fixed some Rakefile quirks.</p>
+</li></ul>
+
+<h3 id="label-0.3.3+%2F+2010-05-24">0.3.3 / 2010-05-24</h3>
+<ul><li>
+<p>Some Rakefile fixes to match RDoc and Ruby 1.9 changes.</p>
+</li><li>
+<p>Minor documentation updates.</p>
+</li></ul>
+
+<h3 id="label-0.3.2+%2F+2009-11-17">0.3.2 / 2009-11-17</h3>
+<ul><li>
+<p>Modules included in a DSL-ized class now have their methods included in the
+DSL.</p>
+</li><li>
+<p>Raise a more informative error (for now) when trying to include <a
+href="Blockenspiel/DSL.html">Blockenspiel::DSL</a> in a module. At some
+point, we’ll support this usage, once I figure out the right semantics for
+it.</p>
+</li></ul>
+
+<h3 id="label-0.3.1+%2F+2009-11-08">0.3.1 / 2009-11-08</h3>
+<ul><li>
+<p>Blockenspiel#invoke can now take its options hash as the second argument
+(instead of the third) when using dynamic target generation, since the
+second argument is otherwise unused in this case.</p>
+</li><li>
+<p>Now defines Blockenspiel::VERSION, as a versionomy object if the versionomy
+library is available, or as a version string if not.</p>
+</li></ul>
+
+<h3 id="label-0.3.0+%2F+2009-11-04">0.3.0 / 2009-11-04</h3>
+<ul><li>
+<p>dsl_attr_writer and dsl_attr_accessor convenience methods are available for
+creating DSL-friendly attributes.</p>
+</li><li>
+<p>Dynamic DSL methods can now take real block arguments, if supported by the
+Ruby interpreter.</p>
+</li><li>
+<p>Shortened <a href="README_rdoc.html">README.rdoc</a> and renamed the longer
+version to <a href="Blockenspiel_rdoc.html">Blockenspiel.rdoc</a>.</p>
+</li><li>
+<p>Some documentation updates.</p>
+</li></ul>
+
+<h3 id="label-0.2.2+%2F+2009-10-28">0.2.2 / 2009-10-28</h3>
+<ul><li>
+<p>Support for gemcutter hosting in the build/release scripts.</p>
+</li><li>
+<p>Some clarifications to constant scopes internal in the code.</p>
+</li><li>
+<p>A few documentation updates.</p>
+</li><li>
+<p>Minor changes to the Implementing DSL Blocks paper to deal with Why’s
+disappearance.</p>
+</li></ul>
+
+<h3 id="label-0.2.1+%2F+2009-04-16">0.2.1 / 2009-04-16</h3>
+<ul><li>
+<p>Now compatible with Ruby 1.9.</p>
+</li><li>
+<p>Now compatible with JRuby 1.2.</p>
+</li><li>
+<p>No longer requires the mixology gem.</p>
+</li><li>
+<p>Building no longer requires hoe.</p>
+</li></ul>
+
+<h3 id="label-0.2.0+%2F+2009-04-15">0.2.0 / 2009-04-15</h3>
+<ul><li>
+<p>Earlier build of 0.2.1 that had some problems with JRuby.</p>
+</li></ul>
+
+<h3 id="label-0.1.1+%2F+2008-11-06">0.1.1 / 2008-11-06</h3>
+<ul><li>
+<p>Added ability to pass the block as the first parameter in the dynamic DSL
+builder API; cleaned up the API a little</p>
+</li><li>
+<p>Minor fixes to Implementing DSL Blocks paper</p>
+</li><li>
+<p>Some updates to rdocs</p>
+</li><li>
+<p>More test coverage</p>
+</li></ul>
+
+<h3 id="label-0.1.0+%2F+2008-10-29">0.1.0 / 2008-10-29</h3>
+<ul><li>
+<p>Alpha release, opened for public feedback</p>
+</li><li>
+<p>Tightened constraints on block parameters</p>
+</li><li>
+<p>Added some test cases for threads and parameter constraints</p>
+</li><li>
+<p>Revisions to the Implementing DSL Blocks paper</p>
+</li></ul>
+
+<h3 id="label-0.0.4+%2F+2008-10-24">0.0.4 / 2008-10-24</h3>
+<ul><li>
+<p>Improvements to the logic for choosing behaviors</p>
+</li><li>
+<p>Added exception classes and provided better error handling</p>
+</li><li>
+<p>Actually added the behavior test case to the gem manifest…</p>
+</li><li>
+<p>Documentation revisions</p>
+</li><li>
+<p>Revisions to the Implementing DSL Blocks paper</p>
+</li></ul>
+
+<h3 id="label-0.0.3+%2F+2008-10-23">0.0.3 / 2008-10-23</h3>
+<ul><li>
+<p>Added :proxy behavior for parameterless blocks</p>
+</li><li>
+<p>Removed option to turn off inheriting, since the semantics are somewhat
+ill-defined and inconsistent. All parameterless blocks now exhibit the
+inheriting behavior.</p>
+</li><li>
+<p>Added tests for the different behavior settings.</p>
+</li></ul>
+
+<h3 id="label-0.0.2+%2F+2008-10-21">0.0.2 / 2008-10-21</h3>
+<ul><li>
+<p>Cleaned up some of the documentation</p>
+</li><li>
+<p>Revisions to the Implementing DSL Blocks paper</p>
+</li></ul>
+
+<h3 id="label-0.0.1+%2F+2008-10-20">0.0.1 / 2008-10-20</h3>
+<ul><li>
+<p>Initial test release</p>
+</li></ul>
+
+</div>
+
+
+
+<footer id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
+  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
+  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+</footer>
+
