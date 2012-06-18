@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Blockenspiel : A comprehensive implementation of Ruby DSL blocks" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Blockenspiel</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/dazuma/blockenspiel">View on GitHub</a>
+
+          <h1 id="project_title">Blockenspiel</h1>
+          <h2 id="project_tagline">A comprehensive implementation of Ruby DSL blocks</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/dazuma/blockenspiel/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/dazuma/blockenspiel/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>Blockenspiel is a helper library providing several different strategies for
+implementing DSL blocks. It supports both DSLs that take a block parameter
+and those that do not.</p>
+
+<p>Here's a simple example:</p>
+
+<div class="highlight">
+<pre><span class="c1"># Call DSL block with parameter</span>
+<span class="n">configure_me</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">add_foo</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">add_bar</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="c1"># Call DSL block without parameter</span>
+<span class="n">configure_me</span> <span class="k">do</span>
+  <span class="n">add_foo</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+  <span class="n">add_bar</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="k">end</span>
+</pre>
+</div>
+
+
+<p>To support the above usage, you can do this:</p>
+
+<div class="highlight">
+<pre><span class="c1"># Implement DSL block methods</span>
+<span class="k">class</span> <span class="nc">ConfigMethods</span>
+  <span class="kp">include</span> <span class="no">Blockenspiel</span><span class="o">::</span><span class="no">DSL</span>
+  <span class="k">def</span> <span class="nf">add_foo</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="c1"># do something</span>
+  <span class="k">end</span>
+  <span class="k">def</span> <span class="nf">add_bar</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="c1"># do something</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="c1"># Implement configure_me method</span>
+<span class="k">def</span> <span class="nf">configure_me</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+  <span class="no">Blockenspiel</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="no">ConfigMethods</span><span class="o">.</span><span class="n">new</span><span class="p">)</span>
+<span class="k">end</span>
+</pre>
+</div>
+
+
+<p>By default, Blockenspiel uses a mixin technique (proposed by the late Why The Lucky Stiff) to support parameterless blocks without the complications introduced by <tt>instance_eval</tt>. It supports nested blocks and multithreaded access, and provides a variety of tools for handling the typical issues you may encounter when writing DSLs.</p>
+
+<p>Install with "gem install blockenspiel".</p>
+
+<p>For more information:</p>
+
+<ul>
+<li><a href="http://dazuma.github.com/blockenspiel/rdoc/Blockenspiel_rdoc.html">Detailed usage and examples</a></li>
+<li>See the <a href="http://dazuma.github.com/blockenspiel/rdoc">documentation</a>
+</li>
+<li>Source code on <a href="http://github.com/dazuma/blockenspiel">Github</a>
+</li>
+<li>Report issues <a href="http://github.com/dazuma/blockenspiel/issues">here</a>
+</li>
+<li>An <a href="http://dazuma.github.com/blockenspiel/rdoc/ImplementingDSLblocks_rdoc.html">extended analysis</a> of different ways to implement DSL blocks</li>
+</ul>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Blockenspiel maintained by <a href="https://github.com/dazuma">dazuma</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
