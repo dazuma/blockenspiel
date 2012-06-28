@@ -1,3 +1,7 @@
+=== 0.4.5 / 2012-06-27
+
+* The 0.4.4 build was missing the JRuby unmixer. Fixed.
+
 === 0.4.4 / 2012-06-27
 
 * Under JRuby 1.9 mode, if two threads mixed into the same object, the calls sometimes went to the wrong place. Fixed.
