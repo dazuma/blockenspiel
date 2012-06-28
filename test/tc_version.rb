@@ -49,7 +49,7 @@ module Blockenspiel
       # Test that the version autoload works.
 
       def test_version
-        assert_not_null(::Blockenspiel::VERSION)
+        assert_not_nil(::Blockenspiel::VERSION)
       end
 
 
