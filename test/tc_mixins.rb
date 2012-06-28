@@ -266,6 +266,41 @@ module Blockenspiel
       end
 
 
+      def test_two_threads_different_mixin
+        hash_ = {}
+        target1_ = Target1.new(hash_)
+        target2_ = Target2.new(hash_)
+        assert(!self.respond_to?(:set_value))
+        assert(!self.respond_to?(:set_value2))
+        assert(!self.respond_to?(:set_value2_inmixin))
+        t1_ = ::Thread.new do
+          ::Blockenspiel.invoke(::Proc.new do
+            sleep(0.1)
+            set_value('a', 1)
+            sleep(0.1)
+            set_value('e', 5)
+          end, target1_)
+        end
+        t2_ = ::Thread.new do
+          ::Blockenspiel.invoke(::Proc.new do
+            sleep(0.1)
+            set_value('A', 11)
+            sleep(0.1)
+            set_value('E', 15)
+          end, target2_)
+        end
+        t1_.join
+        t2_.join
+        assert(!self.respond_to?(:set_value))
+        assert(!self.respond_to?(:set_value2))
+        assert(!self.respond_to?(:set_value2_inmixin))
+        assert_equal(1, hash_['a1'])
+        assert_equal(5, hash_['e1'])
+        assert_equal(11, hash_['A2'])
+        assert_equal(15, hash_['E2'])
+      end
+
+
       # A full thread test with the same set of nested mixins done into the same
       # object twice in two different threads.
       #

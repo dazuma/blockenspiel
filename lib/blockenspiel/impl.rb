@@ -417,7 +417,7 @@ module Blockenspiel
 
       # Store the target and proxy object so dispatchers can get them
       proxy_delegator_key_ = proxy_.object_id
-      target_stack_key_ = [_current_context_id, proxy_.object_id]
+      target_stack_key_ = _current_context_id(proxy_)
       @_proxy_delegators[proxy_delegator_key_] = context_object_ if context_object_
       @_target_stacks[target_stack_key_] = [target_]
 
@@ -442,7 +442,7 @@ module Blockenspiel
 
       # Create hash keys
       mixin_count_key_ = [context_object_.object_id, mod_.object_id]
-      target_stack_key_ = [_current_context_id, context_object_.object_id]
+      target_stack_key_ = _current_context_id(context_object_)
 
       # Store the target for inheriting.
       # We maintain a target call stack per thread.
@@ -496,7 +496,7 @@ module Blockenspiel
   # If we can't find an appropriate method to call, return the special value NO_VALUE.
 
   def self._target_dispatch(object_, name_, params_, block_)  # :nodoc:
-    target_stack_ = @_target_stacks[[_current_context_id, object_.object_id]]
+    target_stack_ = @_target_stacks[_current_context_id(object_)]
     return ::Blockenspiel::NO_VALUE unless target_stack_
     target_stack_.reverse_each do |target_|
       target_class_ = target_.class
@@ -522,24 +522,24 @@ module Blockenspiel
   end
 
 
-  # This returns a current context ID. If fibers are available in the ruby
-  # implementation, this will be the current fiber's object_id. Otherwise,
-  # it is the current thread's object_id.
+  # This returns a current context ID, which includes both the curren thread
+  # object_id and the current fiber object_id (if available).
 
   begin
     require 'fiber'
     raise ::LoadError unless defined?(::Fiber)
-    def self._current_context_id  # :nodoc:
+    def self._current_context_id(object_)  # :nodoc:
+      thid_ = ::Thread.current.object_id
       begin
-        ::Fiber.current.object_id
+        [thid_, ::Fiber.current.object_id, object_.object_id]
       rescue ::Exception
         # JRuby hack (see JRUBY-5842)
-        ::Thread.current.object_id
+        [thid_, 0, object_.object_id]
       end
     end
   rescue ::LoadError
-    def self._current_context_id  # :nodoc:
-      ::Thread.current.object_id
+    def self._current_context_id(object_)  # :nodoc:
+      [::Thread.current.object_id, object_.object_id]
     end
   end
 
