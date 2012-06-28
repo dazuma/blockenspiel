@@ -1,3 +1,9 @@
+=== 0.4.4 / 2012-06-27
+
+* The VERSION constant behaved very oddly under Rubinius 1.9 mode. Fixed.
+* Eliminate some warnings.
+* Integrate with Travis CI.
+
 === 0.4.3 / 2011-06-22
 
 * MRI C extension experienced a compile error under the current MRI head (e.g. 1.9.3). Fixed.

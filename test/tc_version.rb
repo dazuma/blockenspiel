@@ -1,6 +1,8 @@
 # -----------------------------------------------------------------------------
 #
-# Blockenspiel version
+# Blockenspiel version tests
+#
+# This file contains tests for the version.
 #
 # -----------------------------------------------------------------------------
 # Copyright 2008-2011 Daniel Azuma
@@ -34,16 +36,24 @@
 ;
 
 
-begin
-  require 'versionomy'
-rescue ::LoadError
-end
+require 'test/unit'
+require 'blockenspiel'
 
 
 module Blockenspiel
+  module Tests  # :nodoc:
 
-  # Current gem version, as a Versionomy::Value if the versionomy library
-  # is available, or as a frozen string if not.
-  VERSION = defined?(::Versionomy) ? ::Versionomy.parse(VERSION_STRING, :standard) : VERSION_STRING
+    class TestVersion < ::Test::Unit::TestCase  # :nodoc:
 
+
+      # Test that the version autoload works.
+
+      def test_version
+        assert_not_null(::Blockenspiel::VERSION)
+      end
+
+
+    end
+
+  end
 end
