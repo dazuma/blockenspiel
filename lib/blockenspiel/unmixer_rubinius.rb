@@ -71,10 +71,25 @@ module Blockenspiel
     end
 
 
-    def self._reset_method_cache(obj_)  # :nodoc:
-      obj_.methods.each do |name_|
-        ::Rubinius::VM.reset_method_cache(name_.to_sym)
+    if ::Rubinius::VM.method(:reset_method_cache).arity == 1
+
+      # Older versions of Rubinius
+      def self._reset_method_cache(obj_)  # :nodoc:
+        obj_.methods.each do |name_|
+          ::Rubinius::VM.reset_method_cache(name_.to_sym)
+        end
       end
+
+    else
+
+      # Newer versions of Rubinius
+      def self._reset_method_cache(obj_)  # :nodoc:
+        klass_ = obj_.class
+        obj_.methods.each do |name_|
+          ::Rubinius::VM.reset_method_cache(klass_, name_.to_sym)
+        end
+      end
+
     end
 
 
