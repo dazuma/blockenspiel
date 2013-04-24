@@ -1,5 +1,6 @@
 === 0.4.6 / 2013-04-??
 
+* Compatibility with the signature change to reset_method_cache in recent builds of Rubinius 2.0.
 * The gemspec no longer includes the timestamp in the version, so that bundler can pull from github. (Reported by corneverbruggen)
 * The Rakefile is now compatible with Ruby 2.0 and RubyGems 2.0.
 
