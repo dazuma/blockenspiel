@@ -1,6 +1,7 @@
-=== 0.4.6 / 2012-??-??
+=== 0.4.6 / 2013-04-??
 
 * The gemspec no longer includes the timestamp in the version, so that bundler can pull from github. (Reported by corneverbruggen)
+* The Rakefile is now compatible with Ruby 2.0 and RubyGems 2.0.
 
 === 0.4.5 / 2012-06-27
 

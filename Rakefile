@@ -44,6 +44,7 @@ RAKEFILE_CONFIG = {} unless defined?(::RAKEFILE_CONFIG)
 # Gemspec
 
 require 'rubygems'
+require 'rubygems/package'
 gemspec_ = eval(::File.read(::Dir.glob('*.gemspec').first))
 release_gemspec_ = eval(::File.read(::Dir.glob('*.gemspec').first))
 release_gemspec_.version = gemspec_.version.to_s.sub(/\.nonrelease$/, '')
@@ -68,6 +69,8 @@ platform_suffix_ =
       'mri18'
     elsif ::RUBY_VERSION =~ /^1\.9\..*$/
       'mri19'
+    elsif ::RUBY_VERSION =~ /^2\.0\..*$/
+      'mri20'
     else
       raise "Unknown version of Matz Ruby Interpreter (#{::RUBY_VERSION})"
     end
@@ -182,13 +185,21 @@ end
 task :build_other
 
 task :build_gem => :build_other do
-  ::Gem::Builder.new(gemspec_).build
+  if defined?(::Gem::Builder)
+    ::Gem::Builder.new(gemspec_).build
+  else
+    ::Gem::Package.build(gemspec_)
+  end
   mkdir_p(pkg_directory_)
   mv "#{gemspec_.name}-#{gemspec_.version}.gem", "#{pkg_directory_}/"
 end
 
 task :build_release => :build_other do
-  ::Gem::Builder.new(release_gemspec_).build
+  if defined?(::Gem::Builder)
+    ::Gem::Builder.new(release_gemspec_).build
+  else
+    ::Gem::Package.build(release_gemspec_)
+  end
   mkdir_p(pkg_directory_)
   mv "#{release_gemspec_.name}-#{release_gemspec_.version}.gem", "#{pkg_directory_}/"
 end
@@ -204,8 +215,8 @@ end
 
 task :test => [:build_ext, :build_other] do
   $:.unshift(::File.expand_path('lib', ::File.dirname(__FILE__)))
-  if ::ENV['TESTCASE']
-    test_files_ = ::Dir.glob("test/#{::ENV['TESTCASE']}.rb")
+  if (cases_ = ::ENV['TESTCASE'])
+    test_files_ = cases_.split(',').map{ |c_| ::Dir.glob("test/#{c_}.rb") }.flatten
   else
     test_files_ = ::Dir.glob("test/**/tc_*.rb")
   end
