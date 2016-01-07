@@ -2,99 +2,140 @@
 
 <html>
 <head>
-<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+<meta charset="UTF-8">
 
-<title>History - Blockenspiel 0.4.5 Documentation</title>
-
-<link type="text/css" media="screen" href="./rdoc.css" rel="stylesheet">
+<title>History - Blockenspiel 0.5.0 Documentation</title>
 
 <script type="text/javascript">
   var rdoc_rel_prefix = "./";
 </script>
 
-<script type="text/javascript" charset="utf-8" src="./js/jquery.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/navigation.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/search_index.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/search.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/searcher.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/darkfish.js"></script>
+<script src="./js/jquery.js"></script>
+<script src="./js/darkfish.js"></script>
+
+<link href="./css/fonts.css" rel="stylesheet">
+<link href="./css/rdoc.css" rel="stylesheet">
 
 
-<body class="file">
-<nav id="metadata">
-  <nav id="home-section" class="section">
-  <h3 class="section-header">
-    <a href="./index.html">Home</a>
+
+<body id="top" role="document" class="file">
+<nav role="navigation">
+  <div id="project-navigation">
+    <div id="home-section" role="region" title="Quick navigation" class="nav-section">
+  <h2>
+    <a href="./index.html" rel="home">Home</a>
+  </h2>
+
+  <div id="table-of-contents-navigation">
+    <a href="./table_of_contents.html#pages">Pages</a>
     <a href="./table_of_contents.html#classes">Classes</a>
     <a href="./table_of_contents.html#methods">Methods</a>
-  </h3>
-</nav>
+  </div>
+</div>
 
-
-  <nav id="search-section" class="section project-section" class="initially-hidden">
+    <div id="search-section" role="search" class="project-section initially-hidden">
   <form action="#" method="get" accept-charset="utf-8">
-    <h3 class="section-header">
-      <input type="text" name="search" placeholder="Search" id="search-field"
+    <div id="search-field-wrapper">
+      <input id="search-field" role="combobox" aria-label="Search"
+             aria-autocomplete="list" aria-controls="search-results"
+             type="text" name="search" placeholder="Search" spellcheck="false"
              title="Type to search, Up and Down to navigate, Enter to load">
-    </h3>
-  </form>
+    </div>
 
-  <ul id="search-results" class="initially-hidden"></ul>
-</nav>
+    <ul id="search-results" aria-label="Search Results"
+        aria-busy="false" aria-expanded="false"
+        aria-atomic="false" class="initially-hidden"></ul>
+  </form>
+</div>
+
+  </div>
+
+  
+<div class="nav-section">
+  <h3>Table of Contents</h3>
+
+  <ul class="link-list" role="directory">
+    <li><a href="#label-0.5.0+-2F+2016-01-07">0.5.0 / 2016-01-07</a>
+    <li><a href="#label-0.4.6+-2F+-28never+actually+released-29">0.4.6 / (never actually released)</a>
+    <li><a href="#label-0.4.5+-2F+2012-06-27">0.4.5 / 2012-06-27</a>
+    <li><a href="#label-0.4.4+-2F+2012-06-27">0.4.4 / 2012-06-27</a>
+    <li><a href="#label-0.4.3+-2F+2011-06-22">0.4.3 / 2011-06-22</a>
+    <li><a href="#label-0.4.2+-2F+2011-06-02">0.4.2 / 2011-06-02</a>
+    <li><a href="#label-0.4.1+-2F+2010-06-23">0.4.1 / 2010-06-23</a>
+    <li><a href="#label-0.4.0+-2F+2010-06-21">0.4.0 / 2010-06-21</a>
+    <li><a href="#label-0.3.3+-2F+2010-05-24">0.3.3 / 2010-05-24</a>
+    <li><a href="#label-0.3.2+-2F+2009-11-17">0.3.2 / 2009-11-17</a>
+    <li><a href="#label-0.3.1+-2F+2009-11-08">0.3.1 / 2009-11-08</a>
+    <li><a href="#label-0.3.0+-2F+2009-11-04">0.3.0 / 2009-11-04</a>
+    <li><a href="#label-0.2.2+-2F+2009-10-28">0.2.2 / 2009-10-28</a>
+    <li><a href="#label-0.2.1+-2F+2009-04-16">0.2.1 / 2009-04-16</a>
+    <li><a href="#label-0.2.0+-2F+2009-04-15">0.2.0 / 2009-04-15</a>
+    <li><a href="#label-0.1.1+-2F+2008-11-06">0.1.1 / 2008-11-06</a>
+    <li><a href="#label-0.1.0+-2F+2008-10-29">0.1.0 / 2008-10-29</a>
+    <li><a href="#label-0.0.4+-2F+2008-10-24">0.0.4 / 2008-10-24</a>
+    <li><a href="#label-0.0.3+-2F+2008-10-23">0.0.3 / 2008-10-23</a>
+    <li><a href="#label-0.0.2+-2F+2008-10-21">0.0.2 / 2008-10-21</a>
+    <li><a href="#label-0.0.1+-2F+2008-10-20">0.0.1 / 2008-10-20</a>
+  </ul>
+</div>
 
 
   <div id="project-metadata">
-    <nav id="fileindex-section" class="section project-section">
-  <h3 class="section-header">Pages</h3>
-
-  <ul>
-  
-    <li class="file"><a href="./Blockenspiel_rdoc.html">Blockenspiel</a>
-  
-    <li class="file"><a href="./History_rdoc.html">History</a>
-  
-    <li class="file"><a href="./ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
-  
-    <li class="file"><a href="./README_rdoc.html">README</a>
-  
-  </ul>
-</nav>
-
-    <nav id="classindex-section" class="section project-section">
-  <h3 class="section-header">Class and Module Index</h3>
+    <div id="fileindex-section" class="nav-section">
+  <h3>Pages</h3>
 
   <ul class="link-list">
   
-    <li><a href="./Blockenspiel.html">Blockenspiel</a>
+    <li><a href="./Blockenspiel_rdoc.html">Blockenspiel</a>
   
-    <li><a href="./Blockenspiel/Base.html">Blockenspiel::Base</a>
+    <li><a href="./History_rdoc.html">History</a>
   
-    <li><a href="./Blockenspiel/BlockParameterError.html">Blockenspiel::BlockParameterError</a>
+    <li><a href="./ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
   
-    <li><a href="./Blockenspiel/BlockenspielError.html">Blockenspiel::BlockenspielError</a>
-  
-    <li><a href="./Blockenspiel/Builder.html">Blockenspiel::Builder</a>
-  
-    <li><a href="./Blockenspiel/DSL.html">Blockenspiel::DSL</a>
-  
-    <li><a href="./Blockenspiel/DSLMissingError.html">Blockenspiel::DSLMissingError</a>
-  
-    <li><a href="./Blockenspiel/DSLSetupMethods.html">Blockenspiel::DSLSetupMethods</a>
+    <li><a href="./README_rdoc.html">README</a>
   
   </ul>
-</nav>
+</div>
 
   </div>
 </nav>
 
-<div id="documentation" class="description">
-  
-<h3 id="label-0.4.5+%2F+2012-06-27">0.4.5 / 2012-06-27</h3>
+<main role="main" aria-label="Page History.rdoc">
+
+<h3 id="label-0.5.0+-2F+2016-01-07">0.5.0 / 2016-01-07<span><a href="#label-0.5.0+-2F+2016-01-07">&para;</a> <a href="#top">&uarr;</a></span></h3>
+<ul><li>
+<p>Fixed an issue with the proxy strategy, where if a block spawns blocks that
+live longer than it, the sub-blocks lost their context.</p>
+</li><li>
+<p>Changed the default strategy to proxy due to semantic issues with mixin and
+difficulty supporting it.</p>
+</li><li>
+<p>Dropped support for the mixin strategy on MRI because Ruby 2.3.0 broke it
+and I don&#39;t have the bandwidth to find a remedy.</p>
+</li><li>
+<p>Updated the Rakefile, tests, and general infrastructure to play better with
+modern Rubies.</p>
+</li><li>
+<p>Dropped support for Ruby 1.8, because who still uses 1.8???</p>
+</li></ul>
+
+<h3 id="label-0.4.6+-2F+-28never+actually+released-29">0.4.6 / (never actually released)<span><a href="#label-0.4.6+-2F+-28never+actually+released-29">&para;</a> <a href="#top">&uarr;</a></span></h3>
+<ul><li>
+<p>Compatibility with the signature change to reset_method_cache in recent
+builds of Rubinius 2.0.</p>
+</li><li>
+<p>The gemspec no longer includes the timestamp in the version, so that
+bundler can pull from github. (Reported by corneverbruggen)</p>
+</li><li>
+<p>The Rakefile is now compatible with Ruby 2.0 and RubyGems 2.0.</p>
+</li></ul>
+
+<h3 id="label-0.4.5+-2F+2012-06-27">0.4.5 / 2012-06-27<span><a href="#label-0.4.5+-2F+2012-06-27">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>The 0.4.4 build was missing the JRuby unmixer. Fixed.</p>
 </li></ul>
 
-<h3 id="label-0.4.4+%2F+2012-06-27">0.4.4 / 2012-06-27</h3>
+<h3 id="label-0.4.4+-2F+2012-06-27">0.4.4 / 2012-06-27<span><a href="#label-0.4.4+-2F+2012-06-27">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Under JRuby 1.9 mode, if two threads mixed into the same object, the calls
 sometimes went to the wrong place. Fixed.</p>
@@ -106,7 +147,7 @@ sometimes went to the wrong place. Fixed.</p>
 <p>Integrate with Travis CI.</p>
 </li></ul>
 
-<h3 id="label-0.4.3+%2F+2011-06-22">0.4.3 / 2011-06-22</h3>
+<h3 id="label-0.4.3+-2F+2011-06-22">0.4.3 / 2011-06-22<span><a href="#label-0.4.3+-2F+2011-06-22">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>MRI C extension experienced a compile error under the current MRI head
 (e.g. 1.9.3). Fixed.</p>
@@ -116,7 +157,7 @@ sometimes went to the wrong place. Fixed.</p>
 <p>Eliminated some Rakefile deprecation warnings under newer rakes.</p>
 </li></ul>
 
-<h3 id="label-0.4.2+%2F+2011-06-02">0.4.2 / 2011-06-02</h3>
+<h3 id="label-0.4.2+-2F+2011-06-02">0.4.2 / 2011-06-02<span><a href="#label-0.4.2+-2F+2011-06-02">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Fixed an unmixer compatibility issue with Rubinius &gt; 1.2.x. (Thanks to
 @meh for the fix.)</p>
@@ -133,42 +174,42 @@ integration.</p>
 <p>Some cleanup of the Rakefile and tests.</p>
 </li></ul>
 
-<h3 id="label-0.4.1+%2F+2010-06-23">0.4.1 / 2010-06-23</h3>
+<h3 id="label-0.4.1+-2F+2010-06-23">0.4.1 / 2010-06-23<span><a href="#label-0.4.1+-2F+2010-06-23">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Support for rubinius 1.0.</p>
 </li></ul>
 
-<h3 id="label-0.4.0+%2F+2010-06-21">0.4.0 / 2010-06-21</h3>
+<h3 id="label-0.4.0+-2F+2010-06-21">0.4.0 / 2010-06-21<span><a href="#label-0.4.0+-2F+2010-06-21">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Implemented string- and file-based DSLs (in addition to block-based).</p>
 </li><li>
 <p>Correctly handle separate active DSLs in different fibers within the same
 thread, when fibers are avaialble.</p>
 </li><li>
-<p>Updated ruby runtime dependencies to reflect what I’m actually testing.</p>
+<p>Updated ruby runtime dependencies to reflect what I&#39;m actually testing.</p>
 </li><li>
 <p>Organized the source a little better, and fixed some Rakefile quirks.</p>
 </li></ul>
 
-<h3 id="label-0.3.3+%2F+2010-05-24">0.3.3 / 2010-05-24</h3>
+<h3 id="label-0.3.3+-2F+2010-05-24">0.3.3 / 2010-05-24<span><a href="#label-0.3.3+-2F+2010-05-24">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Some Rakefile fixes to match RDoc and Ruby 1.9 changes.</p>
 </li><li>
 <p>Minor documentation updates.</p>
 </li></ul>
 
-<h3 id="label-0.3.2+%2F+2009-11-17">0.3.2 / 2009-11-17</h3>
+<h3 id="label-0.3.2+-2F+2009-11-17">0.3.2 / 2009-11-17<span><a href="#label-0.3.2+-2F+2009-11-17">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Modules included in a DSL-ized class now have their methods included in the
 DSL.</p>
 </li><li>
 <p>Raise a more informative error (for now) when trying to include <a
 href="Blockenspiel/DSL.html">Blockenspiel::DSL</a> in a module. At some
-point, we’ll support this usage, once I figure out the right semantics for
-it.</p>
+point, we&#39;ll support this usage, once I figure out the right semantics
+for it.</p>
 </li></ul>
 
-<h3 id="label-0.3.1+%2F+2009-11-08">0.3.1 / 2009-11-08</h3>
+<h3 id="label-0.3.1+-2F+2009-11-08">0.3.1 / 2009-11-08<span><a href="#label-0.3.1+-2F+2009-11-08">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Blockenspiel#invoke can now take its options hash as the second argument
 (instead of the third) when using dynamic target generation, since the
@@ -178,7 +219,7 @@ second argument is otherwise unused in this case.</p>
 library is available, or as a version string if not.</p>
 </li></ul>
 
-<h3 id="label-0.3.0+%2F+2009-11-04">0.3.0 / 2009-11-04</h3>
+<h3 id="label-0.3.0+-2F+2009-11-04">0.3.0 / 2009-11-04<span><a href="#label-0.3.0+-2F+2009-11-04">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>dsl_attr_writer and dsl_attr_accessor convenience methods are available for
 creating DSL-friendly attributes.</p>
@@ -192,7 +233,7 @@ version to <a href="Blockenspiel_rdoc.html">Blockenspiel.rdoc</a>.</p>
 <p>Some documentation updates.</p>
 </li></ul>
 
-<h3 id="label-0.2.2+%2F+2009-10-28">0.2.2 / 2009-10-28</h3>
+<h3 id="label-0.2.2+-2F+2009-10-28">0.2.2 / 2009-10-28<span><a href="#label-0.2.2+-2F+2009-10-28">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Support for gemcutter hosting in the build/release scripts.</p>
 </li><li>
@@ -200,11 +241,11 @@ version to <a href="Blockenspiel_rdoc.html">Blockenspiel.rdoc</a>.</p>
 </li><li>
 <p>A few documentation updates.</p>
 </li><li>
-<p>Minor changes to the Implementing DSL Blocks paper to deal with Why’s
+<p>Minor changes to the Implementing DSL Blocks paper to deal with Why&#39;s
 disappearance.</p>
 </li></ul>
 
-<h3 id="label-0.2.1+%2F+2009-04-16">0.2.1 / 2009-04-16</h3>
+<h3 id="label-0.2.1+-2F+2009-04-16">0.2.1 / 2009-04-16<span><a href="#label-0.2.1+-2F+2009-04-16">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Now compatible with Ruby 1.9.</p>
 </li><li>
@@ -215,12 +256,12 @@ disappearance.</p>
 <p>Building no longer requires hoe.</p>
 </li></ul>
 
-<h3 id="label-0.2.0+%2F+2009-04-15">0.2.0 / 2009-04-15</h3>
+<h3 id="label-0.2.0+-2F+2009-04-15">0.2.0 / 2009-04-15<span><a href="#label-0.2.0+-2F+2009-04-15">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Earlier build of 0.2.1 that had some problems with JRuby.</p>
 </li></ul>
 
-<h3 id="label-0.1.1+%2F+2008-11-06">0.1.1 / 2008-11-06</h3>
+<h3 id="label-0.1.1+-2F+2008-11-06">0.1.1 / 2008-11-06<span><a href="#label-0.1.1+-2F+2008-11-06">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Added ability to pass the block as the first parameter in the dynamic DSL
 builder API; cleaned up the API a little</p>
@@ -232,7 +273,7 @@ builder API; cleaned up the API a little</p>
 <p>More test coverage</p>
 </li></ul>
 
-<h3 id="label-0.1.0+%2F+2008-10-29">0.1.0 / 2008-10-29</h3>
+<h3 id="label-0.1.0+-2F+2008-10-29">0.1.0 / 2008-10-29<span><a href="#label-0.1.0+-2F+2008-10-29">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Alpha release, opened for public feedback</p>
 </li><li>
@@ -243,7 +284,7 @@ builder API; cleaned up the API a little</p>
 <p>Revisions to the Implementing DSL Blocks paper</p>
 </li></ul>
 
-<h3 id="label-0.0.4+%2F+2008-10-24">0.0.4 / 2008-10-24</h3>
+<h3 id="label-0.0.4+-2F+2008-10-24">0.0.4 / 2008-10-24<span><a href="#label-0.0.4+-2F+2008-10-24">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Improvements to the logic for choosing behaviors</p>
 </li><li>
@@ -256,7 +297,7 @@ builder API; cleaned up the API a little</p>
 <p>Revisions to the Implementing DSL Blocks paper</p>
 </li></ul>
 
-<h3 id="label-0.0.3+%2F+2008-10-23">0.0.3 / 2008-10-23</h3>
+<h3 id="label-0.0.3+-2F+2008-10-23">0.0.3 / 2008-10-23<span><a href="#label-0.0.3+-2F+2008-10-23">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Added :proxy behavior for parameterless blocks</p>
 </li><li>
@@ -267,25 +308,24 @@ inheriting behavior.</p>
 <p>Added tests for the different behavior settings.</p>
 </li></ul>
 
-<h3 id="label-0.0.2+%2F+2008-10-21">0.0.2 / 2008-10-21</h3>
+<h3 id="label-0.0.2+-2F+2008-10-21">0.0.2 / 2008-10-21<span><a href="#label-0.0.2+-2F+2008-10-21">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Cleaned up some of the documentation</p>
 </li><li>
 <p>Revisions to the Implementing DSL Blocks paper</p>
 </li></ul>
 
-<h3 id="label-0.0.1+%2F+2008-10-20">0.0.1 / 2008-10-20</h3>
+<h3 id="label-0.0.1+-2F+2008-10-20">0.0.1 / 2008-10-20<span><a href="#label-0.0.1+-2F+2008-10-20">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
 <p>Initial test release</p>
 </li></ul>
-
-</div>
-
+</main>
 
 
-<footer id="validator-badges">
-  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
-  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
-  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+
+<footer id="validator-badges" role="contentinfo">
+  <p><a href="http://validator.w3.org/check/referer">Validate</a>
+  <p>Generated by <a href="http://docs.seattlerb.org/rdoc/">RDoc</a> 4.2.1.
+  <p>Based on <a href="http://deveiate.org/projects/Darkfish-RDoc/">Darkfish</a> by <a href="http://deveiate.org">Michael Granger</a>.
 </footer>
 

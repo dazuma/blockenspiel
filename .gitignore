@@ -9,4 +9,5 @@
 *.dSYM
 Makefile*
 /ext/*/mkmf.log
-Gemfile.lock
+/Gemfile.lock
+/.ruby-version

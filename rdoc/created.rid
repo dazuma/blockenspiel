@@ -1,14 +1,14 @@
-Wed, 27 Jun 2012 23:43:59 -0700
-lib/blockenspiel/builder.rb	Wed, 27 Jun 2012 23:24:37 -0700
-lib/blockenspiel/dsl_setup.rb	Wed, 27 Jun 2012 23:24:37 -0700
-lib/blockenspiel/errors.rb	Wed, 27 Jun 2012 23:24:37 -0700
-lib/blockenspiel/impl.rb	Wed, 27 Jun 2012 23:24:46 -0700
-lib/blockenspiel/unmixer_rubinius.rb	Wed, 27 Jun 2012 23:24:37 -0700
-lib/blockenspiel/unmixer_unimplemented.rb	Wed, 27 Jun 2012 23:24:37 -0700
-lib/blockenspiel/version.rb	Wed, 27 Jun 2012 23:24:37 -0700
-lib/blockenspiel/versionomy.rb	Wed, 27 Jun 2012 23:24:37 -0700
-lib/blockenspiel.rb	Wed, 27 Jun 2012 23:24:37 -0700
-Blockenspiel.rdoc	Wed, 27 Jun 2012 23:24:37 -0700
-History.rdoc	Wed, 27 Jun 2012 23:42:00 -0700
-ImplementingDSLblocks.rdoc	Wed, 27 Jun 2012 23:24:37 -0700
-README.rdoc	Wed, 27 Jun 2012 23:24:37 -0700
+Wed, 06 Jan 2016 22:32:10 -0800
+lib/blockenspiel/builder.rb	Wed, 06 Jan 2016 17:59:46 -0800
+lib/blockenspiel/dsl_setup.rb	Wed, 06 Jan 2016 17:59:41 -0800
+lib/blockenspiel/errors.rb	Wed, 06 Jan 2016 17:59:37 -0800
+lib/blockenspiel/impl.rb	Wed, 06 Jan 2016 19:35:46 -0800
+lib/blockenspiel/unmixer_rubinius.rb	Wed, 24 Apr 2013 15:50:25 -0700
+lib/blockenspiel/unmixer_unimplemented.rb	Wed, 06 Jan 2016 18:18:09 -0800
+lib/blockenspiel/version.rb	Wed, 06 Jan 2016 17:58:24 -0800
+lib/blockenspiel/versionomy.rb	Wed, 06 Jan 2016 17:58:20 -0800
+lib/blockenspiel.rb	Wed, 06 Jan 2016 17:58:15 -0800
+Blockenspiel.rdoc	Wed, 06 Jan 2016 22:20:09 -0800
+History.rdoc	Wed, 06 Jan 2016 21:43:59 -0800
+ImplementingDSLblocks.rdoc	Wed, 27 Jun 2012 23:44:49 -0700
+README.rdoc	Wed, 06 Jan 2016 22:20:54 -0800

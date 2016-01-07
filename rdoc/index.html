@@ -2,66 +2,74 @@
 
 <html>
 <head>
-<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+<meta charset="UTF-8">
 
-<title>Blockenspiel 0.4.5 Documentation</title>
-
-<link type="text/css" media="screen" href="./rdoc.css" rel="stylesheet">
+<title>Blockenspiel 0.5.0 Documentation</title>
 
 <script type="text/javascript">
   var rdoc_rel_prefix = "./";
 </script>
 
-<script type="text/javascript" charset="utf-8" src="./js/jquery.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/navigation.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/search_index.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/search.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/searcher.js"></script>
-<script type="text/javascript" charset="utf-8" src="./js/darkfish.js"></script>
+<script src="./js/jquery.js"></script>
+<script src="./js/darkfish.js"></script>
+
+<link href="./css/fonts.css" rel="stylesheet">
+<link href="./css/rdoc.css" rel="stylesheet">
 
 
-<body>
-<nav id="metadata">
-  <nav id="home-section" class="section">
-  <h3 class="section-header">
-    <a href="./index.html">Home</a>
+
+<body id="top" role="document" class="file">
+<nav role="navigation">
+  <div id="project-navigation">
+    <div id="home-section" role="region" title="Quick navigation" class="nav-section">
+  <h2>
+    <a href="./index.html" rel="home">Home</a>
+  </h2>
+
+  <div id="table-of-contents-navigation">
+    <a href="./table_of_contents.html#pages">Pages</a>
     <a href="./table_of_contents.html#classes">Classes</a>
     <a href="./table_of_contents.html#methods">Methods</a>
-  </h3>
-</nav>
+  </div>
+</div>
 
 
-  <nav id="search-section" class="section project-section" class="initially-hidden">
+    <div id="search-section" role="search" class="project-section initially-hidden">
   <form action="#" method="get" accept-charset="utf-8">
-    <h3 class="section-header">
-      <input type="text" name="search" placeholder="Search" id="search-field"
+    <div id="search-field-wrapper">
+      <input id="search-field" role="combobox" aria-label="Search"
+             aria-autocomplete="list" aria-controls="search-results"
+             type="text" name="search" placeholder="Search" spellcheck="false"
              title="Type to search, Up and Down to navigate, Enter to load">
-    </h3>
+    </div>
+
+    <ul id="search-results" aria-label="Search Results"
+        aria-busy="false" aria-expanded="false"
+        aria-atomic="false" class="initially-hidden"></ul>
   </form>
+</div>
 
-  <ul id="search-results" class="initially-hidden"></ul>
-</nav>
-
+  </div>
 
   <div id="project-metadata">
-    <nav id="fileindex-section" class="section project-section">
-  <h3 class="section-header">Pages</h3>
+    <div id="fileindex-section" class="nav-section">
+  <h3>Pages</h3>
 
-  <ul>
+  <ul class="link-list">
   
-    <li class="file"><a href="./Blockenspiel_rdoc.html">Blockenspiel</a>
+    <li><a href="./Blockenspiel_rdoc.html">Blockenspiel</a>
   
-    <li class="file"><a href="./History_rdoc.html">History</a>
+    <li><a href="./History_rdoc.html">History</a>
   
-    <li class="file"><a href="./ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
+    <li><a href="./ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks</a>
   
-    <li class="file"><a href="./README_rdoc.html">README</a>
+    <li><a href="./README_rdoc.html">README</a>
   
   </ul>
-</nav>
+</div>
 
-    <nav id="classindex-section" class="section project-section">
-  <h3 class="section-header">Class and Module Index</h3>
+    <div id="classindex-section" class="nav-section">
+  <h3>Class and Module Index</h3>
 
   <ul class="link-list">
   
@@ -82,21 +90,22 @@
     <li><a href="./Blockenspiel/DSLSetupMethods.html">Blockenspiel::DSLSetupMethods</a>
   
   </ul>
-</nav>
+</div>
 
   </div>
 </nav>
 
-<div id="documentation" class="description">
-  
-<h2 id="label-Blockenspiel"><a href="Blockenspiel.html">Blockenspiel</a></h2>
+<main role="main">
+
+
+<h2 id="label-Blockenspiel"><a href="Blockenspiel.html">Blockenspiel</a><span><a href="#label-Blockenspiel">&para;</a> <a href="#top">&uarr;</a></span></h2>
 
 <p><a href="Blockenspiel.html">Blockenspiel</a> is a helper library designed
 to make it easy to implement DSL blocks. It is designed to be comprehensive
 and robust, supporting most common usage patterns, and working correctly in
 the presence of nested blocks and multithreading.</p>
 
-<h3 id="label-Summary">Summary</h3>
+<h3 id="label-Summary">Summary<span><a href="#label-Summary">&para;</a> <a href="#top">&uarr;</a></span></h3>
 
 <p><a href="Blockenspiel.html">Blockenspiel</a> is a helper library providing
 several different strategies for implementing DSL blocks. It supports both
@@ -129,17 +138,19 @@ DSLs that take a block parameter and those that do not. For example:</p>
 <span class="ruby-keyword">end</span>
 
 <span class="ruby-comment"># Implement configure_me method</span>
-<span class="ruby-keyword">def</span> <span class="ruby-identifier">configure_me</span>(&amp;<span class="ruby-identifier">block</span>)
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">configure_me</span>(<span class="ruby-operator">&amp;</span><span class="ruby-identifier">block</span>)
   <span class="ruby-constant">Blockenspiel</span>.<span class="ruby-identifier">invoke</span>(<span class="ruby-identifier">block</span>, <span class="ruby-constant">ConfigMethods</span>.<span class="ruby-identifier">new</span>)
 <span class="ruby-keyword">end</span>
 </pre>
 
-<p>By default, <a href="Blockenspiel.html">Blockenspiel</a> uses a mixin
-technique (proposed by the late Why The Lucky Stiff) to support
-parameterless blocks without the complications introduced by
+<p>By default, <a href="Blockenspiel.html">Blockenspiel</a> uses a
+“delegation” technique (to my knowledge first proposed by Dan Manges) to
+support parameterless blocks while mitigating some of the issues with
 <code>instance_eval</code>. It supports nested blocks and multithreaded
 access, and provides a variety of tools for handling the typical issues you
-may encounter when writing DSLs.</p>
+may encounter when writing DSLs. On some ruby platforms, <a
+href="Blockenspiel.html">Blockenspiel</a> also supports a mixin technique
+(proposed by Why The Lucky Stiff).</p>
 
 <p>For more detailed usage and examples, see <a
 href="Blockenspiel_rdoc.html">Blockenspiel.rdoc</a>.</p>
@@ -147,32 +158,30 @@ href="Blockenspiel_rdoc.html">Blockenspiel.rdoc</a>.</p>
 <p>For an extended analysis of different ways to implement DSL blocks, see <a
 href="ImplementingDSLblocks_rdoc.html">ImplementingDSLblocks.rdoc</a>.</p>
 
-<h3 id="label-Requirements">Requirements</h3>
+<h3 id="label-Requirements">Requirements<span><a href="#label-Requirements">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
-<p>Ruby 1.8.7, Ruby 1.9.1 or later, JRuby 1.5 or later, or Rubinius 1.0 or
-later.</p>
+<p>Ruby 1.9.3 or later, JRuby 1.5 or later, or Rubinius 1.0 or later.</p>
 </li></ul>
 
-<h3 id="label-Installation">Installation</h3>
+<h3 id="label-Installation">Installation<span><a href="#label-Installation">&para;</a> <a href="#top">&uarr;</a></span></h3>
 
-<pre>gem install blockenspiel</pre>
+<pre class="ruby"><span class="ruby-identifier">gem</span> <span class="ruby-identifier">install</span> <span class="ruby-identifier">blockenspiel</span>
+</pre>
 
-<h3 id="label-Known+issues+and+to-do+items">Known issues and to-do items</h3>
+<h3 id="label-Known+issues+and+to-do+items">Known issues and to-do items<span><a href="#label-Known+issues+and+to-do+items">&para;</a> <a href="#top">&uarr;</a></span></h3>
 <ul><li>
-<p>Implementing wildcard DSL methods using <code>method_missing</code> doesn’t
-work. I haven’t yet decided on the right semantics for this case, or
-whether it is even a reasonable feature at all.</p>
+<p>Implementing wildcard DSL methods using <code>method_missing</code>
+doesn&#39;t work. I haven&#39;t yet decided on the right semantics for this
+case, or whether it is even a reasonable feature at all.</p>
 </li><li>
 <p>Including <a href="Blockenspiel/DSL.html">Blockenspiel::DSL</a> in a module
-(rather than a class) is not yet supported, but this is planned for a
-future release.</p>
+(rather than a class) is not supported, but this could appear in a future
+release.</p>
 </li><li>
-<p>Installing on Windows may be a challenge because blockenspiel includes a
-native extension. I’m considering evaluating Luis Lavena’s rake-compiler to
-simplify this process.</p>
+<p>Find a way to implement mixin behavior reliably on MRI.</p>
 </li></ul>
 
-<h3 id="label-Development+and+support">Development and support</h3>
+<h3 id="label-Development+and+support">Development and support<span><a href="#label-Development+and+support">&para;</a> <a href="#top">&uarr;</a></span></h3>
 
 <p>Documentation is available at <a
 href="http://dazuma.github.com/blockenspiel/rdoc">dazuma.github.com/blockenspiel/rdoc</a></p>
@@ -190,10 +199,10 @@ href="http://github.org/dazuma/blockenspiel/issues">github.org/dazuma/blockenspi
 
 <p>Contact the author at dazuma at gmail dot com.</p>
 
-<h3 id="label-Author+%2F+Credits">Author / Credits</h3>
+<h3 id="label-Author+-2F+Credits">Author / Credits<span><a href="#label-Author+-2F+Credits">&para;</a> <a href="#top">&uarr;</a></span></h3>
 
 <p><a href="Blockenspiel.html">Blockenspiel</a> is written by Daniel Azuma (<a
-href="http://www.daniel-azuma.com/">www.daniel-azuma.com/</a>).</p>
+href="http://www.daniel-azuma.com">www.daniel-azuma.com</a>/).</p>
 
 <p>The mixin implementation is based on a concept by the late Why The Lucky
 Stiff, documented in his 6 October 2008 blog posting entitled “Mixing Our
@@ -202,21 +211,23 @@ its author, but you may find copies or mirrors out there.</p>
 
 <p>The unmixer code is based on <a
 href="http://rubyforge.org/projects/mixology">Mixology</a>, version by
-Patrick Farley, anonymous z, Dan Manges, and Clint Bishop. The MRI C
-extension and the JRuby code were adapted from Mixology 0.1, and have been
-stripped down and modified to support Ruby 1.9 and JRuby &gt;= 1.2. The
-Rubinius code was adapted from unreleased code in the Mixology source tree
-and modified to support Rubinius 1.0. I know Mixology 0.2 is now available,
-but its Rubinius support is not active, and I’d rather keep the unmixer
-bundled with <a href="Blockenspiel.html">Blockenspiel</a> for now to reduce
-dependencies.</p>
+Patrick Farley, anonymous z, Dan Manges, and Clint Bishop. The JRuby code
+is adapted from Mixology 0.1, and has been stripped down and modified to
+support JRuby &gt;= 1.2. The Rubinius code was adapted from unreleased code
+in the Mixology source tree and modified to support Rubinius 1.0. I know
+Mixology 0.2 is now available, but its Rubinius support is not active, and
+I&#39;d rather keep the unmixer bundled with <a
+href="Blockenspiel.html">Blockenspiel</a> for now to reduce dependencies.
+Earlier versions of <a href="Blockenspiel.html">Blockenspiel</a> also
+included a C extension, adapted from Mixology, to support mixins for MRI,
+but this code has been disabled due to issues with newer versions of Ruby.</p>
 
 <p>The dsl_attr_writer and dsl_attr_accessor feature came from a suggestion by
 Luis Lavena.</p>
 
-<h3 id="label-License">License</h3>
+<h3 id="label-License">License<span><a href="#label-License">&para;</a> <a href="#top">&uarr;</a></span></h3>
 
-<p>Copyright 2008-2012 Daniel Azuma.</p>
+<p>Copyright 2008 Daniel Azuma.</p>
 
 <p>All rights reserved.</p>
 
@@ -246,13 +257,13 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.</p>
+</main>
 
-</div>
 
 
-<footer id="validator-badges">
-  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
-  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
-  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+<footer id="validator-badges" role="contentinfo">
+  <p><a href="http://validator.w3.org/check/referer">Validate</a>
+  <p>Generated by <a href="http://docs.seattlerb.org/rdoc/">RDoc</a> 4.2.1.
+  <p>Based on <a href="http://deveiate.org/projects/Darkfish-RDoc/">Darkfish</a> by <a href="http://deveiate.org">Michael Granger</a>.
 </footer>
 
