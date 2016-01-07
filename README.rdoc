@@ -41,11 +41,12 @@ To support the above usage, you can do this:
    Blockenspiel.invoke(block, ConfigMethods.new)
  end
 
-By default, Blockenspiel uses a mixin technique (proposed by the late Why
-The Lucky Stiff) to support parameterless blocks without the complications
-introduced by <tt>instance_eval</tt>. It supports nested blocks and
+By default, Blockenspiel uses a "delegation" technique (to my knowledge first
+proposed by Dan Manges) to support parameterless blocks while mitigating some
+of the issues with <tt>instance_eval</tt>. It supports nested blocks and
 multithreaded access, and provides a variety of tools for handling the
-typical issues you may encounter when writing DSLs.
+typical issues you may encounter when writing DSLs. On some ruby platforms,
+Blockenspiel also supports a mixin technique (proposed by Why The Lucky Stiff).
 
 For more detailed usage and examples, see
 {Blockenspiel.rdoc}[link:Blockenspiel\_rdoc.html].
@@ -66,11 +67,9 @@ For an extended analysis of different ways to implement DSL blocks, see
 * Implementing wildcard DSL methods using <tt>method_missing</tt> doesn't
   work. I haven't yet decided on the right semantics for this case, or
   whether it is even a reasonable feature at all.
-* Including Blockenspiel::DSL in a module (rather than a class) is not yet
-  supported, but this is planned for a future release.
-* Installing on Windows may be a challenge because blockenspiel includes a
-  native extension. I'm considering evaluating Luis Lavena's rake-compiler
-  to simplify this process.
+* Including Blockenspiel::DSL in a module (rather than a class) is not
+  supported, but this could appear in a future release.
+* Find a way to implement mixin behavior reliably on MRI.
 
 === Development and support
 
@@ -97,19 +96,21 @@ its author, but you may find copies or mirrors out there.
 
 The unmixer code is based on {Mixology}[http://rubyforge.org/projects/mixology],
 version by Patrick Farley, anonymous z, Dan Manges, and Clint Bishop.
-The MRI C extension and the JRuby code were adapted from Mixology 0.1, and
-have been stripped down and modified to support Ruby 1.9 and JRuby >= 1.2.
-The Rubinius code was adapted from unreleased code in the Mixology source
-tree and modified to support Rubinius 1.0. I know Mixology 0.2 is now
-available, but its Rubinius support is not active, and I'd rather keep the
-unmixer bundled with Blockenspiel for now to reduce dependencies.
+The JRuby code is adapted from Mixology 0.1, and has been stripped down and
+modified to support JRuby >= 1.2. The Rubinius code was adapted from unreleased
+code in the Mixology source tree and modified to support Rubinius 1.0. I know
+Mixology 0.2 is now available, but its Rubinius support is not active, and I'd
+rather keep the unmixer bundled with Blockenspiel for now to reduce
+dependencies. Earlier versions of Blockenspiel also included a C extension,
+adapted from Mixology, to support mixins for MRI, but this code has been
+disabled due to issues with newer versions of Ruby.
 
 The dsl_attr_writer and dsl_attr_accessor feature came from a suggestion by
 Luis Lavena.
 
 === License
 
-Copyright 2008-2012 Daniel Azuma.
+Copyright 2008 Daniel Azuma.
 
 All rights reserved.
 

@@ -3,7 +3,7 @@
 # Blockenspiel version
 #
 # -----------------------------------------------------------------------------
-# Copyright 2008-2011 Daniel Azuma
+# Copyright 2008 Daniel Azuma
 #
 # All rights reserved.
 #

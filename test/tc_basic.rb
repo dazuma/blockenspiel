@@ -5,7 +5,7 @@
 # This file contains tests for the simple use cases.
 #
 # -----------------------------------------------------------------------------
-# Copyright 2008-2011 Daniel Azuma
+# Copyright 2008 Daniel Azuma
 #
 # All rights reserved.
 #
@@ -36,14 +36,14 @@
 ;
 
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'blockenspiel'
 
 
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestBasic < ::Test::Unit::TestCase  # :nodoc:
+    class TestBasic < ::MiniTest::Unit::TestCase  # :nodoc:
 
 
       class SimpleTarget < ::Blockenspiel::Base
@@ -87,16 +87,17 @@ module Blockenspiel
       end
 
 
-      # Test basic usage with a mixin.
+      # Test basic usage with a delegator.
       #
-      # * Asserts that methods are mixed in to self.
-      # * Asserts that methods are removed from self afterward.
-      # * Asserts that the specified target object still receives the messages.
+      # * Asserts that the specified target object receives the messages.
+      # * Asserts that methods from the surrounding context are also available.
+      # * Asserts that methods are not present in self afterward.
 
-      def test_basic_mixin
+      def test_basic_parameterless
         block_ = ::Proc.new do
           set_value(:a, 1)
           set_value_by_block(:b){ 2 }
+          assert(true)
         end
         target_ = SimpleTarget.new
         ::Blockenspiel.invoke(block_, target_)

@@ -3,7 +3,7 @@
 # Blockenspiel unmixer module when unmixer is not implemented
 #
 # -----------------------------------------------------------------------------
-# Copyright 2010-2011 Daniel Azuma
+# Copyright 2010 Daniel Azuma
 #
 # All rights reserved.
 #
@@ -40,6 +40,9 @@ module Blockenspiel
   # :stopdoc:
 
   module Unmixer
+
+
+    UNIMPLEMENTED = true
 
 
     # Unmixer stub.

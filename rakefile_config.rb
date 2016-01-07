@@ -38,10 +38,13 @@ task :build_other => ['lib/blockenspiel_unmixer_jruby.jar']
 file 'lib/blockenspiel_unmixer_jruby.jar' do
   jruby_dir_ = ::Dir.glob("#{::File.expand_path('~')}/.rvm/rubies/jruby-*").sort.last
   unless jruby_dir_
+    jruby_dir_ = ::Dir.glob("#{::ENV['RBENV_ROOT']}/versions/jruby-*").sort.last
+  end
+  unless jruby_dir_
     raise "Cannot find any JRuby"
   end
   ::Dir.chdir('java') do
-    sh "javac -source 1.5 -target 1.5 -classpath #{jruby_dir_}/lib/jruby.jar BlockenspielUnmixerJrubyService.java"
+    sh "javac -classpath #{jruby_dir_}/lib/jruby.jar BlockenspielUnmixerJrubyService.java"
     sh 'jar cf blockenspiel_unmixer_jruby.jar BlockenspielUnmixerJrubyService.class'
     rm 'BlockenspielUnmixerJrubyService.class'
   end

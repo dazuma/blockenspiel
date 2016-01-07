@@ -36,14 +36,14 @@
 ;
 
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'blockenspiel'
 
 
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestBehaviors < ::Test::Unit::TestCase  # :nodoc:
+    class TestBehaviors < ::MiniTest::Unit::TestCase  # :nodoc:
 
 
       class Target1 < ::Blockenspiel::Base
@@ -93,8 +93,8 @@ module Blockenspiel
           set_value1('a', 1)
           set_value2('b'){ 2 }
           set_value3('c', 3)
-          context_self_.assert_raise(::NoMethodError){ set_value3_dslversion('d', 4) }
-          context_self_.assert_raise(::NoMethodError){ helper_method() }
+          context_self_.assert_raises(::NoMethodError){ set_value3_dslversion('d', 4) }
+          context_self_.assert_raises(::NoMethodError){ helper_method() }
           context_self_.assert(!instance_variable_defined?(:@my_instance_variable_test))
           context_self_.assert_instance_of(::Blockenspiel::Tests::TestBehaviors::Target1, self)
         end
@@ -120,11 +120,11 @@ module Blockenspiel
           set_value1('a', 1)
           set_value2('b'){ 2 }
           set_value3_dslversion('c', 3)
-          context_self_.assert_raise(::NoMethodError){ set_value3('d', 4) }
+          context_self_.assert_raises(::NoMethodError){ set_value3('d', 4) }
           context_self_.assert(helper_method())
           context_self_.assert(!instance_variable_defined?(:@my_instance_variable_test))
           context_self_.assert(!self.kind_of?(::Blockenspiel::Tests::TestBehaviors::Target1))
-          context_self_.assert_not_equal(context_self_, self)
+          context_self_.refute_equal(context_self_, self)
         end
         ::Blockenspiel.invoke(block_, Target1.new(hash_), :parameterless => :proxy)
         assert_equal(1, hash_['a1'])
@@ -149,11 +149,11 @@ module Blockenspiel
         block3_ = ::Proc.new do
           set_value1('c', 3)
         end
-        assert_raise(::Blockenspiel::BlockParameterError) do
+        assert_raises(::Blockenspiel::BlockParameterError) do
           ::Blockenspiel.invoke(block1_, Target1.new(hash_), :parameterless => false)
         end
         ::Blockenspiel.invoke(block2_, Target1.new(hash_), :parameterless => false)
-        assert_raise(::Blockenspiel::BlockParameterError) do
+        assert_raises(::Blockenspiel::BlockParameterError) do
           ::Blockenspiel.invoke(block3_, Target1.new(hash_), :parameterless => false)
         end
         assert_equal(2, hash_['b1'])
@@ -177,7 +177,7 @@ module Blockenspiel
           set_value1('c', 3)
         end
         ::Blockenspiel.invoke(block1_, Target1.new(hash_), :parameter => false)
-        assert_raise(::Blockenspiel::BlockParameterError) do
+        assert_raises(::Blockenspiel::BlockParameterError) do
           ::Blockenspiel.invoke(block2_, Target1.new(hash_), :parameter => false)
         end
         ::Blockenspiel.invoke(block3_, Target1.new(hash_), :parameter => false)

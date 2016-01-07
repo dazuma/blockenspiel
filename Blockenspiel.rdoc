@@ -130,8 +130,8 @@ doesn't take a parameter, the second form without a parameter is used.
 === How does that help me? (Or, why not just use instance_eval?)
 
 As noted earlier, some libraries that provide parameter-less DSL blocks use
-<tt>instance_eval</tt>, and they could even support both the parameter and
-parameter-less mechanisms by checking the block arity:
+a simple <tt>instance_eval</tt>, and they could even support both the parameter
+and parameter-less mechanisms by checking the block arity:
 
  def configure_me(&block)
    if block.arity == 1
@@ -159,21 +159,13 @@ methods inside the block:
    add_bar(2)
  end
 
-Blockenspiel by default does _not_ use the <tt>instance_eval</tt> technique.
-Instead, it implements a mechanism using mixin modules, a technique proposed
-by the late {Why}[http://en.wikipedia.org/wiki/Why_the_lucky_stiff]. In this
-technique, the <tt>add_foo</tt> and <tt>add_bar</tt> methods are temporarily
-mixed into the caller's +self+ object. That is, +self+ does not change, as
-it would if we used <tt>instance_eval</tt>, so helper methods like
-<tt>callers_helper_method</tt> still remain available as expected. But, the
-<tt>add_foo</tt> and <tt>add_bar</tt> methods are also made available
-temporarily for the duration of the block. When called, they are intercepted
-and redirected to your +ConfigMethods+ instance just as if you had called
-them directly via a block parameter. Blockenspiel handles the object
-redirection behind the scenes so you do not have to think about it. With
-Blockenspiel, the caller retains access to its helper methods, and even its
-own instance variables, within the block, because +self+ has not been
-modified.
+Blockenspiel employs a number of techniques to mitigate the ill effects of
+<tt>instance_eval</tt>. It delegates methods that are not part of the DSL,
+back to the enclosing context object, so that the caller retains access to
+helper methods. It also includes an optional experimental technique (not
+available on all ruby platforms) that temporarily mixes the DSL methods
+directly into the caller's +self+ object, so that instance variable access
+is retained.
 
 === Is that it?
 
@@ -302,8 +294,22 @@ Blockenspiel also correctly handles nested blocks. e.g.
    end
  end
 
-Finally, it is thread safe, correctly handling, for example, the case of
-multiple threads trying to mix methods into the same object concurrently.
+Blockenspiel provides three strategies for doing parameterless DSL blocks.
+
+The default strategy uses a proxy object that delegates unrecognized methods
+out to the calling context. It should work well for most cases.
+
+Second, some applications might want to use the simple <tt>instance_eval</tt>
+behavior. RSpec is a good example of such a case, since the DSL is being used
+to construct objects, so it makes sense for instance variables inside the block
+to belong to the object being constructed.
+
+Third, an experimental mixin strategy is provided, which adds the DSL methods
+directly to the context's self object, and removes them afterward. This is
+available on Rubinius and JRuby but not on MRI.
+
+Finally, Blockenspiel is thread safe, correctly handling, for example, the case
+of multiple threads trying to mix methods into the same object concurrently.
 
 === Requirements
 
@@ -320,9 +326,7 @@ multiple threads trying to mix methods into the same object concurrently.
   whether it is even a reasonable feature at all.
 * Including Blockenspiel::DSL in a module (rather than a class) is not yet
   supported, but this is planned for a future release.
-* Installing on Windows may be a challenge because blockenspiel includes a
-  native extension. I'm considering evaluating Luis Lavena's rake-compiler
-  to simplify this process.
+* Find a way to implement mixin behavior reliably on MRI.
 
 === Development and support
 
@@ -349,19 +353,21 @@ copies or mirrors out there.
 
 The unmixer code is based on {Mixology}[http://rubyforge.org/projects/mixology],
 version by Patrick Farley, anonymous z, Dan Manges, and Clint Bishop.
-The MRI C extension and the JRuby code were adapted from Mixology 0.1, and
-have been stripped down and modified to support Ruby 1.9 and JRuby >= 1.2.
-The Rubinius code was adapted from unreleased code in the Mixology source
-tree and modified to support Rubinius 1.0. I know Mixology 0.2 is now
-available, but its Rubinius support is not active, and I'd rather keep the
-unmixer bundled with Blockenspiel for now to reduce dependencies.
+The JRuby code is adapted from Mixology 0.1, and has been stripped down and
+modified to support JRuby >= 1.2. The Rubinius code was adapted from unreleased
+code in the Mixology source tree and modified to support Rubinius 1.0. I know
+Mixology 0.2 is now available, but its Rubinius support is not active, and I'd
+rather keep the unmixer bundled with Blockenspiel for now to reduce
+dependencies. Earlier versions of Blockenspiel also included a C extension,
+adapted from Mixology, to support mixins for MRI, but this code has been
+disabled due to issues with newer versions of Ruby.
 
 The dsl_attr_writer and dsl_attr_accessor feature came from a suggestion by
 Luis Lavena.
 
 === License
 
-Copyright 2008-2011 Daniel Azuma.
+Copyright 2008 Daniel Azuma.
 
 All rights reserved.
 

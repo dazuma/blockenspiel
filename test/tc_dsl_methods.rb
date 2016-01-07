@@ -36,14 +36,14 @@
 ;
 
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'blockenspiel'
 
 
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestDSLMethods < ::Test::Unit::TestCase  # :nodoc:
+    class TestDSLMethods < ::MiniTest::Unit::TestCase  # :nodoc:
 
 
       class Target1 < ::Blockenspiel::Base
@@ -206,7 +206,7 @@ module Blockenspiel
         block_ = ::Proc.new do
           set_value1('a', 1)
           set_value2('b'){ 2 }
-          assert_raise(::NoMethodError){ _set_value3('c', 3) }
+          assert_raises(::NoMethodError){ _set_value3('c', 3) }
         end
         ::Blockenspiel.invoke(block_, Target1.new(hash_))
         assert_equal(1, hash_['a1'])
@@ -224,7 +224,7 @@ module Blockenspiel
       def test_onoff_switching
         hash_ = ::Hash.new
         block_ = ::Proc.new do
-          assert_raise(::NoMethodError){ _set_value1('a', 1) }
+          assert_raises(::NoMethodError){ _set_value1('a', 1) }
           set_value2('b'){ 2 }
           _set_value3('c', 3)
         end
@@ -244,7 +244,7 @@ module Blockenspiel
         hash_ = ::Hash.new
         block_ = ::Proc.new do
           set_value1('a', 1)
-          assert_raise(::NoMethodError){ set_value2('b'){ 2 } }
+          assert_raises(::NoMethodError){ set_value2('b'){ 2 } }
           renamed_set_value2('c'){ 3 }
           another_set_value2('d'){ 4 }
         end
@@ -264,8 +264,8 @@ module Blockenspiel
       def test_explicit_removing
         hash_ = ::Hash.new
         block_ = ::Proc.new do
-          assert_raise(::NoMethodError){ set_value1('a', 1) }
-          assert_raise(::NoMethodError){ set_value2('b'){ 2 } }
+          assert_raises(::NoMethodError){ set_value1('a', 1) }
+          assert_raises(::NoMethodError){ set_value2('b'){ 2 } }
           renamed_set_value2('c'){ 3 }
         end
         ::Blockenspiel.invoke(block_, Target4.new(hash_))
@@ -285,8 +285,8 @@ module Blockenspiel
         block_ = ::Proc.new do
           set_value1('a', 1)
           set_value2('b'){ 2 }
-          assert_raise(::NoMethodError){ set_value3('c', 3) }
-          assert_raise(::NoMethodError){ set_value4('d', 4) }
+          assert_raises(::NoMethodError){ set_value3('c', 3) }
+          assert_raises(::NoMethodError){ set_value4('d', 4) }
           renamed_set_value4('e', 5)
           set_value5('f', 6)
         end
@@ -310,7 +310,7 @@ module Blockenspiel
         block_ = ::Proc.new do
           set_value1('a', 1)
           renamed_set_value2('b'){ 2 }
-          assert_raise(::NoMethodError){ set_value2('c', 3) }
+          assert_raises(::NoMethodError){ set_value2('c', 3) }
         end
         ::Blockenspiel.invoke(block_, Target6.new(hash_))
         assert_equal(1, hash_['a1'])

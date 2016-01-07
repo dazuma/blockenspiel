@@ -37,14 +37,14 @@
 ;
 
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'blockenspiel'
 
 
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestMixins < ::Test::Unit::TestCase  # :nodoc:
+    class TestMixins < ::MiniTest::Unit::TestCase  # :nodoc:
 
 
       class Target1 < ::Blockenspiel::Base
@@ -124,6 +124,8 @@ module Blockenspiel
       # * Asserts that self doesn't change, and instance variables are preserved.
 
       def test_basic_mixin
+        skip unless ::Blockenspiel.mixin_available?
+
         hash_ = ::Hash.new
         saved_object_id_ = self.object_id
         @my_instance_variable_test = :hello
@@ -135,7 +137,7 @@ module Blockenspiel
           assert_equal(:hello, @my_instance_variable_test)
           assert_equal(saved_object_id_, self.object_id)
         end
-        ::Blockenspiel.invoke(block_, Target1.new(hash_))
+        ::Blockenspiel.invoke(block_, Target1.new(hash_), :parameterless => :mixin)
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert_equal(1, hash_['a1'])
@@ -149,6 +151,8 @@ module Blockenspiel
       # * Asserts that the methods properly delegate to the target object.
 
       def test_mixin_with_renaming
+        skip unless ::Blockenspiel.mixin_available?
+
         hash_ = ::Hash.new
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
@@ -158,7 +162,7 @@ module Blockenspiel
           set_value2_inmixin('b'){ 2 }
           assert(!self.respond_to?(:set_value2))
         end
-        ::Blockenspiel.invoke(block_, Target2.new(hash_))
+        ::Blockenspiel.invoke(block_, Target2.new(hash_), :parameterless => :mixin)
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
@@ -174,6 +178,8 @@ module Blockenspiel
       #   multiple mixins add the same method name
 
       def test_nested_different
+        skip unless ::Blockenspiel.mixin_available?
+
         hash_ = ::Hash.new
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
@@ -185,11 +191,11 @@ module Blockenspiel
           ::Blockenspiel.invoke(::Proc.new do
             set_value('c', 1)
             set_value2_inmixin('d'){ 2 }
-          end, Target2.new(hash_))
+          end, Target2.new(hash_), :parameterless => :mixin)
           assert(!self.respond_to?(:set_value2_inmixin))
           set_value('e', 1)
           set_value2('f'){ 2 }
-        end, Target1.new(hash_))
+        end, Target1.new(hash_), :parameterless => :mixin)
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
@@ -207,6 +213,8 @@ module Blockenspiel
       # * Asserts that the methods are added and removed at the right time.
 
       def test_nested_same
+        skip unless ::Blockenspiel.mixin_available?
+
         hash_ = ::Hash.new
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
@@ -218,10 +226,10 @@ module Blockenspiel
             set_value('c', 1)
             set_value2_inmixin('d'){ 2 }
             assert(!self.respond_to?(:set_value2))
-          end, Target2.new(hash_))
+          end, Target2.new(hash_), :parameterless => :mixin)
           set_value('e', 1)
           set_value2_inmixin('f'){ 2 }
-        end, Target2.new(hash_))
+        end, Target2.new(hash_), :parameterless => :mixin)
         assert(!self.respond_to?(:set_value))
         assert(!self.respond_to?(:set_value2))
         assert(!self.respond_to?(:set_value2_inmixin))
@@ -239,6 +247,8 @@ module Blockenspiel
       # * Asserts that the mixin is removed only after the second thread is done.
 
       def test_threads_same_mixin
+        skip unless ::Blockenspiel.mixin_available?
+
         hash_ = ::Hash.new
         block1_ = ::Proc.new do
           set_value('a', 1)
@@ -252,10 +262,10 @@ module Blockenspiel
         end
         target_ = Target1.new(hash_)
         thread1_ = ::Thread.new do
-          ::Blockenspiel.invoke(block1_, target_)
+          ::Blockenspiel.invoke(block1_, target_, :parameterless => :mixin)
         end
         thread2_ = ::Thread.new do
-          ::Blockenspiel.invoke(block2_, target_)
+          ::Blockenspiel.invoke(block2_, target_, :parameterless => :mixin)
         end
         thread1_.join
         thread2_.join
@@ -267,6 +277,8 @@ module Blockenspiel
 
 
       def test_two_threads_different_mixin
+        skip unless ::Blockenspiel.mixin_available?
+
         hash_ = {}
         target1_ = Target1.new(hash_)
         target2_ = Target2.new(hash_)
@@ -279,7 +291,7 @@ module Blockenspiel
             set_value('a', 1)
             sleep(0.1)
             set_value('e', 5)
-          end, target1_)
+          end, target1_, :parameterless => :mixin)
         end
         t2_ = ::Thread.new do
           ::Blockenspiel.invoke(::Proc.new do
@@ -287,7 +299,7 @@ module Blockenspiel
             set_value('A', 11)
             sleep(0.1)
             set_value('E', 15)
-          end, target2_)
+          end, target2_, :parameterless => :mixin)
         end
         t1_.join
         t2_.join
@@ -310,6 +322,8 @@ module Blockenspiel
       #   threads.
 
       def test_nested_two_threads
+        skip unless ::Blockenspiel.mixin_available?
+
         hash_ = {}
         target1_ = Target1.new(hash_)
         target2_ = Target2.new(hash_)
@@ -325,11 +339,11 @@ module Blockenspiel
               sleep(0.1)
               set_value('c', 3)
               set_value2_inmixin('d'){ 4 }
-            end, target2_)
+            end, target2_, :parameterless => :mixin)
             sleep(0.1)
             set_value('e', 5)
             set_value2('f'){ 6 }
-          end, target1_)
+          end, target1_, :parameterless => :mixin)
         end
         t2_ = ::Thread.new do
           ::Blockenspiel.invoke(::Proc.new do
@@ -340,11 +354,11 @@ module Blockenspiel
               sleep(0.1)
               set_value('C', 13)
               set_value2('D'){ 14 }
-            end, target1_)
+            end, target1_, :parameterless => :mixin)
             sleep(0.1)
             set_value('E', 15)
             set_value2_inmixin('F'){ 16 }
-          end, target2_)
+          end, target2_, :parameterless => :mixin)
         end
         t1_.join
         t2_.join
@@ -377,6 +391,8 @@ module Blockenspiel
       if defined?(::Fiber)
 
         def test_nested_two_fibers
+          skip unless ::Blockenspiel.mixin_available?
+
           hash_ = {}
           target1_ = Target1.new(hash_)
           target2_ = Target2.new(hash_)
@@ -392,11 +408,11 @@ module Blockenspiel
                 ::Fiber.yield
                 set_value('c', 3)
                 set_value2_inmixin('d'){ 4 }
-              end, target2_)
+              end, target2_, :parameterless => :mixin)
               ::Fiber.yield
               set_value('e', 5)
               set_value2('f'){ 6 }
-            end, target1_)
+            end, target1_, :parameterless => :mixin)
           end
           f2_ = ::Fiber.new do
             ::Blockenspiel.invoke(::Proc.new do
@@ -407,11 +423,11 @@ module Blockenspiel
                 ::Fiber.yield
                 set_value('C', 13)
                 set_value2('D'){ 14 }
-              end, target1_)
+              end, target1_, :parameterless => :mixin)
               ::Fiber.yield
               set_value('E', 15)
               set_value2_inmixin('F'){ 16 }
-            end, target2_)
+            end, target2_, :parameterless => :mixin)
           end
           f1_.resume
           f2_.resume
@@ -447,17 +463,19 @@ module Blockenspiel
       # * Asserts that methods that are turned off after the fact cannot be called.
 
       def test_omissions
+        skip unless ::Blockenspiel.mixin_available?
+
         hash_ = ::Hash.new
         block_ = ::Proc.new do
           set_value(:a, 1)
           assert(!self.respond_to?(:_helper_method))
           assert_equal(:helper, get_value(:a))
-          assert_raise(::NoMethodError) do
+          assert_raises(::NoMethodError) do
             get_value2(:a)
           end
         end
         target_ = Target3.new(hash_)
-        ::Blockenspiel.invoke(block_, target_)
+        ::Blockenspiel.invoke(block_, target_, :parameterless => :mixin)
         assert(!self.respond_to?(:set_value))
         assert_equal(1, target_.get_value(:a))
       end

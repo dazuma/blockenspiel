@@ -62,6 +62,8 @@ platform_ =
   else :unknown
   end
 
+puts "Platform: #{::RUBY_DESCRIPTION}"
+
 platform_suffix_ =
   case platform_
   when :mri
@@ -69,8 +71,8 @@ platform_suffix_ =
       'mri18'
     elsif ::RUBY_VERSION =~ /^1\.9\..*$/
       'mri19'
-    elsif ::RUBY_VERSION =~ /^2\.0\..*$/
-      'mri20'
+    elsif ::RUBY_VERSION =~ /^2\..*$/
+      'mri2'
     else
       raise "Unknown version of Matz Ruby Interpreter (#{::RUBY_VERSION})"
     end

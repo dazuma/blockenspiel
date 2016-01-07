@@ -1,4 +1,9 @@
-=== 0.4.6 / 2013-04-??
+=== 0.5.0 / 2016-01-??
+
+* Changed the default strategy to proxy due to semantic issues with mixin and difficulty supporting it.
+* Dropped support for the mixin strategy on MRI because Ruby 2.3.0 broke it and I don't have the bandwidth to find a remedy.
+
+=== 0.4.6 / (never actually released)
 
 * Compatibility with the signature change to reset_method_cache in recent builds of Rubinius 2.0.
 * The gemspec no longer includes the timestamp in the version, so that bundler can pull from github. (Reported by corneverbruggen)

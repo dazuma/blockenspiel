@@ -1,0 +1,4 @@
+This directory contains the original unmixing implementation for MRI.
+It has been disabled for now due to incompatibility with recent versions of
+Ruby. The build procedure no longer builds it. However, the code will be
+kept around for a while for historical curiosity.

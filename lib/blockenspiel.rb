@@ -3,7 +3,7 @@
 # Blockenspiel entry point
 #
 # -----------------------------------------------------------------------------
-# Copyright 2008-2011 Daniel Azuma
+# Copyright 2008 Daniel Azuma
 #
 # All rights reserved.
 #
@@ -45,7 +45,7 @@ end
 
 case ::RUBY_DESCRIPTION
 when /^ruby\s/
-  require 'blockenspiel/unmixer_mri'
+  require 'blockenspiel/unmixer_unimplemented'
 when /^jruby\s/
   require 'blockenspiel_unmixer_jruby'
 when /^rubinius\s/

@@ -36,14 +36,14 @@
 ;
 
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'blockenspiel'
 
 
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestBasic < ::Test::Unit::TestCase  # :nodoc:
+    class TestModules < ::MiniTest::Unit::TestCase  # :nodoc:
 
 
       class Target1
@@ -143,7 +143,7 @@ module Blockenspiel
           set_value(:a, 1)
           assert(!self.respond_to?(:_helper_method))
           assert_equal(:helper, get_value(:a))
-          assert_raise(::NoMethodError) do
+          assert_raises(::NoMethodError) do
             get_value2(:a)
           end
         end

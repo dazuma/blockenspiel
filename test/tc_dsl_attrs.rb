@@ -36,14 +36,14 @@
 ;
 
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'blockenspiel'
 
 
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestDSLAttrs < ::Test::Unit::TestCase  # :nodoc:
+    class TestDSLAttrs < ::MiniTest::Unit::TestCase  # :nodoc:
 
 
       class WriterTarget < ::Blockenspiel::Base

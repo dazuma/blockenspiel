@@ -36,14 +36,14 @@
 ;
 
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'blockenspiel'
 
 
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestDynamic < ::Test::Unit::TestCase  # :nodoc:
+    class TestDynamic < ::MiniTest::Unit::TestCase  # :nodoc:
 
 
       # Test the simple case.
@@ -78,12 +78,12 @@ module Blockenspiel
         end
         block1_ = ::Proc.new do
           renamed_set_value(:a, 1)
-          assert_raise(::NoMethodError){ set_value(:b, 2) }
+          assert_raises(::NoMethodError){ set_value(:b, 2) }
         end
         ::Blockenspiel.invoke(block1_, &dsl_definition_)
         block2_ = ::Proc.new do |dsl_|
           dsl_.set_value(:c, 3)
-          assert_raise(::NoMethodError){ renamed_set_value(:d, 4) }
+          assert_raises(::NoMethodError){ renamed_set_value(:d, 4) }
         end
         ::Blockenspiel.invoke(block2_, &dsl_definition_)
         assert_equal(1, hash_[:a])
@@ -200,7 +200,7 @@ module Blockenspiel
           set_value(:a, 1)
         end
         hash_ = ::Hash.new
-        assert_raise(::Blockenspiel::BlockParameterError) do
+        assert_raises(::Blockenspiel::BlockParameterError) do
           ::Blockenspiel.invoke(block_, :parameterless => false) do
             add_method(:set_value) do |key_, value_|
               hash_[key_] = value_

@@ -3,7 +3,7 @@
 # Blockenspiel implementation
 #
 # -----------------------------------------------------------------------------
-# Copyright 2008-2011 Daniel Azuma
+# Copyright 2008 Daniel Azuma
 #
 # All rights reserved.
 #
@@ -38,6 +38,16 @@ require 'thread'
 
 
 module Blockenspiel
+
+
+  # === Determine whether the mixin strategy is available
+  #
+  # Returns true if the mixin strategy is available on the current ruby
+  # platform. This will be false for most platforms.
+
+  def self.mixin_available?
+    !::Blockenspiel::Unmixer.const_defined?(:UNIMPLEMENTED)
+  end
 
 
   # === Invoke a given DSL
@@ -135,20 +145,8 @@ module Blockenspiel
   # The following values control the precise behavior of parameterless
   # blocks. These are values for the <tt>:parameterless</tt> option.
   #
-  # [<tt>:mixin</tt>]
-  #   This is the default behavior. DSL methods from the target are
-  #   temporarily overlayed on the caller's +self+ object, but +self+ still
-  #   points to the same object, so the helper methods and instance
-  #   variables from the caller's closure remain available. The DSL methods
-  #   are removed when the block completes.
-  # [<tt>:instance</tt>]
-  #   This behavior actually changes +self+ to the target object using
-  #   <tt>instance_eval</tt>. Thus, the caller loses access to its own
-  #   helper methods and instance variables, and instead gains access to the
-  #   target object's instance variables. The target object's methods are
-  #   not modified: this behavior does not apply any DSL method changes
-  #   specified using <tt>dsl_method</tt> directives.
   # [<tt>:proxy</tt>]
+  #   This is the default behavior for parameterless blocks.
   #   This behavior changes +self+ to a proxy object created by applying the
   #   DSL methods to an empty object, whose <tt>method_missing</tt> points
   #   back at the block's context. This behavior is a compromise between
@@ -159,6 +157,19 @@ module Blockenspiel
   #   object's instance variables are not available (and thus cannot be
   #   clobbered) in the block, and the transformations specified by
   #   <tt>dsl_method</tt> directives are honored.
+  # [<tt>:instance</tt>]
+  #   This behavior changes +self+ directly to the target object using
+  #   <tt>instance_eval</tt>. Thus, the caller loses access to its own
+  #   helper methods and instance variables, and instead gains access to the
+  #   target object's instance variables. The target object's methods are
+  #   not modified: this behavior does not apply any DSL method changes
+  #   specified using <tt>dsl_method</tt> directives.
+  # [<tt>:mixin</tt>]
+  #   This behavior is not available on all ruby platforms. DSL methods from
+  #   the target are temporarily overlayed on the caller's +self+ object, but
+  #   +self+ still points to the same object. Thus the helper methods and
+  #   instance variables from the caller's closure remain available. The DSL
+  #   methods are removed when the block completes.
   #
   # === String DSL options
   #
@@ -328,7 +339,7 @@ module Blockenspiel
     end
 
     # Execute the DSL using the proxy method.
-    _execute_dsl(true, nil, eval_str_, target_, file_, line_)
+    _execute_dsl(false, nil, eval_str_, target_, file_, line_)
   end
 
 
@@ -368,7 +379,7 @@ module Blockenspiel
     end
 
     # Execute the DSL
-    _execute_dsl(parameterless_ == :proxy, block_, nil, target_, nil, nil)
+    _execute_dsl(parameterless_ == :mixin, block_, nil, target_, nil, nil)
   end
 
 
@@ -378,6 +389,10 @@ module Blockenspiel
   # non-handled methods to the context object.
 
   class ProxyDelegator  # :nodoc:
+
+    def initialize(delegate_)
+      @_blockenspiel_delegate = delegate_
+    end
 
     def method_missing(symbol_, *params_, &block_)
       ::Blockenspiel._proxy_dispatch(self, symbol_, params_, block_)
@@ -399,7 +414,7 @@ module Blockenspiel
   # This is the "meat" of Blockenspiel, implementing both the proxy and
   # mixin methods.
 
-  def self._execute_dsl(use_proxy_method_, block_, eval_str_, target_, file_, line_)  # :nodoc:
+  def self._execute_dsl(use_mixin_method_, block_, eval_str_, target_, file_, line_)  # :nodoc:
     # Get the module of dsl methods
     mod_ = target_.class._get_blockenspiel_module rescue nil
     unless mod_
@@ -409,36 +424,7 @@ module Blockenspiel
     # Get the block's calling context object
     context_object_ = block_ ? ::Kernel.eval('self', block_.binding) : nil
 
-    if use_proxy_method_
-
-      # Create proxy object
-      proxy_ = ::Blockenspiel::ProxyDelegator.new
-      proxy_.extend(mod_)
-
-      # Store the target and proxy object so dispatchers can get them
-      proxy_delegator_key_ = proxy_.object_id
-      target_stack_key_ = _current_context_id(proxy_)
-      @_proxy_delegators[proxy_delegator_key_] = context_object_ if context_object_
-      @_target_stacks[target_stack_key_] = [target_]
-
-      begin
-
-        # Evaluate with the proxy as self
-        if block_
-          return proxy_.instance_eval(&block_)
-        else
-          return proxy_.instance_eval(eval_str_, file_, line_)
-        end
-
-      ensure
-
-        # Clean up the dispatcher information
-        @_proxy_delegators.delete(proxy_delegator_key_) if context_object_
-        @_target_stacks.delete(target_stack_key_)
-
-      end
-
-    else
+    if use_mixin_method_
 
       # Create hash keys
       mixin_count_key_ = [context_object_.object_id, mod_.object_id]
@@ -486,6 +472,32 @@ module Blockenspiel
 
       end
 
+    else
+
+      # Create proxy object
+      proxy_ = ::Blockenspiel::ProxyDelegator.new(context_object_)
+      proxy_.extend(mod_)
+
+      # Store the target object so the dispatcher can get it
+      target_stack_key_ = _current_context_id(proxy_)
+      @_target_stacks[target_stack_key_] = [target_]
+
+      begin
+
+        # Evaluate with the proxy as self
+        if block_
+          return proxy_.instance_eval(&block_)
+        else
+          return proxy_.instance_eval(eval_str_, file_, line_)
+        end
+
+      ensure
+
+        # Clean up the dispatcher information
+        @_target_stacks.delete(target_stack_key_)
+
+      end
+
     end
   end
 
@@ -513,7 +525,7 @@ module Blockenspiel
   # We look up the context object, and call the given method on that object.
 
   def self._proxy_dispatch(proxy_, name_, params_, block_)  # :nodoc:
-    delegate_ = @_proxy_delegators[proxy_.object_id]
+    delegate_ = proxy_.instance_variable_get(:@_blockenspiel_delegate)
     if delegate_
       delegate_.send(name_, *params_, &block_)
     else

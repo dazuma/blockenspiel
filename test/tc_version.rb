@@ -36,20 +36,20 @@
 ;
 
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'blockenspiel'
 
 
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestVersion < ::Test::Unit::TestCase  # :nodoc:
+    class TestVersion < ::MiniTest::Unit::TestCase  # :nodoc:
 
 
       # Test that the version autoload works.
 
       def test_version
-        assert_not_nil(::Blockenspiel::VERSION)
+        refute_nil(::Blockenspiel::VERSION)
       end
 
 

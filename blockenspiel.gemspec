@@ -1,17 +1,17 @@
 # -----------------------------------------------------------------------------
-# 
+#
 # Blockenspiel gemspec
-# 
+#
 # This file contains the gemspec for Blockenspiel.
-# 
+#
 # -----------------------------------------------------------------------------
-# Copyright 2011 Daniel Azuma
-# 
+# Copyright 2008 Daniel Azuma
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the following disclaimer.
 # * Redistributions in binary form must reproduce the above copyright notice,
@@ -20,7 +20,7 @@
 # * Neither the name of the copyright holder, nor the names of any other
 #   contributors to this software, may be used to endorse or promote products
 #   derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -47,12 +47,10 @@
   s_.rubyforge_project = 'virtuoso'
   s_.required_ruby_version = '>= 1.8.7'
   s_.files = ::Dir.glob("lib/**/*.{rb,jar}") +
-    ::Dir.glob("ext/**/*.{c,rb}") +
     ::Dir.glob("test/**/*.rb") +
     ::Dir.glob("*.rdoc") +
     ['Version']
   s_.extra_rdoc_files = ::Dir.glob("*.rdoc")
   s_.test_files = ::Dir.glob("test/**/tc_*.rb")
   s_.platform = ::Gem::Platform::RUBY
-  s_.extensions = ::Dir.glob("ext/*/extconf.rb")
 end
