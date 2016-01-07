@@ -43,7 +43,7 @@ require 'blockenspiel'
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestDynamic < ::MiniTest::Unit::TestCase  # :nodoc:
+    class TestDynamic < ::Minitest::Test  # :nodoc:
 
 
       # Test the simple case.

@@ -44,7 +44,7 @@ require 'blockenspiel'
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestMixins < ::MiniTest::Unit::TestCase  # :nodoc:
+    class TestMixins < ::Minitest::Test  # :nodoc:
 
 
       class Target1 < ::Blockenspiel::Base

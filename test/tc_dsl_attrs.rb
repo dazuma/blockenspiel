@@ -43,7 +43,7 @@ require 'blockenspiel'
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestDSLAttrs < ::MiniTest::Unit::TestCase  # :nodoc:
+    class TestDSLAttrs < ::Minitest::Test  # :nodoc:
 
 
       class WriterTarget < ::Blockenspiel::Base

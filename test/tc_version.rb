@@ -43,7 +43,7 @@ require 'blockenspiel'
 module Blockenspiel
   module Tests  # :nodoc:
 
-    class TestVersion < ::MiniTest::Unit::TestCase  # :nodoc:
+    class TestVersion < ::Minitest::Test  # :nodoc:
 
 
       # Test that the version autoload works.

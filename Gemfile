@@ -37,7 +37,7 @@
 source "http://rubygems.org"
 
 group(:test) do
-  gem('minitest', '>= 4.7')
+  gem('minitest', '>= 5.8')
   gem('rake', '>= 10.0')
   gem('rdoc', '>= 4.2')
 end
