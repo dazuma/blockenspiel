@@ -40,15 +40,16 @@ file 'lib/blockenspiel_unmixer_jruby.jar' do
   unless jruby_dir_
     jruby_dir_ = ::Dir.glob("#{::ENV['RBENV_ROOT']}/versions/jruby-*").sort.last
   end
-  unless jruby_dir_
-    raise "Cannot find any JRuby"
+  if jruby_dir_
+    ::Dir.chdir('java') do
+      sh "javac -classpath #{jruby_dir_}/lib/jruby.jar BlockenspielUnmixerJrubyService.java"
+      sh 'jar cf blockenspiel_unmixer_jruby.jar BlockenspielUnmixerJrubyService.class'
+      rm 'BlockenspielUnmixerJrubyService.class'
+    end
+    mv 'java/blockenspiel_unmixer_jruby.jar', 'lib'
+  else
+    puts "Cannot find any JRuby"
   end
-  ::Dir.chdir('java') do
-    sh "javac -classpath #{jruby_dir_}/lib/jruby.jar BlockenspielUnmixerJrubyService.java"
-    sh 'jar cf blockenspiel_unmixer_jruby.jar BlockenspielUnmixerJrubyService.class'
-    rm 'BlockenspielUnmixerJrubyService.class'
-  end
-  mv 'java/blockenspiel_unmixer_jruby.jar', 'lib'
 end
 
 
