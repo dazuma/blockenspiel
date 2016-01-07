@@ -90,7 +90,7 @@ You could write this as follows:
      # do something
    end
  end
- 
+
  def configure_me
    yield ConfigMethods.new
  end
@@ -151,7 +151,7 @@ methods inside the block:
  def callers_helper_method
    # ...
  end
- 
+
  configure_me do
    add_foo(1)
    callers_helper_method  # Error! self is now an instance of ConfigMethods
@@ -188,28 +188,28 @@ a few examples:
 
  class ConfigMethods
    include Blockenspiel::DSL
-   
+
    def add_foo         # automatically added to the dsl
      # do stuff...
    end
-   
+
    def my_private_method
      # do stuff...
    end
    dsl_method :my_private_method, false   # remove from the dsl
-   
+
    dsl_methods false   # stop automatically adding methods to the dsl
-   
+
    def another_private_method  # not added
      # do stuff...
    end
-   
+
    dsl_methods true    # resume automatically adding methods to the dsl
-   
+
    def add_bar         # this method is automatically added
      # do stuff...
    end
-   
+
    def add_baz
      # do stuff
    end
@@ -225,12 +225,12 @@ Parameterless blocks do not support <tt>attr_writer</tt> (or, by corollary,
  configure_me do |config|
    config.foo = 1    # works fine when the block has a parameter
  end
- 
+
  configure_me do
    # foo = 1     # <--- Doesn't work: looks like a variable assignment
    set_foo(1)    # <--- Fix it by renaming to this instead
  end
- 
+
  # This is implemented like this::
  class ConfigMethods
    include Blockenspiel::DSL
@@ -248,7 +248,7 @@ parameterless block:
    foo 1                 # this syntax is now supported.
    puts "foo is #{foo}"  # The getter still works.
  end
- 
+
  # This is implemented like this::
  class ConfigMethods
    include Blockenspiel::DSL

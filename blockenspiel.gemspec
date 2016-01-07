@@ -41,6 +41,7 @@
   s_.summary = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks.'
   s_.description = 'Blockenspiel is a helper library designed to make it easy to implement DSL blocks. It is designed to be comprehensive and robust, supporting most common usage patterns, and working correctly in the presence of nested blocks and multithreading.'
   s_.version = "#{::File.read('Version').strip}.nonrelease"
+  s_.licenses = ['BSD-3-Clause']
   s_.author = 'Daniel Azuma'
   s_.email = 'dazuma@gmail.com'
   s_.homepage = 'http://dazuma.github.com/blockenspiel'

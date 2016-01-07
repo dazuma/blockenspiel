@@ -1,4 +1,4 @@
-=== 0.5.0 / 2016-01-??
+=== 0.5.0 / 2016-01-07
 
 * Fixed an issue with the proxy strategy, where if a block spawns blocks that live longer than it, the sub-blocks lost their context.
 * Changed the default strategy to proxy due to semantic issues with mixin and difficulty supporting it.

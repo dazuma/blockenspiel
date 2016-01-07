@@ -16,7 +16,7 @@ and those that do not. For example:
    config.add_foo(1)
    config.add_bar(2)
  end
- 
+
  # Call DSL block without parameter
  configure_me do
    add_foo(3)
@@ -35,7 +35,7 @@ To support the above usage, you can do this:
      # do something
    end
  end
- 
+
  # Implement configure_me method
  def configure_me(&block)
    Blockenspiel.invoke(block, ConfigMethods.new)
