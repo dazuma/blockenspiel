@@ -45,7 +45,7 @@
   s_.email = 'dazuma@gmail.com'
   s_.homepage = 'http://dazuma.github.com/blockenspiel'
   s_.rubyforge_project = 'virtuoso'
-  s_.required_ruby_version = '>= 1.8.7'
+  s_.required_ruby_version = '>= 1.9.3'
   s_.files = ::Dir.glob("lib/**/*.{rb,jar}") +
     ::Dir.glob("test/**/*.rb") +
     ::Dir.glob("*.rdoc") +

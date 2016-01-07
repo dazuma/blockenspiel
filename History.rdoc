@@ -1,7 +1,10 @@
 === 0.5.0 / 2016-01-??
 
+* Fixed an issue with the proxy strategy, where if a block spawns blocks that live longer than it, the sub-blocks lost their context.
 * Changed the default strategy to proxy due to semantic issues with mixin and difficulty supporting it.
 * Dropped support for the mixin strategy on MRI because Ruby 2.3.0 broke it and I don't have the bandwidth to find a remedy.
+* Updated the Rakefile, tests, and general infrastructure to play better with modern Rubies.
+* Dropped support for Ruby 1.8, because who still uses 1.8???
 
 === 0.4.6 / (never actually released)
 
