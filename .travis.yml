@@ -13,3 +13,4 @@ matrix:
   allow_failures:
     - rvm: ruby-head
 
+sudo: false
