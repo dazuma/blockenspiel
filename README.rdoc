@@ -81,7 +81,7 @@ Contributions are welcome. Fork the project on Github.
 
 Build status: {<img src="https://secure.travis-ci.org/dazuma/blockenspiel.png" />}[http://travis-ci.org/dazuma/blockenspiel]
 
-Report bugs on Github issues at http://github.org/dazuma/blockenspiel/issues
+Report bugs on Github issues at https://github.com/dazuma/blockenspiel/issues
 
 Contact the author at dazuma at gmail dot com.
 
